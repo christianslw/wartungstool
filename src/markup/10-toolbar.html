@@ -22,10 +22,19 @@
     </button>
 
     <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
-      <button class="view-btn" data-view="objects" aria-pressed="true" title="Standortansicht">Standorte</button>
-      <button class="view-btn" data-view="plan" aria-pressed="false" title="Zeitplanansicht">Zeitplan</button>
-      <button class="view-btn" data-view="table" aria-pressed="false" title="Listenansicht">Liste</button>
+      <button class="view-btn" data-view="list" aria-pressed="true" title="Listenansicht">Liste</button>
+      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe">Kacheln</button>
+      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt">Blobs</button>
     </div>
+
+    <span class="step" data-label="Gruppe"><select id="groupSel" aria-label="Gruppieren nach"></select></span>
+    <span class="step" data-label="Sortierung"><select id="sortSel" aria-label="Sortieren nach"></select></span>
+    <button class="btn-ic" id="sortDir" title="auf-/absteigend">↑</button>
+
+    <span class="step" data-label="Preset"><select id="presetSel" aria-label="Preset"></select></span>
+    <button class="btn-ic" id="presetSave" title="Aktuelle Kombination speichern">＋</button>
+    <button class="btn-ic" id="presetDefault" title="Als Standard festlegen">★</button>
+    <button class="btn-ic" id="presetDelete" title="Preset löschen">×</button>
 
     <span id="viewAction"></span>
 

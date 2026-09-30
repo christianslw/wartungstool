@@ -6,8 +6,8 @@ $('#tableHost').addEventListener('click', async e => {
   const termLoc = e.target.closest('[data-termloc]');
   if (termLoc) {
     e.stopPropagation();
-    const g = filteredGroups(aktuelleListe()).find(([k]) => k === termLoc.dataset.termloc);
-    if (g) dispatchTermin(terminZielStandort(g[1]));
+    const g = groupItems(aktuelleListe(), 'object').find(x => x.key === termLoc.dataset.termloc);
+    if (g) dispatchTermin(terminZielStandort(g));
     return;
   }
   const loc = e.target.closest('[data-loc]');
@@ -63,11 +63,42 @@ $('#chipMine').addEventListener('click', () => { state.mine = !state.mine; rende
 
 $('#viewSwitch').addEventListener('click', e => {
   const b = e.target.closest('[data-view]');
-  if (b) {
-    state.view = b.dataset.view;
-    $$('#viewSwitch button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    render();
-  }
+  if (b) setView(b.dataset.view);
+});
+
+/* Drei Schritte: Gruppieren · Sortieren · Ansicht + Presets */
+$('#groupSel').addEventListener('change', e => setGroup(e.target.value));
+$('#sortSel').addEventListener('change', e => setSort(e.target.value));
+$('#sortDir').addEventListener('click', () => toggleSortDir());
+$('#presetSel').addEventListener('change', e => {
+  const p = loadPresets().list.find(x => x.name === e.target.value);
+  if (p) applyPreset(p);
+});
+$('#presetSave').addEventListener('click', async () => {
+  const vorschlag = GROUP_DEFS.find(g => g.key === state.group).label + ' · ' + state.view;
+  const r = await modal({
+    title: 'Preset speichern',
+    bodyHtml: '<p class="t-helper" style="margin-bottom:10px">Gruppieren, Sortieren und Ansicht dieser Kombination benennen.</p>' +
+      '<div class="fld"><label for="pName">Name</label><input class="inp" id="pName" value="' + esc(vorschlag) + '"></div>',
+    primary: 'Speichern',
+    collect: (s) => ({ name: s.querySelector('#pName').value.trim() }),
+    validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+  });
+  if (r && r.name) { saveCurrentPreset(r.name); render(); toast('Preset gespeichert', { tone: 'success', detail: r.name }); }
+});
+$('#presetDefault').addEventListener('click', () => {
+  const name = $('#presetSel').value;
+  if (!name) return toast('Bitte zuerst ein Preset wählen', { tone: 'warning' });
+  const def = setDefaultPreset(name);
+  render();
+  toast(def ? 'Als Standard gesetzt' : 'Standard entfernt', { tone: 'success', detail: name });
+});
+$('#presetDelete').addEventListener('click', () => {
+  const name = $('#presetSel').value;
+  if (!name) return;
+  deletePreset(name);
+  render();
+  toast('Preset gelöscht', { tone: 'warning', detail: name });
 });
 
 $('#btnFilterToggle').addEventListener('click', () => {
@@ -77,7 +108,6 @@ $('#btnFilterToggle').addEventListener('click', () => {
 
 $('.filter-drawer').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
-  if (e.target.id === 'fltSort') state.sort = e.target.value;
   render();
 });
 $('#btnReset').addEventListener('click', () => {
@@ -90,7 +120,7 @@ $('.toolbar-row').addEventListener('click', e => {
   const exp = e.target.closest('[data-expand]');
   if (exp) {
     const list = aktuelleListe();
-    state.expanded = exp.dataset.expand === 'all' ? new Set(filteredGroups(list).map(([k]) => k)) : new Set();
+    state.expanded = exp.dataset.expand === 'all' ? new Set(groupItems(list, state.group).map(g => g.key)) : new Set();
     render();
   }
 });
@@ -136,9 +166,8 @@ document.addEventListener('keydown', e => {
   if (e.key === '/') { e.preventDefault(); $('#search').focus(); }
   if (e.key === 'p') { window.print(); }
   if (e.key === 'm') {
-    const order = ['objects', 'plan', 'table'];
+    const order = ['list', 'tiles', 'blobs'];
     state.view = order[(order.indexOf(state.view) + 1) % order.length];
-    $$('#viewSwitch button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === state.view)));
     render();
   }
 });

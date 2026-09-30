@@ -1,0 +1,76 @@
+/* Wartungstool · Styles · Kacheln, Blasen, Fortschritt, Toolbar-Steuerung */
+
+/* ---- Gesamtfortschritt (Balken oben) ------------------------------------ */
+.progress-strip{
+  display:flex;align-items:center;gap:10px;padding:6px 16px;
+  background:var(--layer-01);border-bottom:1px solid var(--border-subtle);
+  font-size:11px;color:var(--text-secondary);flex:0 0 auto;
+}
+.ps-label{font-weight:600;color:var(--text-primary);white-space:nowrap}
+.ps-track{flex:1 1 auto;height:6px;background:var(--layer-03);border-radius:3px;overflow:hidden}
+.ps-track > i{display:block;height:100%;width:0;background:var(--interactive-light);transition:width .3s ease}
+.progress-strip.done .ps-track > i{background:var(--success)}
+.ps-value{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---- Toolbar: Schritte (Gruppe/Sortierung/Preset) ----------------------- */
+.step{display:inline-flex;align-items:center;gap:4px;height:28px}
+.step::before{content:attr(data-label);font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
+.step select{
+  height:28px;background:var(--layer-02);border:1px solid var(--border-subtle);
+  padding:0 20px 0 6px;font-size:11px;color:var(--text-primary);
+}
+.btn-ic{
+  display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+  background:var(--layer-01);border:1px solid var(--border-subtle);color:var(--text-secondary);
+  border-radius:2px;font-size:13px;line-height:1;
+}
+.btn-ic:hover{color:var(--text-primary);border-color:var(--border-strong)}
+.btn-ic.on{color:var(--interactive);border-color:var(--interactive-light)}
+
+/* ---- To-Do-/Gruppen-Kennzeichen ----------------------------------------- */
+.tag{display:inline-flex;align-items:center;border-radius:2px;font-weight:600;letter-spacing:.02em}
+.tag.gray{background:var(--tag-gray-bg);color:var(--tag-gray-fg)}
+.tag.mini{font-size:9px;padding:0 5px;height:16px}
+
+/* ---- Kacheln ------------------------------------------------------------ */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:16px 16px 120px}
+.tile{border:1px solid var(--border-subtle);background:var(--layer-01);border-radius:4px;overflow:hidden}
+.tile.open{grid-column:1 / -1}
+.tile.over{border-left:3px solid var(--error)}
+.tile.done{opacity:.72}
+.tile-head{
+  display:grid;grid-template-columns:auto 1fr;grid-template-areas:'ring label' 'ring sub' 'ring over';
+  align-items:center;gap:2px 12px;padding:12px;width:100%;text-align:left;
+}
+.tile-ring{
+  grid-area:ring;position:relative;width:52px;height:52px;border-radius:50%;
+  background:conic-gradient(var(--interactive-light) calc(var(--pct) * 1%), var(--layer-03) 0);
+  display:grid;place-items:center;flex:0 0 auto;
+}
+.tile-ring::after{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--layer-01)}
+.tile-ring b{position:relative;z-index:1;font-size:12px;font-variant-numeric:tabular-nums}
+.tile.done .tile-ring{background:conic-gradient(var(--success) calc(var(--pct) * 1%), var(--layer-03) 0)}
+.tile-label{grid-area:label;font-weight:600;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-sub{grid-area:sub;font-size:11px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.tile-head .urgency-badge{grid-area:over;justify-self:start;margin-top:2px}
+.tile-rows{border-top:1px solid var(--border-subtle)}
+
+/* ---- Blasen ------------------------------------------------------------- */
+.blobs{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center;padding:28px 16px}
+.blob{
+  position:relative;width:var(--size);height:var(--size);border-radius:50%;border:0;cursor:pointer;
+  background:conic-gradient(var(--interactive-light) calc(var(--pct) * 1%), var(--layer-03) 0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  color:var(--text-primary);font:inherit;transition:transform .12s ease;
+}
+.blob:hover{transform:translateY(-2px)}
+.blob::after{content:'';position:absolute;inset:8px;border-radius:50%;background:var(--layer-01)}
+.blob > *{position:relative;z-index:1}
+.blob.done{background:conic-gradient(var(--success) calc(var(--pct) * 1%), var(--layer-03) 0)}
+.blob.over{background:conic-gradient(var(--error) calc(var(--pct) * 1%), var(--layer-03) 0)}
+.blob.open{box-shadow:var(--ring)}
+.blob-pct{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.blob-label{font-size:11px;font-weight:600;max-width:calc(var(--size) - 28px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blob-sub{font-size:10px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.blob-detail{padding:0 16px 24px}
+.blob-detail h3{font-size:13px;font-weight:600;margin:10px 0 4px;display:flex;gap:8px;align-items:baseline}

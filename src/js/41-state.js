@@ -2,7 +2,9 @@
 const state = {
   items: [], todos: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
-  mine: false, sort: 'loc-critical', view: 'objects',
+  mine: false,
+  /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
+  group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',
   expanded: new Set(), collapsed: new Set(), panelId: null, loading: true, online: true, filterOpen: false
 };
 

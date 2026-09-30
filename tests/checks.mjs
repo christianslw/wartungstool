@@ -124,8 +124,8 @@ const group = (t) => console.log('\n== ' + t + ' ==');
 group('Startzustand');
 ok('Stammdaten geladen', state.items.length === ERWARTET,
    state.items.length + ' (Quelle: ' + (EXT ? 'daten.js' : 'Testbestand') + ')');
-ok('Startansicht = Standort-Arbeitsliste', state.view === 'objects' && state.sort === 'loc-critical');
-ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.filteredGroups(ctx.aktuelleListe()).length);
+ok('Startansicht = Standort-Arbeitsliste', state.view === 'list' && state.group === 'object' && state.sortKey === 'status' && state.sortDir === 'asc');
+ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.groupItems(ctx.aktuelleListe(), 'object').length);
 ok('Fortschritt je Standort sichtbar', /\d+\/\d+/.test(host()));
 ok('Kein doppelter Prozentwert in der Zeile', !host().includes('loc-pct'));
 ok('Alle Standorte eingeklappt zu Beginn', (host().match(/class="loc-row[ "]/g) || []).length === 0);
@@ -147,20 +147,20 @@ if (EXT) {
      state.items.every(i => typeof i.erledigt === 'boolean'));
   const objekte = new Set(state.items.map(i => i.objekt_nr));
   ok('Standorte übernommen', objekte.size >= 10, objekte.size + ' Standorte');
-  ctx.setView('plan');
+  ctx.setGroup('status');
   ok('Zeitplan erkennt echte Dringlichkeit', /Überfällig/.test(host()) && /Bald fällig/.test(host()),
      'überfällig + bald fällig vorhanden');
-  ctx.setView('objects');
+  ctx.setGroup('object');
 }
 
 /* ------------------------------------------------------------------ Offene zuerst */
 group('Offene Positionen stehen oben');
-ctx.setView('table');
-const rows = [...host().matchAll(/<tr data-id="(\d+)"/g)].map(m => state.items.find(i => String(i.id) === m[1]));
-const firstDone = rows.findIndex(r => r.erledigt);
+ctx.setGroup('none');
+const rows = [...host().matchAll(/<tr data-id="([wt]:\d+)"/g)].map(m => ctx.findByKey(m[1]));
+const firstDone = rows.findIndex(r => r && r.erledigt);
 ok('Erledigte Positionen stehen am Ende (Liste)',
-   firstDone < 0 || rows.slice(firstDone).every(r => r.erledigt), firstDone + ' von ' + rows.length);
-ctx.setView('plan');
+   rows.length > 0 && (firstDone < 0 || rows.slice(firstDone).every(r => r.erledigt)), firstDone + ' von ' + rows.length);
+ctx.setGroup('status');
 const plan = host();
 ok('Zeitplan: Gruppen in Dringlichkeitsreihenfolge', (() => {
   const labels = ['Überfällig', 'Bald fällig', 'Im Zeitraum', 'Später geplant', 'Erledigt'];
@@ -172,7 +172,7 @@ ok('Zeitplan: Gruppen in Dringlichkeitsreihenfolge', (() => {
 })());
 ok('Zeitplan zeigt die Frist als Warnhinweis', /überfällig seit|heute fällig|noch \d+ Tag/.test(plan));
 ok('Zeitplan nutzt dieselbe Arbeitszeile (Häkchen links)', /class="loc-row[^"]*" data-id="[wt]:\d+">\s*<button class="tick/.test(plan));
-ctx.setView('objects');
+ctx.setGroup('object');
 
 /* --------------------------------------------------------------- Abschluss */
 group('Wartung abschließen');
@@ -277,13 +277,13 @@ ok('Aktiver Bereich ist markiert (kein Titel nötig)',
 ok('To-Do erscheint mit Frist und Standort', host().includes('Blitzschutzableiter erneuern') && host().includes('Bad Mergentheim'));
 ok('Anlege-Knopf sichtbar (To-Dos sind keine Stammdaten)', !reg['#btnNewTodo'].hidden);
 ok('To-Dos nutzen dieselben Ansichten wie die Wartungen',
-   // Standorte: Gruppierung nach Standort
-   (() => { ctx.setView('objects'); return (host().match(/class="loc-head"/g) || []).length >= 1; })() &&
-   // Liste: gleiche Tabellenstruktur
-   (() => { ctx.setView('table'); return /<table class="cds">/.test(host()) && host().includes('Blitzschutzableiter erneuern'); })() &&
-   // Zeitplan: gleiche Gruppenlogik
-   (() => { ctx.setView('plan'); return /class="plan-sec/.test(host()); })());
-ctx.setView('objects');
+   // Standort-Gruppierung
+   (() => { ctx.setGroup('object'); return (host().match(/class="loc-head"/g) || []).length >= 1; })() &&
+   // Flache Tabelle
+   (() => { ctx.setGroup('none'); return /<table class="cds">/.test(host()) && host().includes('Blitzschutzableiter erneuern'); })() &&
+   // Status-Gruppierung
+   (() => { ctx.setGroup('status'); return /class="plan-sec/.test(host()); })());
+ctx.setGroup('object');
 ctx.setAllExpanded(true);
 ok('To-Do ist in der Zeile als To-Do erkennbar', host().includes('ist-todo'));
 ok('Standortkopf zählt offene Positionen', /\d+\/\d+ offen/.test(host()));
@@ -429,6 +429,67 @@ ok('Datenquelle dezent in der Fußzeile', /class="app-foot"/.test(APP) && /app-f
 ok('Tags kräftiger (hell)', /--tag-yellow-bg:#fdf5d6/.test(APP) && /--tag-red-bg:#ffeef0/.test(APP));
 ok('Ergebniszahl nur bei aktivem Filter', () => true, '');
 ok('Fortschritt bleibt sichtbar', /loc-mini-track/.test(css) && /linearProgress/.test(src));
+
+/* --------------------------------------------------- Drei Schritte & Presets */
+group('Drei Schritte: Gruppieren · Sortieren · Ansicht');
+state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.personen = []; state.mine = false;
+ctx.setBereich('wartung');
+ctx.setGroup('task'); ctx.setView('list'); ctx.setAllExpanded(false);
+const taskGroups = ctx.groupItems(ctx.aktuelleListe(), 'task');
+ok('Gruppieren nach Tätigkeit', taskGroups.length === new Set(state.items.map(i => i.taetigkeit)).size && taskGroups.length > 1,
+   taskGroups.length + ' Tätigkeiten');
+ctx.setView('tiles');
+const tiles = host();
+ok('Kacheln: eine Karte je Gruppe', (tiles.match(/class="tile[ "]/g) || []).length === taskGroups.length);
+ok('Kachel zeigt Prozent und offen/gesamt',
+   /class="tile-ring"[^>]*><b>\d+%<\/b>/.test(tiles) && /offen · \d+\/\d+/.test(tiles));
+ctx.setView('blobs');
+const blobs = host();
+ok('Blasen: ein Kreis je Gruppe', (blobs.match(/class="blob[ "]/g) || []).length === taskGroups.length);
+ok('Blase zeigt Prozent', /class="blob-pct">\d+%</.test(blobs));
+ok('Blase ist auf-/zuklappbar', /data-loc="/.test(blobs));
+
+ctx.setView('list'); ctx.setGroup('object');
+const groupNrs = () => ctx.sortGroups(ctx.groupItems(ctx.aktuelleListe(), 'object'), 'object', state.sortDir).map(g => g.nr);
+ctx.setSort('object', 'asc');
+const ascNrs = groupNrs();
+ctx.setSort('object', 'desc');
+const descNrs = groupNrs();
+ok('Sortierrichtung wirkt (auf/absteigend)', ascNrs.length > 1 && ascNrs[0] !== descNrs[0], ascNrs[0] + ' / ' + descNrs[0]);
+ok('Status-Sortierung: offene zuerst', (() => {
+  const arr = ctx.sortItems(state.items, 'status', 'asc');
+  const i = arr.findIndex(x => x.erledigt);
+  return arr.length > 0 && (i < 0 || arr.slice(i).every(x => x.erledigt));
+})());
+ctx.setSort('status', 'asc'); ctx.setGroup('object'); ctx.setView('list');
+
+group('Presets (clientseitig gespeichert)');
+const psKey = ctx.__config.storageKey + '.presets';
+ctx.setGroup('task'); ctx.setView('tiles'); ctx.setSort('due', 'desc');
+ctx.saveCurrentPreset('VDE-Kacheln');
+let pf = JSON.parse(store.get(psKey) || '{}');
+ok('Preset speichert Gruppe/Ansicht/Sortierung',
+   (pf.list || []).some(p => p.name === 'VDE-Kacheln' && p.group === 'task' && p.view === 'tiles' && p.sortKey === 'due' && p.sortDir === 'desc'));
+ctx.setDefaultPreset('VDE-Kacheln');
+pf = JSON.parse(store.get(psKey) || '{}');
+ok('Standard-Preset merkbar', pf.def === 'VDE-Kacheln');
+ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc');
+ctx.applyPreset((pf.list || []).find(p => p.name === 'VDE-Kacheln'));
+ok('Preset anwendbar', state.group === 'task' && state.view === 'tiles' && state.sortKey === 'due' && state.sortDir === 'desc');
+ctx.setDefaultPreset('VDE-Kacheln'); // Standard wieder abwählen
+ctx.deletePreset('VDE-Kacheln');
+pf = JSON.parse(store.get(psKey) || '{}');
+ok('Preset löschbar', !(pf.list || []).some(p => p.name === 'VDE-Kacheln'));
+ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc');
+
+group('Gesamtfortschritt oben');
+state.user = 'Salwa, Christian';
+const f = ctx.fortschritt();
+const meine = state.items.filter(i => i.zustaendig === state.user);
+ok('Fortschritt zählt meine Wartungen', f.personal && f.total === meine.length && f.done === meine.filter(i => i.erledigt).length,
+   f.done + '/' + f.total);
+ctx.render();
+ok('Fortschrittsbalken oben vorhanden', /class="progress-strip"/.test(APP) && /\d+ \/ \d+ · \d+%/.test(reg['#psValue'].textContent));
 
 console.log('\n' + (fails
   ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs

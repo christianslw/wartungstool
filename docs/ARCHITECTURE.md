@@ -17,6 +17,7 @@ src/
 │  ├─ 10-appbar.css         App-Bar (Zeile 1)
 │  ├─ 20-toolbar.css        Toolbar (Zeile 2)
 │  ├─ 30-locations.css      Standortliste / Progress Rings
+│  ├─ 35-cards.css          Kacheln, Blasen, Fortschrittsbalken, Toolbar-Steuerung
 │  ├─ 40-views.css          Tabelle & Zeitplan
 │  └─ 50-responsive.css     Responsive & Druck
 ├─ markup/                  statisches HTML
@@ -38,7 +39,8 @@ src/
    ├─ 40-settings.js        Einstellungen & Design
    ├─ 41-state.js           Anwendungszustand
    ├─ 42-selectors.js       Filter, Gruppierung, Kennzahlen
-   ├─ 43-actions.js         setView / setBereich / setAllExpanded / aktuelleZahlen
+   ├─ 43-actions.js         setView / setGroup / setSort / setBereich / fortschritt
+   ├─ 44-presets.js         Presets (Gruppieren+Sortieren+Ansicht), Standard
    ├─ 50-render.js          Rendering aller Ansichten
    ├─ 60-detail.js          Detailpanel, Anhänge, Combo-Box
    ├─ 70-termin.js          Outlook-/ICS-Disposition
@@ -125,6 +127,23 @@ node tests/api.mjs       # gegen die API (server.mjs muss laufen)
 `checks.mjs` fügt alle eingebetteten `<script>` der gebauten `index.html`
 zusammen und führt sie in `node:vm` aus. Nach Änderungen an `src/` also erst
 `node build.mjs`, dann testen.
+
+## Anzeige-Modell: drei Schritte
+
+Die Darstellung wird allein durch vier Felder in `state` gesteuert:
+
+| Feld | Werte |
+|---|---|
+| `state.group` | `object` · `task` · `status` · `none` |
+| `state.view` | `list` · `tiles` · `blobs` |
+| `state.sortKey` | `status` · `due` · `object` · `name` |
+| `state.sortDir` | `asc` · `desc` |
+
+`groupItems()`, `sortItems()`, `sortGroups()` (Reine Funktionen in
+`src/js/42-selectors.js`) erzeugen daraus Gruppen und Reihenfolgen; die Ansichten
+in `src/js/50-render.js` rendern Liste, Kacheln oder Blasen. Presets
+(`src/js/44-presets.js`) speichern genau diese vier Felder in `localStorage`.
+Der Fortschrittsbalken kommt aus `fortschritt()` (`src/js/43-actions.js`).
 
 ## Konventionen
 

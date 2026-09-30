@@ -95,17 +95,15 @@ In der Produktion zusätzlich über Spaltenrechte (siehe `schema.sql`).
 nur aus einer Leiste plus einer Filterzeile:
 
 1. **Titelleiste** (folgt dem Design, hell/dunkel): Programmname · **globale
-   Suche** (Taste `/`) · **Ansicht** (`Standorte · Zeitplan · Liste`) ·
-   Fortschritt · Name · Drucken/Menü
-2. **Filterzeile**: Bereich (`Alle · Wartungen · Eigene To-Dos`, jeweils mit
-   Anzahl) · die vier wichtigsten Status-Pills (`Alle · Überfällig · Offen ·
-   Erledigt`, mit Zahlen) · **Filter**-Knopf · *Alle (ein/aus)klappen* · *Neues
-   To-Do*
+   Suche** (Taste `/`) · Name · Drucken/Menü
+2. **Werkzeugleiste**: Bereich (`Alle · Wartungen · Eigene To-Dos`, je mit
+   Anzahl) · Status-Pills (`Alle · Überfällig · Bald · Offen · Erledigt`, mit
+   Zahlen) · **Filter** · die **drei Schritte** (Gruppieren · Sortieren ·
+   Ansicht) · **Presets** · *Neues To-Do*
+3. **Fortschrittsbalken**: Gesamtfortschritt der Wartungen – eigene, sonst alle.
 
-Die **Feinfilter** (Personen, Tätigkeit, Sortierung, *Meine*) liegen platzsparend
-im ausklappbaren **Filter-Panel**; der Filter-Knopf zeigt die Anzahl aktiver
-Feinfilter. So stehen vorn nur die vier schnellen Status-Sichten, und nichts
-„doppelt sich" optisch.
+Die **Feinfilter** (Personen, Tätigkeit, *Meine*) liegen platzsparend
+im ausklappbaren **Filter-Panel**; der Filter-Knopf zeigt aktive Feinfilter an.
 
 Die **Standortzeilen** sitzen in einem **festen Spalten-Grid**:
 
@@ -135,19 +133,36 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 | Drucken / CSV / JSON | `P` bzw. Menü `⋯` |
 | Einstellungen | Menü `⋯` → *Einstellungen* (Design, Terminadresse, eigener Name) |
 
-### Ansichten (Taste `M`)
-| Ansicht | Zweck |
+### Drei Schritte: Gruppieren · Sortieren · Ansicht
+
+| Schritt | Optionen |
 |---|---|
-| **Standorte** *(Start)* | je Standort Fortschritt, Warnhinweise, Vorschau der offenen Tätigkeiten, Termin-Knopf; **kritische zuerst**, abgeschlossene unten. Anklicken klappt die Positionen auf. |
-| **Zeitplan** | nach Dringlichkeit gruppiert: Überfällig → Bald fällig → Im Zeitraum → Später geplant → Erledigt |
-| **Liste** | flache, sortierbare Tabelle für die Gesamtdurchsicht |
+| **Gruppieren nach** | Standort · Tätigkeit · Status · Ohne Gruppierung |
+| **Sortieren nach** | Status · Frist · Standort (Nr.) · Standort (Name) – jeweils auf-/absteigend (`↑`/`↓`) |
+| **Ansicht** | **Liste** · **Kacheln** · **Blobs** (Taste `M` wechselt) |
 
-**In allen Ansichten stehen offene Positionen oben**; abgeschlossene haben keine
-Frist mehr und rutschen ans Ende.
+* **Liste** – Gruppen mit Kopfzeile (Fortschritt, offen/gesamt, Warnhinweise);
+  ohne Gruppierung die flache, sortierbare Tabelle.
+* **Kacheln** – eine Karte je Gruppe mit **Fortschrittsring, Prozent und
+  „X offen · erledigt/gesamt"**. Ideal z. B. gruppiert nach Tätigkeit: eine
+  Kachel je Prüfart, man sieht sofort, wie viel noch offen ist. Klick öffnet die
+  Positionen der Kachel. Zeigt die aktuelle Auswahl (alle – oder nur offene bei
+  gesetztem Statusfilter).
+* **Blobs** – ein Kreis je Gruppe: **Größe = Anzahl Positionen**, **Füllung =
+  Fortschritt**, Prozent in der Mitte; Klick zeigt die Positionen darunter.
 
-**To-Dos** nutzen exakt dieselben Ansichten und sind nur durch ihr Kennzeichen
-„To-Do" und eine dezente Kante unterscheidbar. Im Bereich **Alle** erscheinen
-Wartungen und To-Dos gemeinsam, bleiben aber als eigene Punkte erkennbar.
+**In allen Ansichten stehen offene Positionen oben**, abgeschlossene Gruppen
+unten.
+
+### Presets (clientseitig)
+Die Kombination aus Gruppieren, Sortieren und Ansicht lässt sich als **Preset**
+speichern (`＋`), im Dropdown wählen, mit `★` **als Standard** festlegen und mit
+`×` löschen. Gespeichert wird im Browser (`localStorage`), ein Standard wird beim
+Start automatisch angewandt. Es sind **keine Stammdaten** – reine Anzeigepräferenz.
+
+**To-Dos** nutzen exakt dieselben Gruppierungen und Ansichten und sind nur durch
+ihr Kennzeichen „To-Do" unterscheidbar. Im Bereich **Alle** erscheinen Wartungen
+und To-Dos gemeinsam, bleiben aber als eigene Punkte erkennbar.
 
 ### Termin-Disposition (Outlook)
 * **Ganztägig ist der Standard** – ein Datum genügt; oben umschaltbar auf

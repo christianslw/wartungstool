@@ -6,7 +6,19 @@ function render() {
   renderSource();
   renderHead();
   renderToolbar();
+  renderProgress();
   renderBody();
+}
+
+/** Gesamtfortschritt der Wartungen oben als Balken. */
+function renderProgress() {
+  const f = fortschritt();
+  const el = $('#progressStrip');
+  if (!el) return;
+  $('#psBar').style.width = f.pct + '%';
+  $('#psLabel').textContent = f.personal ? 'Meine Wartungen' : 'Alle Wartungen';
+  $('#psValue').textContent = f.done + ' / ' + f.total + ' · ' + f.pct + '%';
+  el.classList.toggle('done', f.total > 0 && f.done === f.total);
 }
 
 /** Datenquelle dezent in der Fußzeile anzeigen (statt prominent im Kopf). */
@@ -54,8 +66,7 @@ function renderToolbar() {
   $('#chipMineN').hidden = !state.user;
   $('#chipMine').classList.toggle('on', state.mine);
 
-  const sortDefault = state.view === 'objects' ? 'loc-critical' : 'due-asc';
-  const hasAdvanced = !!(state.taetigkeit || state.personen.length || state.sort !== sortDefault);
+  const hasAdvanced = !!(state.taetigkeit || state.personen.length);
   $('#filterActiveDot').hidden = !hasAdvanced;
   $('#btnFilterToggle').classList.toggle('has-active', hasAdvanced);
   $('#btnFilterToggle').setAttribute('aria-expanded', String(state.filterOpen));
@@ -67,7 +78,21 @@ function renderToolbar() {
       '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
   };
   fill('#fltTask', uniq(aktuelleListe().map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
-  $('#fltSort').value = state.sort;
+
+  // Drei Schritte: Gruppieren · Sortieren · Ansicht (+ Presets)
+  $('#groupSel').innerHTML = GROUP_DEFS.map(g =>
+    '<option value="' + g.key + '"' + (g.key === state.group ? ' selected' : '') + '>' + g.label + '</option>').join('');
+  $('#sortSel').innerHTML = SORT_DEFS.map(s =>
+    '<option value="' + s.key + '"' + (s.key === state.sortKey ? ' selected' : '') + '>' + s.label + '</option>').join('');
+  const dirBtn = $('#sortDir');
+  dirBtn.textContent = state.sortDir === 'asc' ? '↑' : '↓';
+  dirBtn.title = state.sortDir === 'asc' ? 'aufsteigend (klicken: absteigend)' : 'absteigend (klicken: aufsteigend)';
+  $$('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+
+  const ps = loadPresets();
+  $('#presetSel').innerHTML = '<option value="">Preset …</option>' + ps.list.map(p =>
+    '<option value="' + esc(p.name) + '">' + (p.name === ps.def ? '★ ' : '') + esc(p.name) + '</option>').join('');
+  $('#presetDefault').classList.toggle('on', !!ps.def);
 
   const personHost = $('#fltUser');
   if (personHost && personHost.dataset.open !== '1') {
@@ -85,9 +110,9 @@ function renderToolbar() {
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
 
   const act = $('#viewAction');
-  if (state.view === 'objects') {
-    const groups = filteredGroups(aktuelleListe());
-    const allOpen = groups.length > 0 && groups.every(([k]) => state.expanded.has(k));
+  if (state.view === 'list' && (state.group === 'object' || state.group === 'task')) {
+    const groups = groupItems(aktuelleListe(), state.group);
+    const allOpen = groups.length > 0 && groups.every(g => state.expanded.has(g.key));
     act.innerHTML = '<button class="btn btn-sm btn-ghost" data-expand="' + (allOpen ? 'none' : 'all') + '">' +
       (allOpen ? 'Alle einklappen' : 'Alle ausklappen') + '</button>';
   } else {
@@ -106,9 +131,11 @@ function renderBody() {
     host.innerHTML = '<div style="padding:48px 16px;text-align:center;color:var(--text-helper)"><h3>Keine Positionen gefunden</h3><p style="font-size:12px;margin-top:6px">Überprüfen Sie die Filter oder das Suchfeld.</p></div>';
     return;
   }
-  host.innerHTML = state.view === 'plan' ? viewTimeline(list)
-                 : state.view === 'table' ? viewTable(list)
-                 : viewLocations(list);
+  if (state.view === 'tiles') { host.innerHTML = viewTiles(list); return; }
+  if (state.view === 'blobs') { host.innerHTML = viewBlobs(list); return; }
+  if (state.group === 'none') { host.innerHTML = viewTable(list); return; }
+  if (state.group === 'status') { host.innerHTML = viewTimeline(list); return; }
+  host.innerHTML = viewGroupedList(list);
 }
 
 function tickControl(it) {
@@ -135,56 +162,81 @@ function linearProgress(pct) {
   return '<div class="loc-mini-track"><i style="width:' + w + '%"></i></div>';
 }
 
-function viewLocations(list) {
-  const groups = filteredGroups(list);
-  const byNr = (a, b) => (a[1].nr || '').localeCompare(b[1].nr || '', 'de', { numeric: true });
-  
-  if (state.sort === 'loc-nr') groups.sort(byNr);
-  else groups.sort((a, b) => {
-    const ra = locRank(a[1]), rb = locRank(b[1]);
-    const aDone = (ra.open + ra.over + ra.soon === 0) ? 1 : 0;
-    const bDone = (rb.open + rb.over + rb.soon === 0) ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    return (rb.over - ra.over) || (rb.soon - ra.soon) || (rb.open - ra.open) || byNr(a, b);
-  });
-
-  return '<div class="locs">' + groups.map(([k, g]) => {
-    const r = locRank(g);
-    const done = g.items.filter(i => i.erledigt).length;
-    const pct = Math.round(done / g.items.length * 100);
-    const isOpen = state.expanded.has(k);
-    const isFinished = done === g.items.length;
-    const isOverdue = r.over > 0;
-    const isSoon = !isOverdue && r.soon > 0;
-
+function viewGroupedList(list) {
+  const groups = sortGroups(groupItems(list, state.group));
+  return '<div class="locs">' + groups.map(g => {
+    const st = groupStats(g);
+    const isOpen = state.expanded.has(g.key);
     let cls = 'loc';
     if (isOpen) cls += ' open';
-    if (isOverdue) cls += ' is-overdue';
-    else if (isSoon) cls += ' is-soon';
-    else if (isFinished) cls += ' is-finished';
+    if (st.over) cls += ' is-overdue';
+    else if (st.open > 0) cls += ' is-soon';
+    else cls += ' is-finished';
 
-    const openTasks = g.items.filter(i => !i.erledigt && i.taetigkeit).map(i => i.taetigkeit);
-    const preview = openTasks.length ? esc(openTasks.slice(0, 2).join(' · ')) + (openTasks.length > 2 ? ' <span class="more">+' + (openTasks.length - 2) + '</span>' : '') : 'Alle erledigt';
-    const rows = g.items.map(it => workRow(it, false)).join('');
+    const rows = sortItems(g.items).map(it => workRow(it, state.group === 'task')).join('');
+    const nrCell = state.group === 'object'
+      ? '<span class="loc-nr">' + esc(g.nr || '–') + '</span>'
+      : '<span class="loc-nr"><span class="tag gray mini">' + (state.group === 'task' ? 'Tätigkeit' : 'Gruppe') + '</span></span>';
 
     return '<section class="' + cls + '">' +
-      '<div class="loc-head" data-loc="' + esc(k) + '" role="button" tabindex="0">' +
+      '<div class="loc-head" data-loc="' + esc(g.key) + '" role="button" tabindex="0">' +
         '<span class="loc-caret">' + svg(ICON.chevR, 14) + '</span>' +
-        '<span class="loc-nr">' + esc(g.nr || '–') + '</span>' +
+        nrCell +
         '<div class="loc-title-col">' +
-          '<span class="loc-name">' + esc(g.name) + '</span>' +
-          (isOverdue ? '<span class="urgency-badge late">' + r.over + ' überfällig</span>' : '') +
-          (isSoon ? '<span class="urgency-badge soon">' + r.soon + ' bald</span>' : '') +
-          (isFinished ? '<span class="urgency-badge done">Erledigt</span>' : '') +
+          '<span class="loc-name">' + esc(g.label) + '</span>' +
+          (st.over ? '<span class="urgency-badge late">' + st.over + ' überfällig</span>' : '') +
+          (st.open === 0 ? '<span class="urgency-badge done">Erledigt</span>' : '') +
         '</div>' +
-        '<span class="loc-preview-col">' + preview + '</span>' +
-        '<div class="loc-summary-col"><b>' + (g.items.length - done) + '/' + g.items.length + ' offen</b>' + (r.over ? ' · <span class="late-count">' + r.over + ' überfällig</span>' : '') + '</div>' +
-        '<div class="loc-progress-col">' + linearProgress(pct) + '<span>' + done + '/' + g.items.length + '</span></div>' +
-        '<div class="loc-acts-col"><button class="td-act" data-termloc="' + esc(k) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button></div>' +
+        '<span class="loc-preview-col">' + esc(groupPreview(g)) + '</span>' +
+        '<div class="loc-summary-col"><b>' + st.open + '/' + st.total + ' offen</b></div>' +
+        '<div class="loc-progress-col">' + linearProgress(st.pct) + '<span>' + st.done + '/' + st.total + '</span></div>' +
+        '<div class="loc-acts-col">' + (state.group === 'object' ? '<button class="td-act" data-termloc="' + esc(g.key) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button>' : '') + '</div>' +
       '</div>' +
       (isOpen ? '<div class="loc-rows">' + rows + '</div>' : '') +
     '</section>';
   }).join('') + '</div>';
+}
+
+/** Kacheln: eine Karte je Gruppe mit Fortschrittsring und offenen Positionen. */
+function viewTiles(list) {
+  const groups = state.group === 'status' ? groupItems(list, 'status') : sortGroups(groupItems(list, state.group));
+  return '<div class="tiles">' + groups.map(g => {
+    const st = groupStats(g);
+    const isOpen = state.expanded.has(g.key);
+    const rows = isOpen ? sortItems(g.items).map(it => workRow(it, true)).join('') : '';
+    return '<section class="tile' + (isOpen ? ' open' : '') + (st.open === 0 ? ' done' : '') + (st.over ? ' over' : '') + '">' +
+      '<button class="tile-head" data-loc="' + esc(g.key) + '">' +
+        '<span class="tile-ring" style="--pct:' + st.pct + '"><b>' + st.pct + '%</b></span>' +
+        '<span class="tile-label" title="' + esc(g.label) + '">' + esc(g.label) + '</span>' +
+        '<span class="tile-sub">' + st.open + ' offen · ' + st.done + '/' + st.total + '</span>' +
+        (st.over ? '<span class="urgency-badge late">' + st.over + ' überfällig</span>' : '') +
+      '</button>' +
+      (isOpen ? '<div class="tile-rows">' + rows + '</div>' : '') +
+    '</section>';
+  }).join('') + '</div>';
+}
+
+/** Blasen: Kreis je Gruppe, Größe = Anzahl, Füllung = Fortschritt. */
+function viewBlobs(list) {
+  const groups = state.group === 'status' ? groupItems(list, 'status') : sortGroups(groupItems(list, state.group));
+  const max = Math.max(1, groups.map(g => g.items.length).reduce((m, n) => Math.max(m, n), 1));
+  const blobs = groups.map(g => {
+    const st = groupStats(g);
+    const size = 76 + Math.round(Math.sqrt(g.items.length / max) * 60);
+    const isOpen = state.expanded.has(g.key);
+    return '<button class="blob' + (isOpen ? ' open' : '') + (st.open === 0 ? ' done' : '') + (st.over ? ' over' : '') + '"' +
+      ' data-loc="' + esc(g.key) + '" style="--size:' + size + 'px;--pct:' + st.pct + '" title="' + esc(g.label) + '">' +
+      '<span class="blob-pct">' + st.pct + '%</span>' +
+      '<span class="blob-label">' + esc(g.label) + '</span>' +
+      '<span class="blob-sub">' + st.open + '/' + st.total + '</span>' +
+    '</button>';
+  }).join('');
+  const detail = groups.filter(g => state.expanded.has(g.key)).map(g => {
+    const st = groupStats(g);
+    return '<section class="blob-detail"><h3>' + esc(g.label) + ' <span class="t-helper">' + st.open + ' offen</span></h3>' +
+      sortItems(g.items).map(it => workRow(it, true)).join('') + '</section>';
+  }).join('');
+  return '<div class="blobs">' + blobs + '</div>' + detail;
 }
 
 function workRow(it, showObject) {
@@ -218,26 +270,17 @@ function viewTable(list) {
   return '<div class="tbl-wrap"><table class="cds"><thead><tr><th></th><th>Standort</th><th>Tätigkeit</th><th>Frist</th><th>Zuständig / Erledigt</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
-const PLAN_GROUPS = [
-  { key: 'over', label: 'Überfällig', tone: 'late' },
-  { key: 'soon', label: 'Bald fällig', tone: 'soon' },
-  { key: 'open', label: 'Im Zeitraum', tone: '' },
-  { key: 'done', label: 'Erledigt', tone: 'done' }
-];
-
 function viewTimeline(list) {
-  const buckets = new Map();
-  for (const it of list) {
-    const k = statusOf(it);
-    if (!buckets.has(k)) buckets.set(k, []);
-    buckets.get(k).push(it);
-  }
-  return '<div class="plan">' + PLAN_GROUPS.filter(g => buckets.has(g.key)).map(g => {
-    const items = buckets.get(g.key);
-    const open = !state.collapsed.has('plan:' + g.key);
-    return '<section class="plan-sec' + (open ? ' open' : '') + '">' +
-      '<button class="plan-head" data-plan="' + g.key + '"><span class="plan-caret">' + svg(ICON.chevR, 14) + '</span><span class="urgency-badge ' + g.tone + '">' + g.label + '</span><span class="plan-sub">' + items.length + ' Positionen</span></button>' +
-      (open ? '<div class="loc-rows">' + items.map(i => workRow(i, true)).join('') + '</div>' : '') +
+  const groups = groupItems(list, 'status');
+  return '<div class="plan">' + groups.map(g => {
+    const isOpen = !state.collapsed.has('plan:' + g.key);
+    const st = groupStats(g);
+    const items = sortItems(g.items);
+    return '<section class="plan-sec' + (isOpen ? ' open' : '') + '">' +
+      '<button class="plan-head" data-plan="' + esc(g.key) + '"><span class="plan-caret">' + svg(ICON.chevR, 14) + '</span>' +
+      '<span class="urgency-badge ' + statusTone(g.key.slice(3)) + '">' + g.label + '</span>' +
+      '<span class="plan-sub">' + st.open + '/' + st.total + ' offen</span></button>' +
+      (isOpen ? '<div class="loc-rows">' + items.map(i => workRow(i, true)).join('') + '</div>' : '') +
     '</section>';
   }).join('') + '</div>';
 }

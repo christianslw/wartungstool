@@ -27,10 +27,13 @@ window.WT = {
 
   /* Fachliche Auswertung (src/js/20-util.js, 42-selectors.js) */
   model: { statusOf, dueInfo, matchesQuery, keyOf },
-  select: { filtered, aktuelleListe, filteredGroups, countsForScope, aktuelleZahlen },
+  select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt },
 
   /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
-  view: { render, setView, setBereich, setAllExpanded, viewLocations, viewTimeline, viewTable },
+  view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline },
+
+  /* Presets (src/js/44-presets.js) */
+  presets: { loadPresets, applyPreset, saveCurrentPreset, deletePreset, setDefaultPreset, applyDefaultPreset },
 
   /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein
      bestehendes SQL-Backend: gleiche Methoden wie LocalStore implementieren. */
@@ -52,6 +55,7 @@ window.WT = {
       quelle: store === ApiStore ? 'SQL-Backend' : (hasDataFile() ? 'daten.js' : 'Testbestand'),
       online: state.online,
       bereich: state.bereich, ansicht: state.view, status: state.status,
+      gruppe: state.group, sortierung: state.sortKey + ' ' + state.sortDir,
       positionen: state.items.length, todos: state.todos.length,
       zahlen: countsForScope(state.bereich)
     };
