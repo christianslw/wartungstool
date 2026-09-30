@@ -84,8 +84,21 @@ const sandbox = {
 sandbox.window = sandbox; sandbox.globalThis = sandbox;
 
 const ctx = vm.createContext(sandbox);
+/* index.html ist aus src/ gebaut und enthaelt je Modul ein eigenes <script>
+   (DevTools-freundlich). Fuer den Stub werden alle eingebetteten Skripte
+   ausser dem Seed (application/json) und daten.js (src) zusammengefuegt. */
+const appScript = (() => {
+  const parts = [];
+  const re = /<script([^>]*)>([\s\S]*?)<\/script>/g;
+  let m;
+  while ((m = re.exec(APP))) {
+    if (/\bsrc=/.test(m[1] || '') || /application\/json/.test(m[1] || '')) continue;
+    parts.push(m[2]);
+  }
+  return parts.join('\n');
+})();
 vm.runInContext(
-  APP.slice(APP.lastIndexOf('<script>') + 8, APP.lastIndexOf('</script>'))
+  appScript
   + '\n;globalThis.__state = state; globalThis.__seed = seedData(); globalThis.__config = CONFIG;'
   + '\nglobalThis.__fmtDate = fmtDate; globalThis.__isoToDe = isoToDe; globalThis.__keyOf = keyOf;',
   ctx, { filename: 'app.js' });
@@ -104,7 +117,7 @@ await new Promise(r => setTimeout(r, 60));
 const state = ctx.__state, seed = ctx.__seed;
 const filtered = ctx.filtered, counts = ctx.counts, render = ctx.render;
 const host = () => reg['#tableHost'].innerHTML;
-const src = APP.slice(APP.lastIndexOf('<script>'));
+const src = appScript;
 const group = (t) => console.log('\n== ' + t + ' ==');
 
 /* --------------------------------------------------------------- Startzustand */
@@ -321,15 +334,15 @@ ok('Tippen filtert die Vorschläge', /combo-list/.test(personHost.innerHTML) && 
 ok('Filter wirkt auf die Liste', (() => {
   const personen = uniq(state.items.map(i => i.zustaendig));
   state.personen = [personen[0]];
-  const treffer = filtered().length;
+  const treffer = filtered(state.items).length;
   state.personen = ['__gibt_es_nicht__'];
-  const leer = filtered().length;
+  const leer = filtered(state.items).length;
   state.personen = [];
   return personen.length > 0 && treffer > 0 && treffer <= state.items.length && leer === 0;
 })(), (() => {
   const p = uniq(state.items.map(i => i.zustaendig));
   state.personen = [p[0]];
-  const n = filtered().length;
+  const n = filtered(state.items).length;
   state.personen = [];
   return p.length + ' Person(en), ' + n + ' Treffer';
 })());

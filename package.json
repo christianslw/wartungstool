@@ -1,0 +1,14 @@
+{
+  "name": "wartungstool",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wartungsdisposition Technik Ausseneinsatz - eine ausgelieferte index.html, Quelle in src/",
+  "scripts": {
+    "build": "node build.mjs --check",
+    "dev": "node dev.mjs --open",
+    "test": "node tests/checks.mjs",
+    "test:api": "node tests/api.mjs",
+    "server": "node server.mjs"
+  }
+}

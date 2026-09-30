@@ -1,0 +1,62 @@
+/* Wartungstool · Styles · App-Bar (Zeile 1) */
+/* ==========================================================================
+   Chrome Zeile 1: App Bar (Höhe 48px)
+   ========================================================================== */
+.shell-header{
+  height:var(--hdr-h);flex:0 0 auto;background:var(--hdr-bg);
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;align-items:center;gap:12px;padding:0 16px;
+  position:relative;z-index:var(--z-header);
+}
+.hdr-brand{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.hdr-brand svg{color:var(--interactive)}
+.hdr-name{font-size:14px;font-weight:600;letter-spacing:.16px;white-space:nowrap}
+.hdr-sub{font-size:11px;color:var(--text-helper);white-space:nowrap;display:none}
+@media (min-width:980px){.hdr-sub{display:inline}}
+
+.hdr-search{
+  flex:1 1 360px;max-width:560px;display:flex;align-items:center;height:34px;
+  background:var(--layer-01);border:1px solid var(--border-strong);
+  border-bottom:2px solid var(--border-strong);transition:border-color .15s, box-shadow .15s;
+  margin:0 8px;position:relative;
+}
+.hdr-search:focus-within{border-color:var(--interactive);box-shadow:var(--ring)}
+.hdr-search > svg{margin:0 8px 0 10px;color:var(--text-secondary);flex:0 0 auto}
+.hdr-search input{
+  flex:1 1 auto;height:100%;border:0;background:none;outline:none;
+  font-size:13px;color:var(--text-primary);min-width:60px;padding-right:28px;
+}
+.hdr-search input::placeholder{color:var(--text-placeholder)}
+.searchkey{
+  font:600 10px var(--mono);color:var(--text-helper);background:var(--layer-02);
+  border:1px solid var(--border-subtle);border-radius:3px;padding:1px 5px;
+  margin-right:8px;pointer-events:none;flex:0 0 auto;
+}
+.hdr-search .clr{
+  position:absolute;right:28px;width:24px;height:100%;display:grid;place-items:center;
+  color:var(--text-secondary);
+}
+.hdr-search .clr:hover{color:var(--text-primary)}
+.hdr-search input:placeholder-shown + .clr{display:none}
+
+.hdr-spacer{flex:1 1 auto}
+
+.hdr-user{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px;
+  font-size:12px;color:var(--text-secondary);border:1px solid transparent;
+  max-width:180px;white-space:nowrap;transition:background .1s, border-color .1s;flex:0 0 auto;
+}
+.hdr-user:hover{background:var(--hdr-hover);color:var(--text-primary);border-color:var(--border-subtle)}
+.hdr-user span.uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-nudge{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--warning);color:#161616;font-size:10px;font-weight:700;
+  width:16px;height:16px;border-radius:50%;margin-left:2px;flex:0 0 auto;
+}
+
+.hdr-btn{
+  width:32px;height:32px;display:grid;place-items:center;color:var(--text-secondary);
+  border:1px solid transparent;flex:0 0 auto;transition:background .1s, color .1s;
+}
+.hdr-btn:hover{background:var(--hdr-hover);color:var(--text-primary);border-color:var(--border-subtle)}
+.hdr-btn:active{background:var(--hdr-active)}

@@ -1,0 +1,142 @@
+/* Wartungstool · Styles · Tokens, Reset, Basis */
+/* ==========================================================================
+   Wartungstool – IBM Carbon Design System (Redesign /ui)
+   ========================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+
+:root{
+  color-scheme:dark;
+  --bg:#0f0f0f;
+  --layer-01:#1c1c1c;
+  --layer-02:#262626;
+  --layer-03:#333333;
+  --field:#1c1c1c;
+  --field-hover:#262626;
+  --hover-1:#1c1c1c;
+  --hover-2:#262626;
+  --sel-bg:#1b2a4a;
+  --sel-fg:#dbeafe;
+  --scrim:rgba(0,0,0,.55);
+
+  --hdr-bg:#161616; --hdr-hover:#353535; --hdr-active:#4c4c4c;
+
+  --panel:var(--field);
+  --row-alt:#141414;
+  --muted:var(--text-helper);
+  --border-2:#393939;
+  --support-info:var(--info);
+  --ring:0 0 0 2px var(--interactive);
+  --shadow-2:0 4px 14px rgba(0,0,0,.5);
+
+  --border-subtle:#262626;
+  --border-strong:#525252;
+  --border-inverse:#f4f4f4;
+
+  --text-primary:#f4f4f4;
+  --text-secondary:#c6c6c6;
+  --text-helper:#8d8d8d;
+  --text-disabled:#525252;
+  --text-placeholder:#6f6f6f;
+  --text-on-color:#ffffff;
+
+  --link:#78a9ff;
+  --interactive:#0f62fe;
+  --interactive-hover:#0353e9;
+  --interactive-active:#002d9c;
+  --interactive-light:#4589ff;
+  --focus:#ffffff;
+
+  --success:#42be65;
+  --warning:#f1c21b;
+  --error:#fa4d56;
+  --info:#4589ff;
+
+  --tag-green-bg:#044317;  --tag-green-fg:#a7f0ba;
+  --tag-red-bg:#750e13;    --tag-red-fg:#ffd7d9;
+  --tag-yellow-bg:#684e00; --tag-yellow-fg:#fdd13a;
+  --tag-blue-bg:#0043ce;   --tag-blue-fg:#d0e2ff;
+  --tag-gray-bg:#333333;   --tag-gray-fg:#f4f4f4;
+
+  --font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+
+  --row-h:40px;
+  --ctl-h:36px;
+  --hdr-h:48px;
+  --tb-h:44px;
+  --z-header:60; --z-sticky:20; --z-overlay:90; --z-toast:100;
+}
+
+html[data-theme="light"]{
+  --bg:#ffffff;
+  --layer-01:#f4f4f4;
+  --layer-02:#ffffff;
+  --layer-03:#e0e0e0;
+  --field:#f4f4f4;
+  --field-hover:#e8e8e8;
+  --hover-1:#f7f7f7;
+  --hover-2:#eeeeee;
+  --sel-bg:#edf5ff;
+  --sel-fg:#0043ce;
+  --scrim:rgba(22,22,22,.5);
+
+  --border-subtle:#e0e0e0;
+  --border-strong:#8d8d8d;
+  --border-inverse:#161616;
+
+  --text-primary:#161616;
+  --text-secondary:#525252;
+  --text-helper:#6f6f6f;
+  --text-disabled:#c6c6c6;
+  --text-placeholder:#a8a8a8;
+  --text-on-color:#ffffff;
+
+  --link:#0f62fe;
+  --interactive:#0f62fe;
+  --interactive-hover:#0353e9;
+  --interactive-active:#002d9c;
+  --interactive-light:#0f62fe;
+  --focus:#0f62fe;
+
+  --success:#24a148;
+  --warning:#8e6a00;
+  --error:#da1e28;
+  --info:#0043ce;
+
+  --tag-green-bg:#defbe6;  --tag-green-fg:#044317;
+  --tag-red-bg:#ffeef0;    --tag-red-fg:#750e13;
+  --tag-yellow-bg:#fdf5d6; --tag-yellow-fg:#4d3b00;
+  --tag-blue-bg:#edf5ff;   --tag-blue-fg:#0043ce;
+  --tag-gray-bg:#e8e8e8;   --tag-gray-fg:#161616;
+
+  color-scheme:light;
+  --hdr-bg:#ffffff; --hdr-hover:#f4f4f4; --hdr-active:#e8e8e8;
+  --row-alt:#fbfbfb;
+  --border-2:#c6c6c6;
+  --shadow-2:0 4px 14px rgba(22,22,22,.12);
+}
+
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text-primary);font-family:var(--font);
+  font-size:13px;line-height:18px;letter-spacing:.16px;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:var(--link);text-decoration:none}
+dl,dd,dt,h1,h2,h3,p{margin:0}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+::selection{background:var(--interactive);color:#fff}
+
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+
+.t-label{font-size:11px;line-height:14px;letter-spacing:.32px;color:var(--text-secondary)}
+.t-helper{font-size:11px;line-height:14px;letter-spacing:.32px;color:var(--text-helper)}
+.t-body{font-size:13px;line-height:18px;letter-spacing:.16px}
+.t-strong{font-weight:600}
+.t-mono{font-family:var(--mono)}

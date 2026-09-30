@@ -7,7 +7,10 @@ Administration. Eigene To-Dos des Technikers sind bewusst davon getrennt.
 
 ```
 wartungstool/
-├─ index.html          ← die komplette Anwendung (HTML + CSS + JS, kein Build)
+├─ index.html          ← GENERIERT: die komplette Anwendung (HTML+CSS+JS in einer Datei)
+├─ src/                ← Quelle: Schnipsel für Styles, Markup und JS (nicht index.html editieren!)
+├─ build.mjs           ← setzt index.html aus src/ zusammen
+├─ dev.mjs             ← Dev-Server mit Live-Reload
 ├─ daten.js            ← Stammdaten für den Betrieb ohne Server (aus wartungen2026.json)
 ├─ wartungen2026.json  ← Export der Wartungsaufgaben (Quelle der Stammdaten)
 ├─ schema.sql          ← SQL-Schema (Wartungen, To-Dos, Anhänge)
@@ -15,8 +18,28 @@ wartungstool/
 ├─ start.cmd           ← Doppelklick: Server starten und Browser öffnen
 ├─ tests/checks.mjs    ← 126 Prüfungen der Frontend-Logik (node tests/checks.mjs)
 ├─ tests/api.mjs       ← 26 Prüfungen gegen die API (node tests/api.mjs)
+├─ docs/ARCHITECTURE.md← Aufbau, Stores, Weg zum bestehenden SQL-Backend
 └─ README.md
 ```
+
+---
+
+## 0. Entwicklung (Quelle in `src/`)
+
+`index.html` ist **generiert** – nicht direkt bearbeiten. Die Anwendung besteht
+unter `src/` aus kleinen, thematischen Schnipseln (`src/js/`, `src/styles/`,
+`src/markup/`); der Build fügt daraus wieder die eine HTML-Datei zusammen:
+
+```
+npm run build          # index.html neu bauen + prüfen (node build.mjs --check)
+npm run dev            # Dev-Server mit Live-Reload: http://127.0.0.1:8090
+npm test               # Frontend-Prüfungen (node tests/checks.mjs)
+```
+
+Im Browser zeigt DevTools jedes Modul dank `//# sourceURL` als **eigene Quelle**;
+in der Konsole hilft `WT` (z. B. `WT.dump()`, `WT.setView('plan')`,
+`WT.resetCache()`). Details, Modulreihenfolge und der Weg zum bestehenden
+SQL-Backend stehen in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 

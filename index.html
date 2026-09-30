@@ -1,4 +1,8 @@
 <!doctype html>
+<!-- ==========================================================================
+     GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
+     Quelle: src/   Bauen: node build.mjs   (Build 071c6ce1)
+     ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -8,6 +12,7 @@
 <meta name="description" content="Wartungsdisposition für Techniker im Außeneinsatz – Erledigung und Auskunft">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23161616'/><path d='M8 21.5 13 10.5l3.4 6.6L18.6 14 24 21.5z' fill='none' stroke='%23f4f4f4' stroke-width='2' stroke-linejoin='round'/></svg>">
 <style>
+/* Wartungstool · Styles · Tokens, Reset, Basis */
 /* ==========================================================================
    Wartungstool – IBM Carbon Design System (Redesign /ui)
    ========================================================================== */
@@ -150,6 +155,7 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .t-strong{font-weight:600}
 .t-mono{font-family:var(--mono)}
 
+/* Wartungstool · Styles · App-Bar (Zeile 1) */
 /* ==========================================================================
    Chrome Zeile 1: App Bar (Höhe 48px)
    ========================================================================== */
@@ -212,6 +218,7 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .hdr-btn:hover{background:var(--hdr-hover);color:var(--text-primary);border-color:var(--border-subtle)}
 .hdr-btn:active{background:var(--hdr-active)}
 
+/* Wartungstool · Styles · Toolbar (Zeile 2) */
 /* ==========================================================================
    Chrome Zeile 2: Toolbar (Höhe 44px)
    ========================================================================== */
@@ -310,6 +317,7 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 }
 .filter-drawer .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
 
+/* Wartungstool · Styles · Standortliste / Progress Rings */
 /* ==========================================================================
    Standort-Arbeitsliste mit Circular Progress Rings
    ========================================================================== */
@@ -406,6 +414,7 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .ecell-note{font-size:11px;color:var(--text-secondary);border-left:2px solid var(--support-info);padding-left:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-note{font-size:11px;color:var(--link);display:inline-flex;align-items:center;gap:3px}
 
+/* Wartungstool · Styles · Tabelle & Zeitplan */
 /* ==========================================================================
    Tabellen- & Zeitplanansichten
    ========================================================================== */
@@ -438,6 +447,7 @@ table.cds td{height:36px;padding:0 12px;vertical-align:middle;font-size:12px}
 .plan-sec.open .plan-caret{transform:rotate(90deg)}
 .plan-sub{font-size:11px;color:var(--text-helper);margin-left:auto}
 
+/* Wartungstool · Styles · Responsive & Druck */
 /* ==========================================================================
    Responsive Regeln
    ========================================================================== */
@@ -570,6 +580,7 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 .att span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-meta{font-size:11px;color:var(--text-helper);white-space:nowrap}
 </style>
+
 </head>
 <body>
 
@@ -672,6 +683,8 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
   <span class="summary-info" id="resultInfo"></span>
 </div>
 
+<!-- Inhalt, Fußzeile, Overlays -->
+
 <main class="content-body" id="tableHost"></main>
 
 <footer class="app-foot">
@@ -741,7 +754,7 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 
 <script>
 'use strict';
-
+/* Wartungstool · JS · Konfiguration & URL-Optionen */
 const CONFIG = {
   storageKey : 'wartungstool.v1',
   userKey    : 'wartungstool.v1.user',
@@ -762,7 +775,12 @@ const CONFIG = {
     if (p.get('user')) CONFIG.currentUser = p.get('user');
   } catch {}
 })();
+//# sourceURL=src/js/00-config.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · DOM-Helfer, Icons */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -788,7 +806,12 @@ const ICON = {
 };
 const svg = (d, size = 16, cls = '') =>
   '<svg class="' + cls + '" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">' + d + '</svg>';
+//# sourceURL=src/js/10-dom.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Formatierung, Status, Dialog-Grundlagen */
 const norm = (v) => String(v ?? '').toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -916,7 +939,12 @@ function modal({ title, bodyHtml, primary = 'Speichern', secondary = 'Abbrechen'
     else { const f = scrim.querySelector('input,textarea'); if (f) setTimeout(() => f.focus(), 30); }
   });
 }
+//# sourceURL=src/js/20-util.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Datenmodell & Export-Mapping */
 const DEFAULT_FIELDS = {
   objekt_art: 'Standorte', objekt_nr: '', objekt_name: '', beschreibung: '', taetigkeit: '',
   kommentar: '', intervall: '', ab: '', bis: '', zustaendig: '', erledigt: false, erledigt_am: '',
@@ -962,6 +990,12 @@ function fromExport(r, idx) {
     hash_key: r.hashKey || ''
   });
 }
+//# sourceURL=src/js/30-model.js
+</script>
+
+<script>
+'use strict';
+/* Wartungstool · JS · Seed, Signatur, Erledigungs-Abgleich */
 const seedData = () => {
   const ext = asRecords(globalThis.WARTUNGSDATEN);
   if (ext && ext.length) {
@@ -1005,7 +1039,12 @@ function carryCompletion(oldItems, newItems) {
   }
   return newItems;
 }
+//# sourceURL=src/js/31-data-source.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Store: lokaler Bestand (localStorage) */
 const LocalStore = {
   label: 'Lokaler Testbestand',
   persist(items, sig) {
@@ -1072,7 +1111,12 @@ const LocalStore = {
     return true;
   }
 };
+//# sourceURL=src/js/32-store-local.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Store: SQL-Backend (REST) */
 const ApiStore = {
   label: 'SQL-Backend',
   url: (p) => CONFIG.apiBase.replace(/\/$/, '') + p,
@@ -1129,9 +1173,19 @@ const ApiStore = {
     return this.req('/todos/' + encodeURIComponent(id), { method: 'DELETE' });
   }
 };
+//# sourceURL=src/js/33-store-api.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Store-Auswahl */
 let store = LocalStore;
+//# sourceURL=src/js/34-store.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Einstellungen & Design */
 const settings = Object.assign(
   { theme: CONFIG.theme, dispoMail: CONFIG.dispoMail, user: '' },
   (() => { try { return JSON.parse(localStorage.getItem(CONFIG.setKey) || '{}'); } catch { return {}; } })()
@@ -1146,7 +1200,12 @@ function applyTheme() {
     : settings.theme;
   document.documentElement.dataset.theme = t;
 }
+//# sourceURL=src/js/40-settings.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Anwendungszustand & To-Do-Kennzeichen */
 const state = {
   items: [], todos: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
@@ -1167,7 +1226,12 @@ function findByKey(key) {
     ? state.todos.find(x => String(x.id) === id)
     : state.items.find(x => String(x.id) === id);
 }
+//# sourceURL=src/js/41-state.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Filter, Gruppierung, Kennzahlen */
 function statusMatch(it, s) {
   if (s === 'alle') return true;
   if (s === 'open') return !it.erledigt;
@@ -1235,7 +1299,49 @@ function locRank(g) {
   }
   return { over, soon, open };
 }
+//# sourceURL=src/js/42-selectors.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Programmatische Aktionen
+   ---------------------------------------------------------------------------
+   Bewusst benannte Funktionen statt an jeder Stelle verstreuter
+   "state.x = ...; render()". Damit lassen sich Ansicht/Bereich auch aus der
+   Konsole oder aus Tests heraus umschalten (siehe window.WT in 95-debug.js). */
+
+/** Ansicht wechseln: 'objects' | 'plan' | 'table'. */
+function setView(v) {
+  if (state.view === v) return;
+  state.view = v;
+  render();
+}
+
+/** Bereich wechseln: 'alle' | 'wartung' | 'todo'. */
+function setBereich(b) {
+  if (state.bereich === b) return;
+  state.bereich = b;
+  render();
+}
+
+/** Alle Standort-/Statusgruppen auf- (true) oder zuklappen (false). */
+function setAllExpanded(on) {
+  state.expanded = on
+    ? new Set(filteredGroups(aktuelleListe()).map(([k]) => k))
+    : new Set();
+  render();
+}
+
+/** Kennzahlen der Liste eines Bereichs: { alle, over, soon, open, done, mine }. */
+function aktuelleZahlen(scope = state.bereich) {
+  return countsForScope(scope);
+}
+//# sourceURL=src/js/43-actions.js
+</script>
+
+<script>
+'use strict';
+/* Wartungstool · JS · Rendering der Ansichten */
 /* ==========================================================================
    UI-Rendering mit Circular Progress Rings
    ========================================================================== */
@@ -1478,7 +1584,12 @@ function viewTimeline(list) {
     '</section>';
   }).join('') + '</div>';
 }
+//# sourceURL=src/js/50-render.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Detailpanel, Anhänge, Combo-Box */
 /* ==========================================================================
    Details, Dialoge & Outlook/ICS Dispatch
    ========================================================================== */
@@ -1734,7 +1845,12 @@ function comboBox(host, { options = [], selected = [], multi = false, placeholde
   host.__comboCleanup = () => document.removeEventListener('mousedown', onDoc);
   syncValue(); renderChips();
 }
+//# sourceURL=src/js/60-detail.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Termin-Disposition (Outlook/ICS) */
 /* ==========================================================================
    Termin-Disposition (Outlook Web + ICS für Desktop)
    ========================================================================== */
@@ -1893,7 +2009,12 @@ async function dispatchTermin(rec) {
     toast('ICS-Datei erstellt', { tone: 'success' });
   }
 }
+//# sourceURL=src/js/70-termin.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · To-Do- und Erledigungs-Dialoge */
 /* ==========================================================================
    To-Do und Erledigungs-Dialoge
    ========================================================================== */
@@ -2148,7 +2269,12 @@ function shortcutsDialog() {
       '<dd class="t-body">' + esc(r[1]) + '</dd>').join('') + '</dl>'
   });
 }
+//# sourceURL=src/js/80-dialogs.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Event-Verdrahtung */
 /* ==========================================================================
    Event-Verdrahtung
    ========================================================================== */
@@ -2292,7 +2418,76 @@ document.addEventListener('keydown', e => {
     render();
   }
 });
+//# sourceURL=src/js/90-events.js
+</script>
 
+<script>
+'use strict';
+/* Wartungstool · JS · Oeffentliche/debug-API (window.WT)
+   ---------------------------------------------------------------------------
+   Alles, was in der Browser-Konsole nuetzlich ist, an EINER Stelle - statt
+   verstreuter Namen im Globalen Namensraum. In der Konsole:
+
+       WT.state.items.length
+       WT.setView('plan')
+       WT.aktuelleZahlen('alle')
+       WT.store                 // aktueller Store (Local/Api)
+       WT.resetCache()          // localStorage-Bestand verwerfen + neu laden
+
+   Die Struktur spiegelt die Ordner unter src/js/ und ist damit auch die
+   Anlaufstelle, wenn spaeter ein bestehendes SQL-Backend angebunden wird:
+   alles Datenzugriffsrelevante liegt unter WT.data / WT.stores. */
+window.WT = {
+  /* Zustand & Konfiguration */
+  CONFIG,
+  state,
+  settings,
+  get store() { return store; },
+
+  /* Datenmodell / Export-Mapping (src/js/30-model.js, 31-data-source.js) */
+  data: {
+    normalize, fromExport, asRecords, isoToDe, intervallText,
+    seedData, hasDataFile, dataSignature
+  },
+
+  /* Fachliche Auswertung (src/js/20-util.js, 42-selectors.js) */
+  model: { statusOf, dueInfo, matchesQuery, keyOf },
+  select: { filtered, aktuelleListe, filteredGroups, countsForScope, aktuelleZahlen },
+
+  /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
+  view: { render, setView, setBereich, setAllExpanded, viewLocations, viewTimeline, viewTable },
+
+  /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein
+     bestehendes SQL-Backend: gleiche Methoden wie LocalStore implementieren. */
+  stores: { LocalStore, ApiStore },
+
+  /* Eigenen Bestand verwerfen und aus der Quelle neu laden. */
+  resetCache() {
+    try {
+      for (const k of Object.keys(localStorage)) {
+        if (k.indexOf('wartungstool') === 0) localStorage.removeItem(k);
+      }
+    } catch (e) {}
+    if (typeof init === 'function') return init();
+  },
+
+  /* Kurzueberblick fuer die Konsole. */
+  dump() {
+    return {
+      quelle: store === ApiStore ? 'SQL-Backend' : (hasDataFile() ? 'daten.js' : 'Testbestand'),
+      online: state.online,
+      bereich: state.bereich, ansicht: state.view, status: state.status,
+      positionen: state.items.length, todos: state.todos.length,
+      zahlen: countsForScope(state.bereich)
+    };
+  }
+};
+//# sourceURL=src/js/95-debug.js
+</script>
+
+<script>
+'use strict';
+/* Wartungstool · JS · Start */
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
@@ -2316,6 +2511,8 @@ async function init() {
 }
 
 init();
+//# sourceURL=src/js/99-boot.js
 </script>
+
 </body>
 </html>
