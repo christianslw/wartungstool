@@ -1,0 +1,11 @@
+# Laufzeitdaten des Testservers (SQLite-Datenbank, hochgeladene Anhänge)
+/data/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Betriebssystem / Editor
+.DS_Store
+Thumbs.db
+*.log

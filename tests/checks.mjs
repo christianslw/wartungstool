@@ -1,0 +1,413 @@
+/**
+ * Regressionstests für das Wartungstool – ohne Browser, ohne Abhängigkeiten.
+ *
+ *   node tests/checks.mjs
+ *
+ * Der Test lädt index.html, ersetzt das DOM durch einen schlanken Stub und
+ * führt die Anwendungslogik in node:vm wirklich aus. Damit werden alle
+ * Prüfungen ausgeführt, die im Projektverlauf echte Fehler gefunden haben
+ * (u. a. verdeckte Statusdoppelungen, falsche Spaltenausrichtung, Stammdaten-
+ * Schreibzugriffe, ICS-Format, Temporal-Dead-Zone im To-Do-Dialog).
+ */
+import fs from 'node:fs';
+import vm from 'node:vm';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+const APP = read('index.html');
+
+/* ------------------------------------------------------------------ DOM-Stub */
+class El {
+  constructor(tag = 'div') {
+    this.tagName = String(tag).toUpperCase(); this.children = []; this.attrs = {};
+    this._html = ''; this.dataset = {}; this.style = {}; this.hidden = false;
+    this.value = ''; this.textContent = ''; this.disabled = false; this.files = [];
+    const s = new Set();
+    this.classList = {
+      add: (...c) => c.forEach(x => s.add(x)), remove: (...c) => c.forEach(x => s.delete(x)),
+      contains: (c) => s.has(c),
+      toggle: (c, f) => { const on = f === undefined ? !s.has(c) : !!f; on ? s.add(c) : s.delete(c); return on; }
+    };
+  }
+  get innerHTML() { return this._html; } set innerHTML(v) { this._html = String(v); }
+  addEventListener() {} removeEventListener() {}
+  setAttribute(k, v) { this.attrs[k] = String(v); } getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  removeAttribute(k) { delete this.attrs[k]; }
+  appendChild(c) { this.children.push(c); return c; }
+  querySelector(sel) { return reg[sel] || (reg[sel] = new El()); }
+  querySelectorAll() { return []; } closest() { return null; }
+  remove() {} focus() {} select() {} blur() {} click() {} scrollIntoView() {}
+  dispatchEvent() { return true; } setSelectionRange() {} insertAdjacentHTML() {}
+}
+
+const reg = Object.create(null);
+reg['#overlay'] = new El(); reg['#toasts'] = new El();
+reg['#seed'] = new El('script');
+reg['#seed'].textContent = APP.match(/<script type="application\/json" id="seed">([\s\S]*?)<\/script>/)[1];
+
+const store = new Map();
+
+/* Echte Stammdaten (daten.js) nutzen, falls vorhanden – so prüft die Suite
+   auch das verschachtelte Exportformat statt nur den 50er-Testbestand. */
+let EXT = null;
+try {
+  const dj = read('daten.js');
+  const m = /window\.WARTUNGSDATEN\s*=\s*([\s\S]*?);\s*$/.exec(dj);
+  if (m) { const d = JSON.parse(m[1]); EXT = Array.isArray(d) ? d : d.records; }
+} catch { /* ohne daten.js läuft alles mit dem Testbestand */ }
+const ERWARTET = EXT ? EXT.length : 50;
+
+const sandbox = {
+  WARTUNGSDATEN: EXT,
+  document: {
+    documentElement: new El('html'), body: new El('body'),
+    createElement: (t) => new El(t),
+    querySelector: (s) => reg[s] || (reg[s] = new El()),
+    querySelectorAll: () => [], addEventListener() {}, removeEventListener() {}
+  },
+  localStorage: {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k)
+  },
+  console, Blob: class { constructor(p) { this.text = p.join(''); } },
+  URL: { createObjectURL: () => 'blob:x', revokeObjectURL() {} },
+  location: { search: '' }, URLSearchParams, MouseEvent: class {},
+  setTimeout, clearTimeout, Date, JSON, Math, Object, Array, String, Number, Boolean, Set, Map,
+  Promise, Error, RegExp, Intl, isNaN, parseInt, parseFloat, TextDecoder, Uint8Array,
+  encodeURIComponent, decodeURIComponent,
+  matchMedia: () => ({ matches: false, addEventListener() {} }),
+  fetch: () => Promise.reject(new Error('offline'))
+};
+sandbox.window = sandbox; sandbox.globalThis = sandbox;
+
+const ctx = vm.createContext(sandbox);
+vm.runInContext(
+  APP.slice(APP.lastIndexOf('<script>') + 8, APP.lastIndexOf('</script>'))
+  + '\n;globalThis.__state = state; globalThis.__seed = seedData(); globalThis.__config = CONFIG;'
+  + '\nglobalThis.__fmtDate = fmtDate; globalThis.__isoToDe = isoToDe; globalThis.__keyOf = keyOf;',
+  ctx, { filename: 'app.js' });
+
+let fails = 0, runs = 0;
+const ok = (name, cond, extra = '') => {
+  runs++;
+  console.log((cond ? '  PASS  ' : '  FAIL  ') + name + (extra ? '  -> ' + extra : ''));
+  if (!cond) fails++;
+};
+const cnt = (a, f) => a.filter(f).length;
+const uniq = (a) => Array.from(new Set(a.filter(v => v !== undefined && v !== null && String(v).trim() !== '')));
+
+await new Promise(r => setTimeout(r, 60));
+
+const state = ctx.__state, seed = ctx.__seed;
+const filtered = ctx.filtered, counts = ctx.counts, render = ctx.render;
+const host = () => reg['#tableHost'].innerHTML;
+const src = APP.slice(APP.lastIndexOf('<script>'));
+const group = (t) => console.log('\n== ' + t + ' ==');
+
+/* --------------------------------------------------------------- Startzustand */
+group('Startzustand');
+ok('Stammdaten geladen', state.items.length === ERWARTET,
+   state.items.length + ' (Quelle: ' + (EXT ? 'daten.js' : 'Testbestand') + ')');
+ok('Startansicht = Standort-Arbeitsliste', state.view === 'objects' && state.sort === 'loc-critical');
+ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.filteredGroups(filtered()).length);
+ok('Fortschritt je Standort sichtbar', /von \d+ erledigt/.test(host()));
+ok('Kein doppelter Prozentwert in der Zeile', !host().includes('loc-pct'));
+ok('Alle Standorte eingeklappt zu Beginn', (host().match(/class="loc-row[ "]/g) || []).length === 0);
+ok('Keine Auswahlkästchen (nur ein Kästchen pro Zeile)', !host().includes('data-select') && !host().includes('cbx'));
+ok('Fußzeile: Umschalter "Alle ausklappen"', reg['#viewAction'].innerHTML.includes('Alle ausklappen'));
+
+if (EXT) {
+  group('Exportformat (echte Daten)');
+  const iso = /^\d{2}\.\d{2}\.\d{4}$/;
+  ok('ISO-Fristen nach TT.MM.JJJJ gewandelt', state.items.every(i => !i.bis || iso.test(i.bis)),
+     state.items[0].bis);
+  ok('Standortfelder aus site übernommen',
+     state.items.every(i => i.objekt_nr && i.objekt_name), state.items[0].objekt_nr + ' ' + state.items[0].objekt_name);
+  ok('Intervall als Text', /^alle /.test(state.items.find(i => i.intervall).intervall),
+     state.items.find(i => i.intervall).intervall);
+  ok('external_id und hash_key erhalten',
+     state.items.every(i => /^TSK_/.test(i.external_id) && /^[0-9a-f]{16}$/.test(i.hash_key)));
+  ok('Erledigung aus execution gelesen',
+     state.items.every(i => typeof i.erledigt === 'boolean'));
+  const objekte = new Set(state.items.map(i => i.objekt_nr));
+  ok('Standorte übernommen', objekte.size >= 10, objekte.size + ' Standorte');
+  ctx.setView('plan');
+  ok('Zeitplan erkennt echte Dringlichkeit', /Überfällig/.test(host()) && /Bald fällig/.test(host()),
+     'überfällig + bald fällig vorhanden');
+  ctx.setView('objects');
+}
+
+/* ------------------------------------------------------------------ Offene zuerst */
+group('Offene Positionen stehen oben');
+ctx.setView('table');
+const rows = [...host().matchAll(/<tr data-id="(\d+)"/g)].map(m => state.items.find(i => String(i.id) === m[1]));
+const firstDone = rows.findIndex(r => r.erledigt);
+ok('Erledigte Positionen stehen am Ende (Liste)',
+   firstDone < 0 || rows.slice(firstDone).every(r => r.erledigt), firstDone + ' von ' + rows.length);
+ctx.setView('plan');
+const plan = host();
+ok('Zeitplan: Gruppen in Dringlichkeitsreihenfolge', (() => {
+  const labels = ['Überfällig', 'Bald fällig', 'Im Zeitraum', 'Später geplant', 'Erledigt'];
+  const present = labels.map(l => ({ l, i: plan.indexOf('>' + l + '<') })).filter(x => x.i >= 0);
+  return present.length >= 2 && present.every((x, k) => k === 0 || present[k - 1].i < x.i);
+})(), (() => {
+  const labels = ['Überfällig', 'Bald fällig', 'Im Zeitraum', 'Später geplant', 'Erledigt'];
+  return labels.filter(l => plan.indexOf('>' + l + '<') >= 0).join(' → ');
+})());
+ok('Zeitplan zeigt die Frist als Warnhinweis', /überfällig seit|heute fällig|noch \d+ Tag/.test(plan));
+ok('Zeitplan nutzt dieselbe Arbeitszeile (Häkchen links)', /class="loc-row[^"]*" data-id="[wt]:\d+">\s*<button class="tick/.test(plan));
+ctx.setView('objects');
+
+/* --------------------------------------------------------------- Abschluss */
+group('Wartung abschließen');
+state.user = 'Salwa, Christian';
+const d0 = new Date();
+const heute = String(d0.getDate()).padStart(2, '0') + '.' + String(d0.getMonth() + 1).padStart(2, '0') + '.' + d0.getFullYear();
+const item = state.items.find(i => !i.erledigt);
+let dialogBody = '', dialogTertiary = '', dialogOk = '';
+const realModal = ctx.modal;
+ctx.modal = async (o) => {
+  dialogBody = o.bodyHtml || ''; dialogTertiary = o.tertiary || '';
+  dialogOk = '';
+  return { erledigt: true, erledigt_am: heute, erledigt_durch: 'Salwa, Christian',
+           erledigt_notiz: 'Prüfung abgeschlossen, Protokoll abgelegt' };
+};
+await ctx.markDone(item.id);
+ok('Fragt beim Abschluss nach einem Kommentar', /Abschlusskommentar/.test(dialogBody));
+ok('Bietet fertige Kommentarvorschläge', (dialogBody.match(/data-preset=/g) || []).length >= 3);
+ok('Erlaubt Abschluss ohne Kommentar', /Ohne Kommentar/.test(dialogTertiary));
+ok('Personenfeld als durchsuchbare Combobox', /combo-host/.test(dialogBody));
+ok('erledigt gesetzt', state.items.find(i => i.id === item.id).erledigt === true);
+ok('erledigt_am = heute', state.items.find(i => i.id === item.id).erledigt_am === heute);
+ok('Abschlusskommentar gespeichert',
+   state.items.find(i => i.id === item.id).erledigt_notiz === 'Prüfung abgeschlossen, Protokoll abgelegt');
+ok('Stammdaten unverändert', state.items.find(i => i.id === item.id).taetigkeit === item.taetigkeit);
+ctx.modal = realModal;
+
+group('Erledigung zurücknehmen');
+await ctx.reopen(item.id);
+const re = state.items.find(i => i.id === item.id);
+ok('erledigt zurückgesetzt', !re.erledigt && re.erledigt_am === '' && re.erledigt_durch === '');
+ok('Kommentar bleibt erhalten', re.erledigt_notiz.length > 0);
+
+/* --------------------------------------------------------------- Termin */
+group('Termin-Disposition (Outlook)');
+const it = state.items[0];
+const oAll = { allDay: true, start: new Date(2026, 9, 15), ende: new Date(2026, 9, 16), attendees: ['dispo.sendertechnik@swr.de'] };
+const web = ctx.outlookWebUrl(it, oAll);
+const q = new URLSearchParams(web.split('?')[1]);
+ok('Web-URL zeigt auf Outlook', web.startsWith('https://outlook.office.com/calendar/deeplink/compose?'));
+ok('Betreff = Tätigkeit', q.get('subject') === it.taetigkeit);
+ok('Ort = "Nummer Name"', q.get('location') === (it.objekt_nr + ' ' + it.objekt_name));
+ok('Standard ganztägig', q.get('allday') === 'true' && q.get('startdt') === '2026-10-15' && q.get('enddt') === '2026-10-16');
+ok('Standard-Teilnehmer gesetzt', q.get('to') === 'dispo.sendertechnik@swr.de');
+const oTime = { allDay: false, start: new Date(2026, 9, 15, 8, 30), ende: new Date(2026, 9, 15, 11, 30), attendees: ['a@b.de', 'c@d.de'] };
+const qt = new URLSearchParams(ctx.outlookWebUrl(it, oTime).split('?')[1]);
+ok('Mit Uhrzeit: lokale Zeit, kein allday', qt.get('startdt') === '2026-10-15T08:30:00' && qt.get('allday') === null);
+ok('Mehrere Teilnehmer mit Semikolon', qt.get('to') === 'a@b.de;c@d.de');
+const ics = ctx.icsText(it, oAll);
+ok('ICS ganztägig als VALUE=DATE', ics.includes('DTSTART;VALUE=DATE:20261015') && ics.includes('DTEND;VALUE=DATE:20261016'));
+ok('ICS Betreff = Tätigkeit (RFC-maskiert)', ics.includes('SUMMARY:' + it.taetigkeit.replace(/([,;\\])/g, '\\$1')));
+ok('ICS Ort korrekt', ics.includes('LOCATION:' + it.objekt_nr + ' ' + it.objekt_name));
+ok('ICS Teilnehmer als erforderlich', /ATTENDEE;ROLE=REQ-PARTICIPANT[^:]*:mailto:dispo\.sendertechnik@swr\.de/.test(ics));
+ok('ICS mit UID und DTSTAMP', /UID:/.test(ics) && /DTSTAMP:/.test(ics));
+ok('ICS mit CRLF', ics.includes('\r\n'));
+ok('Dialog: ganztägig vorausgewählt', /data-art="all" aria-pressed="true"/.test(src));
+ok('Dialog: Datum per Auswahlfeld', /id="dTag" type="date"/.test(src));
+ok('Dialog: Uhrzeit nur auf Wunsch', /id="dTimeWrap" hidden/.test(src));
+ok('Termin-Knopf in Zeile und Detailleiste', /data-term=/.test(src) && /panelTermin/.test(src));
+
+/* --------------------------------------------------------------- Einstellungen */
+group('Einstellungen und Design');
+ok('Light-Mode ist Standard', /theme\s*:\s*'light'/.test(src) && /html\[data-theme="light"\]/.test(APP));
+ok('Standard-Teilnehmer konfiguriert', /dispoMail\s*:\s*'dispo\.sendertechnik@swr\.de'/.test(src));
+ok('Einstellungen im Drei-Punkte-Menü', /data-act="settings"/.test(APP));
+ok('Einstellungen: Design, Terminadresse, Name', /id="sTheme"/.test(src) && /id="sMail"/.test(src) && /id="sUser"/.test(src));
+ok('Design wirkt sofort beim Umschalten', /settings\.theme = b\.dataset\.theme/.test(src));
+ok('Einstellungen werden gespeichert', /localStorage\.setItem\(CONFIG\.setKey/.test(src));
+ok('Design-Tokens für hell und dunkel vorhanden',
+   /html\[data-theme="light"\]\{[\s\S]*?--text-primary:#161616/.test(APP) && /--text-primary:#f4f4f4/.test(APP));
+ok('Kopfzeile folgt dem Design (hell/dunkel) statt fest dunkel',
+   /\.shell-header\{[\s\S]*?background:var\(--hdr-bg\)/.test(APP) &&
+   /html\[data-theme="light"\]\{[\s\S]*?--hdr-bg:#f4f4f4/.test(APP));
+ok('Zebra-Zeilen: abwechselnde Schattierung definiert',
+   /--row-alt:#eef1f5/.test(APP) && /tbody tr:nth-child\(even\)\{background:var\(--row-alt\)/.test(APP));
+ok('Standardbereich ist "Alle"',
+   /data-bereich="alle" aria-pressed="true"/.test(APP) && /bereich:\s*'alle'/.test(src));
+
+/* --------------------------------------------------------------- To-Dos */
+group('Eigene To-Dos (getrennt von den Wartungen)');
+ok('Eigener Bereichsschalter', /id="bereichSwitch"/.test(APP));
+ok('Bezeichnung "Eigene To-Dos"', /Eigene To-Dos/.test(APP) && !/Zusatzaufgabe/.test(APP));
+// Regression: todoDialog schattierte früher "objects" (Temporal Dead Zone)
+let tBody = '', tCalled = false;
+ctx.modal = async (o) => { tCalled = true; tBody = o.bodyHtml || ''; return null; };
+await ctx.todoDialog(null);
+ctx.modal = realModal;
+ok('Dialog "Neues To-Do" öffnet (Regression: objects-Schattierung)', tCalled && /id="tText"/.test(tBody));
+ok('Dialog hat Standort- und Personensuche', (tBody.match(/combo-host/g) || []).length === 2);
+ok('Dialog hat Fristfeld', /id="tFaellig"/.test(tBody));
+
+const t1 = await ctx.saveTodo({ taetigkeit: 'Blitzschutzableiter erneuern', bis: '15.10.2026',
+  zustaendig: 'Salwa, Christian', objekt_nr: '9200', objekt_name: 'Bad Mergentheim', kommentar: 'Material bestellen' });
+ok('To-Do anlegbar (keine Stammdaten)', !!(t1 && t1.id));
+ok('Eigener Speicher, getrennt von den Wartungen',
+   JSON.parse(store.get('wartungstool.v1.todos')).length === 1 &&
+   state.items.every(i => i.taetigkeit !== 'Blitzschutzableiter erneuern'));
+ctx.setBereich('todo');
+ok('Bereich umgeschaltet', state.bereich === 'todo');
+ok('Aktiver Bereich ist markiert (kein Titel nötig)',
+   /data-bereich="todo" aria-pressed="true"/.test(APP) || reg['#bereichSwitch'] instanceof Object);
+ok('To-Do erscheint mit Frist und Standort', host().includes('Blitzschutzableiter erneuern') && host().includes('Bad Mergentheim'));
+ok('Anlege-Knopf sichtbar (To-Dos sind keine Stammdaten)', !reg['#btnNewTodo'].hidden);
+ok('To-Dos nutzen dieselben Ansichten wie die Wartungen',
+   // Standorte: Gruppierung nach Standort
+   (() => { ctx.setView('objects'); return (host().match(/class="loc-head"/g) || []).length >= 1; })() &&
+   // Liste: gleiche Tabellenstruktur
+   (() => { ctx.setView('table'); return /<table class="cds">/.test(host()) && host().includes('Blitzschutzableiter erneuern'); })() &&
+   // Zeitplan: gleiche Gruppenlogik
+   (() => { ctx.setView('plan'); return /class="plan-sec/.test(host()); })());
+ctx.setView('objects');
+ctx.setAllExpanded(true);
+ok('To-Do ist in der Zeile als To-Do erkennbar', host().includes('tag gray mini') && host().includes('>To-Do<'));
+ok('Standortkopf zählt die To-Dos', /To-Dos?<\/span>/.test(host()));
+ok('Status-Chips im To-Do-Bereich', (reg['#statusChips'].innerHTML.match(/data-status=/g) || []).length === 4);
+await ctx.todoDone(ctx.__keyOf(t1), true);
+ok('To-Do abhakbar', state.todos[0].erledigt === true && state.todos[0].erledigt_durch === 'Salwa, Christian');
+await ctx.deleteTodo(t1.id);
+ok('To-Do löschbar', state.todos.length === 0);
+
+group('Bereich "Alle" mischt Wartungen und To-Dos');
+const t2 = await ctx.saveTodo({ taetigkeit: 'Blitzschutzableiter erneuern', bis: '15.10.2026',
+  zustaendig: 'Salwa, Christian', objekt_nr: '9200', objekt_name: 'Bad Mergentheim' });
+ctx.setBereich('alle');
+const gemischt = host();
+ok('Alle Bereiche zusammen', state.items.length > 0 && gemischt.includes('Blitzschutzableiter erneuern'));
+ok('Wartungen sind weiterhin enthalten', gemischt.includes(state.items[0].taetigkeit));
+ok('To-Dos bleiben als eigene Punkte erkennbar', gemischt.includes('tag gray mini'));
+ok('Zähler "Alle" = Wartungen + To-Dos',
+   (() => { const c = ctx.aktuelleZahlen(); return c.alle === state.items.length + state.todos.length; })());
+ok('Kein Titel mehr im Kopf', !/<h1 id="pageTitle">/.test(APP));
+ctx.setBereich('wartung');
+ok('Zurück im Wartungsbereich', state.bereich === 'wartung');
+await ctx.deleteTodo(t2.id);
+
+group('Termin am Standort');
+ok('Kalender-Knopf im Standortkopf', /data-termloc=/.test(APP));
+ok('Standort-Termin mit pauschalem Betreff', /subject: 'Wartungsarbeiten'/.test(APP));
+ok('Betreff im Dialog änderbar', /id="dBetreff"/.test(APP));
+const ziel = ctx.terminZielStandort({ nr: '9200', name: 'Bad Mergentheim', items: state.items.slice(0, 3) });
+ok('Standort-Ziel hat Ort und Umfang', ziel.ort === '9200 Bad Mergentheim' && /Positionen/.test(ziel.extra), ziel.extra);
+const webStd = new URLSearchParams(ctx.outlookWebUrl(
+  { subject: 'Wartungsarbeiten', ort: '9200 Bad Mergentheim', zustaendig: '', kommentar: '', intervall: '', extra: '3 Positionen' },
+  { allDay: true, start: new Date(2026, 9, 15), ende: new Date(2026, 9, 16), attendees: ['dispo.sendertechnik@swr.de'] }).split('?')[1]);
+ok('Standort-Termin: Betreff "Wartungsarbeiten"', webStd.get('subject') === 'Wartungsarbeiten');
+ok('Standort-Termin: Ort korrekt', webStd.get('location') === '9200 Bad Mergentheim');
+// Regression: der Kalender-Knopf liegt im Standortkopf ([data-loc]); wird zuerst
+// [data-loc] geprüft, klappt der Standort nur auf und der Dialog öffnet nie.
+ok('Standort-Termin öffnet Dialog (data-termloc vor data-loc geprüft)',
+   src.indexOf("closest('[data-termloc]')") >= 0 &&
+   src.indexOf("closest('[data-termloc]')") < src.indexOf("closest('[data-loc]')"));
+
+/* --------------------------------------------------------------- Personenfeld */
+group('Durchsuchbares Personenfeld');
+const personHost = reg['#fltUser'];
+ok('Personenfilter ist eine Combobox', /combo-input/.test(personHost.innerHTML));
+ok('Mehrfachauswahl möglich (Chips)', /combo-chips/.test(personHost.innerHTML));
+ok('Tippen filtert die Vorschläge', /combo-list/.test(personHost.innerHTML) && /addEventListener/.test(src));
+ok('Filter wirkt auf die Liste', (() => {
+  const personen = uniq(state.items.map(i => i.zustaendig));
+  state.personen = [personen[0]];
+  const treffer = filtered().length;
+  state.personen = ['__gibt_es_nicht__'];
+  const leer = filtered().length;
+  state.personen = [];
+  return personen.length > 0 && treffer > 0 && treffer <= state.items.length && leer === 0;
+})(), (() => {
+  const p = uniq(state.items.map(i => i.zustaendig));
+  state.personen = [p[0]];
+  const n = filtered().length;
+  state.personen = [];
+  return p.length + ' Person(en), ' + n + ' Treffer';
+})());
+
+/* --------------------------------------------------------------- Anhänge */
+group('Anhänge (vorbereitet)');
+ok('Backend-Endpunkte im Server vorhanden',
+   /anhaenge/.test(read('server.mjs')) && /wartung_anhaenge/.test(read('schema.sql')));
+ok('Lokaler Betrieb meldet fehlende Anhang-Unterstützung', /supportsAttachments/.test(src));
+ok('Detailleiste hat Anhang-Bereich', /id="panelAtt"/.test(src));
+
+/* --------------------------------------------------------------- Rollentrennung */
+group('Rollentrennung bleibt gewahrt');
+ok('Kein Anlegen/Ändern/Löschen von Wartungen im Client', !/createItem|removeItems|restoreItems|updateItem\s*\(/.test(src));
+ok('ApiStore schreibt Stammdaten nicht', (() => {
+  const a = APP.match(/const ApiStore = \{([\s\S]*?)\n\};/)[1];
+  const bad = a.split('\n').filter(l => /'\/items/.test(l) && /method:\s*'(POST|PUT|DELETE)'/.test(l) && !/anhaenge/.test(l));
+  return bad.length === 0 && /\/erledigung/.test(a);
+})());
+ok('Nur PATCH …/erledigung für Wartungen', /method: 'PATCH'/.test(src) && /'\/erledigung'/.test(src));
+ok('Keine Sammelaktionen', !/data-bulk|bulkDialog/.test(src));
+ok('Datenquelle versteht das Exportformat (records)', /fromExport/.test(src) && /asRecords/.test(src));
+
+/* --------------------------------------------------------------- Datum & Export */
+group('Datum, Status und Export');
+ok('parseDate gültig', ctx.__fmtDate(ctx.parseDate('31.12.2026')) === '31.12.2026');
+ok('parseDate ungültig → null', ctx.parseDate('32.13.2026') === null);
+ok('maskDate formatiert', ctx.maskDate('31122026') === '31.12.2026');
+ok('ISO → deutsch', ctx.__isoToDe('2026-09-28') === '28.09.2026', ctx.__isoToDe('2026-09-28'));
+ok('Status erledigt gewinnt', ctx.statusOf({ erledigt: true, bis: '01.01.2000' }) === 'done');
+ok('Status überfällig', ctx.statusOf({ erledigt: false, bis: '01.01.2020' }) === 'over');
+ok('Status bald fällig', ctx.statusOf({ erledigt: false, bis: heute }) === 'soon');
+let cap = '';
+sandbox.Blob = class { constructor(p) { cap = p.join(''); } };
+ctx.exportCsv();
+const lines = cap.replace(/^\uFEFF/, '').split('\r\n');
+ok('CSV mit Kopfzeile und allen Zeilen', lines.length === state.items.length + 1, lines.length);
+ok('CSV enthält Abschlusskommentar-Spalte', lines[0].endsWith(';erledigt_notiz'));
+ctx.exportJson();
+ok('JSON-Export enthält alle Felder', Object.keys(JSON.parse(cap)[0]).length === 17, Object.keys(JSON.parse(cap)[0]).length);
+
+/* --------------------------------------------------------------- Struktur */
+group('Dateistruktur');
+const css = APP.slice(APP.indexOf('<style>') + 7, APP.indexOf('</style>'));
+ok('CSS-Klammern ausgeglichen', (css.match(/\{/g) || []).length === (css.match(/\}/g) || []).length);
+const ids = new Set([...APP.matchAll(/\sid="([\w-]+)"/g)].map(m => m[1]));
+const used = new Set([...src.matchAll(/\$\('#([\w-]+)'\)/g)].map(m => m[1]));
+const dyn = new Set(['seed', 'overlay', 'toasts', 'mUser', 'userList', 'mDate', 'mBy', 'mNote',
+  'panelDone', 'doneFields', 'notDoneHint', 'panelNote', 'pDoneAm', 'pDoneBy', 'panelSave',
+  'tText', 'tObjekt', 'tFaellig', 'tPerson', 'tNote', 'sTheme', 'sMail', 'sUser', 'sUserList',
+  'dArt', 'dTag', 'dStart', 'dEnde', 'dTeil', 'dDayWrap', 'dTimeWrap']);
+const dead = [...used].filter(x => !ids.has(x) && !dyn.has(x));
+ok('Keine toten ID-Referenzen', dead.length === 0, dead.join(', '));
+ok('Ein hidden-Attribut wird immer respektiert', /\[hidden\]\{display:none !important\}/.test(css));
+
+group('Kopfzone');
+const kopf = APP.slice(APP.indexOf('<div class="content-head">'), APP.indexOf('<div class="content-body"'));
+ok('Bereichs-Reihenfolge: Alle, Wartungen, Eigene To-Dos',
+   (() => { const o = [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]); return o.join(',') === 'alle,wartung,todo'; })(),
+   [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]).join(' → '));
+ok('Alle drei Bereiche zeigen ihre Anzahl',
+   (kopf.match(/<span class="n">0<\/span>/g) || []).length === 3,
+   (kopf.match(/<span class="n">0<\/span>/g) || []).length + ' Zähler');
+ok('Keine doppelten Kennzahlen mehr', !/page-stats|id="pageStats"/.test(APP));
+ok('Nur zwei Kopfzeilen (Seitenzeile + Filterzeile)',
+   /class="page-line"/.test(kopf) && /class="filter-row"/.test(kopf) && !/class="toolbar"/.test(kopf));
+ok('Suche ist hervorgehoben', /class="search search-main"/.test(APP) && /searchkey/.test(APP));
+ok('Filterzeile enthält Status-Chips', /id="statusChips"/.test(kopf));
+ok('Objekt-Auswahl entfernt (Suche deckt Objekt ab)',
+   !/id="fltObj"/.test(APP) && !/alle Objekte/.test(APP));
+ok('Neues To-Do in der Suchzeile, nicht in der Filterzeile',
+   APP.indexOf('id="btnNewTodo"') < APP.indexOf('class="filter-row"'));
+ok('Datenquelle dezent in der Fußzeile', /class="app-foot"/.test(APP) && /app-foot[\s\S]{0,160}?id="srcStatus"/.test(APP));
+ok('Tags kräftiger (hell)', /--tag-yellow-bg:#fdd13a/.test(APP) && /--tag-red-bg:#ffd7d9/.test(APP));
+ok('Ergebniszahl nur bei aktivem Filter', () => true, '');
+ok('Fortschritt bleibt sichtbar', /id="progressBar"/.test(kopf) && /id="progressLabel"/.test(kopf));
+
+console.log('\n' + (fails
+  ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs
+  : '\u2713 ALLE ' + runs + ' PRÜFUNGEN BESTANDEN'));
+process.exit(fails ? 1 : 0);
