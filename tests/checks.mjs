@@ -112,8 +112,8 @@ group('Startzustand');
 ok('Stammdaten geladen', state.items.length === ERWARTET,
    state.items.length + ' (Quelle: ' + (EXT ? 'daten.js' : 'Testbestand') + ')');
 ok('Startansicht = Standort-Arbeitsliste', state.view === 'objects' && state.sort === 'loc-critical');
-ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.filteredGroups(filtered()).length);
-ok('Fortschritt je Standort sichtbar', /von \d+ erledigt/.test(host()));
+ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.filteredGroups(ctx.aktuelleListe()).length);
+ok('Fortschritt je Standort sichtbar', /\d+\/\d+/.test(host()));
 ok('Kein doppelter Prozentwert in der Zeile', !host().includes('loc-pct'));
 ok('Alle Standorte eingeklappt zu Beginn', (host().match(/class="loc-row[ "]/g) || []).length === 0);
 ok('Keine Auswahlkästchen (nur ein Kästchen pro Zeile)', !host().includes('data-select') && !host().includes('cbx'));
@@ -274,7 +274,7 @@ ctx.setView('objects');
 ctx.setAllExpanded(true);
 ok('To-Do ist in der Zeile als To-Do erkennbar', host().includes('tag gray mini') && host().includes('>To-Do<'));
 ok('Standortkopf zählt die To-Dos', /To-Dos?<\/span>/.test(host()));
-ok('Status-Chips im To-Do-Bereich', (reg['#statusChips'].innerHTML.match(/data-status=/g) || []).length === 4);
+ok('Status-Chips im To-Do-Bereich', (reg['#statusChips'].innerHTML.match(/data-status=/g) || []).length === 3);
 await ctx.todoDone(ctx.__keyOf(t1), true);
 ok('To-Do abhakbar', state.todos[0].erledigt === true && state.todos[0].erledigt_durch === 'Salwa, Christian');
 await ctx.deleteTodo(t1.id);
@@ -394,18 +394,28 @@ ok('Alle drei Bereiche zeigen ihre Anzahl',
    (kopf.match(/<span class="n">0<\/span>/g) || []).length === 3,
    (kopf.match(/<span class="n">0<\/span>/g) || []).length + ' Zähler');
 ok('Keine doppelten Kennzahlen mehr', !/page-stats|id="pageStats"/.test(APP));
-ok('Nur zwei Kopfzeilen (Seitenzeile + Filterzeile)',
-   /class="page-line"/.test(kopf) && /class="filter-row"/.test(kopf) && !/class="toolbar"/.test(kopf));
-ok('Suche ist hervorgehoben', /class="search search-main"/.test(APP) && /searchkey/.test(APP));
+ok('Kopf konsolidiert: Suche/Ansichten oben, Filterzeile darunter',
+   /class="search hdr-search"/.test(APP) && /class="switcher hdr-views" id="viewSwitch"/.test(APP) &&
+   /class="filter-row"/.test(kopf) && !/class="page-line"/.test(kopf) && !/class="toolbar"/.test(kopf));
+ok('Suche ist hervorgehoben', /hdr-search/.test(APP) && /searchkey/.test(APP));
 ok('Filterzeile enthält Status-Chips', /id="statusChips"/.test(kopf));
+ok('Drei Status-Pills ohne doppeltes "Alle" (Überfällig, Offen, Erledigt)',
+   (() => { const g = /const STATUS_CHIPS = \[([\s\S]*?)\];/.exec(src); return !!g && (g[1].match(/key:/g) || []).length === 3 &&
+     /key: 'over'/.test(g[1]) && /key: 'open'/.test(g[1]) && /key: 'done'/.test(g[1]) &&
+     !/key: 'soon'/.test(g[1]) && !/key: 'alle'/.test(g[1]); })());
+ok('Aktive Status-Pill lässt sich wieder abwählen',
+   /state\.status === chip\.dataset\.status \? 'alle'/.test(src));
+ok('Feinfilter im ausklappbaren Panel', /id="filterPanel"/.test(kopf) && /id="btnFilter"/.test(kopf) && /id="fltUser"/.test(kopf));
 ok('Objekt-Auswahl entfernt (Suche deckt Objekt ab)',
    !/id="fltObj"/.test(APP) && !/alle Objekte/.test(APP));
-ok('Neues To-Do in der Suchzeile, nicht in der Filterzeile',
-   APP.indexOf('id="btnNewTodo"') < APP.indexOf('class="filter-row"'));
+ok('Zeilenkopf als festes Spalten-Grid',
+   /\.loc-head\{display:grid;/.test(css) && /\.loc-tags\{/.test(css) && /\.loc-tasks\{/.test(css) && /\.loc-stat\{/.test(css));
+ok('Dringlichkeit am linken Rahmen (überfällig rot)',
+   /\.loc\.has-over \.loc-head\{border-left-color:var\(--error\)\}/.test(css));
 ok('Datenquelle dezent in der Fußzeile', /class="app-foot"/.test(APP) && /app-foot[\s\S]{0,160}?id="srcStatus"/.test(APP));
 ok('Tags kräftiger (hell)', /--tag-yellow-bg:#fdd13a/.test(APP) && /--tag-red-bg:#ffd7d9/.test(APP));
 ok('Ergebniszahl nur bei aktivem Filter', () => true, '');
-ok('Fortschritt bleibt sichtbar', /id="progressBar"/.test(kopf) && /id="progressLabel"/.test(kopf));
+ok('Fortschritt bleibt sichtbar', /id="progressBar"/.test(APP) && /id="progressLabel"/.test(APP));
 
 console.log('\n' + (fails
   ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs

@@ -13,7 +13,7 @@ wartungstool/
 ├─ schema.sql          ← SQL-Schema (Wartungen, To-Dos, Anhänge)
 ├─ server.mjs          ← Testserver: SQLite + REST-API, ohne npm-Abhängigkeiten
 ├─ start.cmd           ← Doppelklick: Server starten und Browser öffnen
-├─ tests/checks.mjs    ← 108 Prüfungen der Frontend-Logik (node tests/checks.mjs)
+├─ tests/checks.mjs    ← 126 Prüfungen der Frontend-Logik (node tests/checks.mjs)
 ├─ tests/api.mjs       ← 26 Prüfungen gegen die API (node tests/api.mjs)
 └─ README.md
 ```
@@ -69,30 +69,41 @@ In der Produktion zusätzlich über Spaltenrechte (siehe `schema.sql`).
 ## 4. Bedienung
 
 **Leitidee:** Die App ist ein Arbeitsmittel, kein Datenbrowser. Der Kopf besteht
-unter der dunklen bzw. hellen Titelleiste nur aus **zwei Zeilen**:
+nur aus einer Leiste plus einer Filterzeile:
 
-1. **Prominente Suche** (Taste `/`, breites Feld) · *Neues To-Do* · Ansicht
-   (`Standorte · Zeitplan · Liste`) · Fortschritt
-2. **Filter, in einer Zeile gebündelt**: Bereich (`Alle · Wartungen · Eigene
-   To-Dos`, jeweils mit Anzahl) · Status-Chips mit Zahlen (`Alle · Offen · Bald
-   fällig · Überfällig · Erledigt`) · *Meine* · Personensuche, Tätigkeit,
-   Sortierung · *Alle (ein/aus)klappen*
+1. **Titelleiste** (folgt dem Design, hell/dunkel): Programmname · **globale
+   Suche** (Taste `/`) · **Ansicht** (`Standorte · Zeitplan · Liste`) ·
+   Fortschritt · Name · Drucken/Menü
+2. **Filterzeile**: Bereich (`Alle · Wartungen · Eigene To-Dos`, jeweils mit
+   Anzahl) · die vier wichtigsten Status-Pills (`Alle · Überfällig · Offen ·
+   Erledigt`, mit Zahlen) · **Filter**-Knopf · *Alle (ein/aus)klappen* · *Neues
+   To-Do*
 
-Jede Zahl kommt nur **einmal** vor (in den Chips bzw. Bereichsknöpfen); eine
-eigene Kennzahlenzeile gibt es nicht. Die frühere Überschrift entfällt ebenfalls
-– der aktive Bereichsknopf zeigt den Kontext. Das erledigt auch die frühere
-„doppelte" Optik: Bereich und Status stehen nun sichtbar als zwei Filter
-nebeneinander getrennt statt in zwei konkurrierenden Zeilen. Die Suche deckt
-Objektname **und** -nummer ab – ein eigenes Objekt-Auswahlfeld ist daher
-überflüssig und entfallen.
+Die **Feinfilter** (Personen, Tätigkeit, Sortierung, *Meine*) liegen platzsparend
+im ausklappbaren **Filter-Panel**; der Filter-Knopf zeigt die Anzahl aktiver
+Feinfilter. So stehen vorn nur die vier schnellen Status-Sichten, und nichts
+„doppelt sich" optisch.
+
+Die **Standortzeilen** sitzen in einem **festen Spalten-Grid**:
+
+| Spalte | Inhalt |
+|---|---|
+| 1 | Aufklapp-Pfeil + Objektnummer + Standortname (feste Breite, gekürzt) |
+| 2 | Dringlichkeits-Badges (`überfällig`, `bald fällig`, `To-Do`, `abgeschlossen`) – immer an derselben Stelle |
+| 3 | Aufgabenübersicht: die nächsten zwei Tätigkeiten als Chips, Rest als `+X weitere` |
+| 4 | Fortschritt: Mini-Balken + `erledigt/gesamt` (z. B. `0/33`) |
+| 5 | Aktion (Termin) rechtsbündig |
+
+Standorte mit **überfälligen** Positionen bekommen einen **3 px roten linken
+Rahmen** (bald fällig: gelb), damit Kritische beim Scrollen sofort auffallen.
 
 Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle**
 (`Stammdaten: daten.js`, `SQL-Backend`, `Offline`) statt prominent im Kopf.
 
 | Aktion | Weg |
 |---|---|
-| Suchen | Suchfeld oder Taste `/` |
-| Filtern | Bereichs-Umschalter + Status-Chips + Filterzeile |
+| Suchen | Suchfeld oben oder Taste `/` |
+| Filtern | Status-Pills + Bereichs-Umschalter; Feinfilter über **Filter** |
 | **Abhaken** | Kästchen ganz links – Datum, Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
 | Kommentar ändern | „Kommentar" in der Zeile oder Detailleiste (Wartungen) bzw. im To-Do-Dialog |
@@ -185,7 +196,7 @@ wird zurückgerollt statt fälschlich als gespeichert angezeigt.
 ## 6. Tests
 
 ```
-node tests/checks.mjs    # 116 Prüfungen der Frontend-Logik (ohne Browser)
+node tests/checks.mjs    # 126 Prüfungen der Frontend-Logik (ohne Browser)
 node tests/api.mjs       #  26 Prüfungen gegen die API (Server muss laufen)
 ```
 
