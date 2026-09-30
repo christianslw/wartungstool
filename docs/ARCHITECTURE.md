@@ -132,3 +132,4 @@ zusammen und führt sie in `node:vm` aus. Nach Änderungen an `src/` also erst
 * Keine Build-Abhängigkeiten: nur Node-Bordmittel (`node:fs`, `node:vm`, …).
 * Neue Funktionen mit klarem Namen statt „Zustand setzen und `render()`“ verstreut.
 * Nicht direkt in `index.html` editieren – immer `src/`.
+* Verwaiste Dateien nach `archive/` verschieben (siehe `.gitignore`) statt löschen.

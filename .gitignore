@@ -9,3 +9,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 *.log
+
+# Geparkte / verwaiste Dateien: bleiben lokal erhalten, gehoeren nicht ins Repo
+/archive/
+*.bak
+*.tmp
+*.orig

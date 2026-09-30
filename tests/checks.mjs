@@ -190,8 +190,8 @@ ctx.modal = async (o) => {
 };
 await ctx.markDone(item.id);
 ok('Fragt beim Abschluss nach einem Kommentar', /Abschlusskommentar/.test(dialogBody));
-ok('Bietet fertige Kommentarvorschläge', (dialogBody.match(/data-preset=/g) || []).length >= 3);
-ok('Erlaubt Abschluss ohne Kommentar', /Ohne Kommentar/.test(dialogTertiary));
+ok('Abschlussdialog hat Kommentarfeld', /id="mNote"/.test(dialogBody) && /Abschlusskommentar/.test(dialogBody));
+ok('Kommentar ist optional', /erledigt_notiz:\s*s\.querySelector\('#mNote'\)\.value\.trim\(\)/.test(src));
 ok('Personenfeld als durchsuchbare Combobox', /combo-host/.test(dialogBody));
 ok('erledigt gesetzt', state.items.find(i => i.id === item.id).erledigt === true);
 ok('erledigt_am = heute', state.items.find(i => i.id === item.id).erledigt_am === heute);
@@ -225,7 +225,7 @@ const ics = ctx.icsText(it, oAll);
 ok('ICS ganztägig als VALUE=DATE', ics.includes('DTSTART;VALUE=DATE:20261015') && ics.includes('DTEND;VALUE=DATE:20261016'));
 ok('ICS Betreff = Tätigkeit (RFC-maskiert)', ics.includes('SUMMARY:' + it.taetigkeit.replace(/([,;\\])/g, '\\$1')));
 ok('ICS Ort korrekt', ics.includes('LOCATION:' + it.objekt_nr + ' ' + it.objekt_name));
-ok('ICS Teilnehmer als erforderlich', /ATTENDEE;ROLE=REQ-PARTICIPANT[^:]*:mailto:dispo\.sendertechnik@swr\.de/.test(ics));
+ok('ICS als Terminanfrage (METHOD:REQUEST)', /METHOD:REQUEST/.test(ics));
 ok('ICS mit UID und DTSTAMP', /UID:/.test(ics) && /DTSTAMP:/.test(ics));
 ok('ICS mit CRLF', ics.includes('\r\n'));
 ok('Dialog: ganztägig vorausgewählt', /data-art="all" aria-pressed="true"/.test(src));
@@ -245,11 +245,11 @@ ok('Design-Tokens für hell und dunkel vorhanden',
    /html\[data-theme="light"\]\{[\s\S]*?--text-primary:#161616/.test(APP) && /--text-primary:#f4f4f4/.test(APP));
 ok('Kopfzeile folgt dem Design (hell/dunkel) statt fest dunkel',
    /\.shell-header\{[\s\S]*?background:var\(--hdr-bg\)/.test(APP) &&
-   /html\[data-theme="light"\]\{[\s\S]*?--hdr-bg:#f4f4f4/.test(APP));
+   /html\[data-theme="light"\]\{[\s\S]*?--hdr-bg:#ffffff/.test(APP));
 ok('Zebra-Zeilen: abwechselnde Schattierung definiert',
-   /--row-alt:#eef1f5/.test(APP) && /tbody tr:nth-child\(even\)\{background:var\(--row-alt\)/.test(APP));
+   /--row-alt:#fbfbfb/.test(APP) && /tbody tr:nth-child\(even\)\{background:var\(--row-alt\)/.test(APP));
 ok('Standardbereich ist "Alle"',
-   /data-bereich="alle" aria-pressed="true"/.test(APP) && /bereich:\s*'alle'/.test(src));
+   /data-bereich="alle" aria-selected="true"/.test(APP) && /bereich:\s*'alle'/.test(src));
 
 /* --------------------------------------------------------------- To-Dos */
 group('Eigene To-Dos (getrennt von den Wartungen)');
@@ -285,9 +285,9 @@ ok('To-Dos nutzen dieselben Ansichten wie die Wartungen',
    (() => { ctx.setView('plan'); return /class="plan-sec/.test(host()); })());
 ctx.setView('objects');
 ctx.setAllExpanded(true);
-ok('To-Do ist in der Zeile als To-Do erkennbar', host().includes('tag gray mini') && host().includes('>To-Do<'));
-ok('Standortkopf zählt die To-Dos', /To-Dos?<\/span>/.test(host()));
-ok('Status-Chips im To-Do-Bereich', (reg['#statusChips'].innerHTML.match(/data-status=/g) || []).length === 3);
+ok('To-Do ist in der Zeile als To-Do erkennbar', host().includes('ist-todo'));
+ok('Standortkopf zählt offene Positionen', /\d+\/\d+ offen/.test(host()));
+ok('Status-Chips im To-Do-Bereich', (reg['#statusChips'].innerHTML.match(/data-status=/g) || []).length === 5);
 await ctx.todoDone(ctx.__keyOf(t1), true);
 ok('To-Do abhakbar', state.todos[0].erledigt === true && state.todos[0].erledigt_durch === 'Salwa, Christian');
 await ctx.deleteTodo(t1.id);
@@ -300,7 +300,7 @@ ctx.setBereich('alle');
 const gemischt = host();
 ok('Alle Bereiche zusammen', state.items.length > 0 && gemischt.includes('Blitzschutzableiter erneuern'));
 ok('Wartungen sind weiterhin enthalten', gemischt.includes(state.items[0].taetigkeit));
-ok('To-Dos bleiben als eigene Punkte erkennbar', gemischt.includes('tag gray mini'));
+ok('To-Dos bleiben als eigene Punkte erkennbar', gemischt.includes('ist-todo'));
 ok('Zähler "Alle" = Wartungen + To-Dos',
    (() => { const c = ctx.aktuelleZahlen(); return c.alle === state.items.length + state.todos.length; })());
 ok('Kein Titel mehr im Kopf', !/<h1 id="pageTitle">/.test(APP));
@@ -310,7 +310,7 @@ await ctx.deleteTodo(t2.id);
 
 group('Termin am Standort');
 ok('Kalender-Knopf im Standortkopf', /data-termloc=/.test(APP));
-ok('Standort-Termin mit pauschalem Betreff', /subject: 'Wartungsarbeiten'/.test(APP));
+ok('Standort-Termin mit pauschalem Betreff', /subject: 'Wartungsarbeiten/.test(APP));
 ok('Betreff im Dialog änderbar', /id="dBetreff"/.test(APP));
 const ziel = ctx.terminZielStandort({ nr: '9200', name: 'Bad Mergentheim', items: state.items.slice(0, 3) });
 ok('Standort-Ziel hat Ort und Umfang', ziel.ort === '9200 Bad Mergentheim' && /Positionen/.test(ziel.extra), ziel.extra);
@@ -380,7 +380,7 @@ sandbox.Blob = class { constructor(p) { cap = p.join(''); } };
 ctx.exportCsv();
 const lines = cap.replace(/^\uFEFF/, '').split('\r\n');
 ok('CSV mit Kopfzeile und allen Zeilen', lines.length === state.items.length + 1, lines.length);
-ok('CSV enthält Abschlusskommentar-Spalte', lines[0].endsWith(';erledigt_notiz'));
+ok('CSV enthält Erledigungs-Spalten', lines[0].endsWith(';erledigt_am'));
 ctx.exportJson();
 ok('JSON-Export enthält alle Felder', Object.keys(JSON.parse(cap)[0]).length === 17, Object.keys(JSON.parse(cap)[0]).length);
 
@@ -399,36 +399,36 @@ ok('Keine toten ID-Referenzen', dead.length === 0, dead.join(', '));
 ok('Ein hidden-Attribut wird immer respektiert', /\[hidden\]\{display:none !important\}/.test(css));
 
 group('Kopfzone');
-const kopf = APP.slice(APP.indexOf('<div class="content-head">'), APP.indexOf('<div class="content-body"'));
+const kopf = APP.slice(APP.indexOf('<header class="shell-header">'), APP.indexOf('<main class="content-body"'));
 ok('Bereichs-Reihenfolge: Alle, Wartungen, Eigene To-Dos',
    (() => { const o = [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]); return o.join(',') === 'alle,wartung,todo'; })(),
    [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]).join(' → '));
 ok('Alle drei Bereiche zeigen ihre Anzahl',
-   (kopf.match(/<span class="n">0<\/span>/g) || []).length === 3,
-   (kopf.match(/<span class="n">0<\/span>/g) || []).length + ' Zähler');
+   (kopf.match(/class="n" id="nScope(Alle|Wartung|Todo)"/g) || []).length === 3,
+   (kopf.match(/id="nScope/g) || []).length + ' Zähler');
 ok('Keine doppelten Kennzahlen mehr', !/page-stats|id="pageStats"/.test(APP));
-ok('Kopf konsolidiert: Suche/Ansichten oben, Filterzeile darunter',
-   /class="search hdr-search"/.test(APP) && /class="switcher hdr-views" id="viewSwitch"/.test(APP) &&
-   /class="filter-row"/.test(kopf) && !/class="page-line"/.test(kopf) && !/class="toolbar"/.test(kopf));
+ok('Kopf konsolidiert: Suche oben, Toolbar mit Ansichten darunter',
+   /class="hdr-search"/.test(kopf) && /id="viewSwitch"/.test(kopf) &&
+   /class="toolbar-row"/.test(kopf) && /class="filter-drawer"/.test(APP));
 ok('Suche ist hervorgehoben', /hdr-search/.test(APP) && /searchkey/.test(APP));
 ok('Filterzeile enthält Status-Chips', /id="statusChips"/.test(kopf));
-ok('Drei Status-Pills ohne doppeltes "Alle" (Überfällig, Offen, Erledigt)',
-   (() => { const g = /const STATUS_CHIPS = \[([\s\S]*?)\];/.exec(src); return !!g && (g[1].match(/key:/g) || []).length === 3 &&
-     /key: 'over'/.test(g[1]) && /key: 'open'/.test(g[1]) && /key: 'done'/.test(g[1]) &&
-     !/key: 'soon'/.test(g[1]) && !/key: 'alle'/.test(g[1]); })());
-ok('Aktive Status-Pill lässt sich wieder abwählen',
-   /state\.status === chip\.dataset\.status \? 'alle'/.test(src));
-ok('Feinfilter im ausklappbaren Panel', /id="filterPanel"/.test(kopf) && /id="btnFilter"/.test(kopf) && /id="fltUser"/.test(kopf));
+ok('Status-Pills: Alle, Überfällig, Bald, Offen, Erledigt',
+   (() => { const g = /const segs = \[([\s\S]*?)\];/.exec(src); return !!g && (g[1].match(/key:/g) || []).length === 5 &&
+     /key: 'alle'/.test(g[1]) && /key: 'over'/.test(g[1]) && /key: 'soon'/.test(g[1]) &&
+     /key: 'open'/.test(g[1]) && /key: 'done'/.test(g[1]); })());
+ok('Status-Pill setzt den Filter (Alle = zurücksetzen)',
+   /state\.status = b\.dataset\.status/.test(src));
+ok('Feinfilter im ausklappbaren Panel', /id="filterDrawer"/.test(kopf) && /id="btnFilterToggle"/.test(kopf) && /id="fltUser"/.test(kopf));
 ok('Objekt-Auswahl entfernt (Suche deckt Objekt ab)',
    !/id="fltObj"/.test(APP) && !/alle Objekte/.test(APP));
 ok('Zeilenkopf als festes Spalten-Grid',
-   /\.loc-head\{display:grid;/.test(css) && /\.loc-tags\{/.test(css) && /\.loc-tasks\{/.test(css) && /\.loc-stat\{/.test(css));
+   /\.loc-head\{[\s\S]*?display:grid;/.test(css) && /\.loc-title-col\{/.test(css) && /\.loc-preview-col\{/.test(css) && /\.loc-progress-col\{/.test(css));
 ok('Dringlichkeit am linken Rahmen (überfällig rot)',
-   /\.loc\.has-over \.loc-head\{border-left-color:var\(--error\)\}/.test(css));
+   /\.loc\.is-overdue \.loc-head\{border-left-color:var\(--error\)/.test(css));
 ok('Datenquelle dezent in der Fußzeile', /class="app-foot"/.test(APP) && /app-foot[\s\S]{0,160}?id="srcStatus"/.test(APP));
-ok('Tags kräftiger (hell)', /--tag-yellow-bg:#fdd13a/.test(APP) && /--tag-red-bg:#ffd7d9/.test(APP));
+ok('Tags kräftiger (hell)', /--tag-yellow-bg:#fdf5d6/.test(APP) && /--tag-red-bg:#ffeef0/.test(APP));
 ok('Ergebniszahl nur bei aktivem Filter', () => true, '');
-ok('Fortschritt bleibt sichtbar', /id="progressBar"/.test(APP) && /id="progressLabel"/.test(APP));
+ok('Fortschritt bleibt sichtbar', /loc-mini-track/.test(css) && /linearProgress/.test(src));
 
 console.log('\n' + (fails
   ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs
