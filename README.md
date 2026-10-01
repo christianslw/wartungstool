@@ -97,12 +97,13 @@ in **Tabs** (benannte Ansichten), eine **zusammengefasste Steuerung** und einen
 
 1. **Titelleiste** (folgt dem Design, hell/dunkel): Programmname · **globale
    Suche** (Taste `/`) · Name · Drucken/Menü
-2. **Tab-Leiste**: Start ist **Zuhause** (Landing), dann die Standard-Ansichten
-   *Alle · Wartungen · Eigene To-Dos*, daneben **`+`** für eigene Tabs (benennen).
-   Jeder Tab merkt sich **seine Filter und Ansicht**; Favoriten (`★`) stehen vorne.
-   Rechtsklick auf einen Tab (oder Hover → `⋯`) öffnet *Farbe · Symbol · **Als Standard** ·
-   Anpinnen · Tab speichern · Umbenennen · Tab schließen*. Über **`+`** lassen sich
-   gespeicherte Tabs wieder öffnen (Ablage, max. 5 – wächst nicht endlos).
+2. **Tab-Leiste**: Start ist der **Standard-Tab** (Vorgabe *Zuhause*, Landing). Die
+   Tabs sind **frei verschiebbar** (ziehen); der Standard-Tab bleibt **ganz links**.
+   **Alle** Tabs sind schließbar; die vier **Standard-Tabs** (*Zuhause · Alle ·
+   Wartungen · Eigene To-Dos*) sind immer über **`+` → Standard Tabs** aufrufbar,
+   darunter *Eigene Tabs* und *Zuletzt geschlossen*. Rechtsklick/Hover → `⋯` öffnet
+   *Farbe … · Symbol … · Als Standard · Favorit · Tab speichern · Umbenennen ·
+   Tab schließen* (Farbe und Symbol öffnen je ein eigenes Auswahl-Popup).
 3. **Ansicht & Filter** – **ein** Knopf öffnet darunter die Leiste mit Status-Pills,
    *Meine*, Personen, Tätigkeit, **Zeitraum** (Jahr + von/bis), den **drei
    Schritten** (Gruppieren · Sortieren · Ansicht) und **Presets**.
@@ -165,20 +166,20 @@ Die **Tabs** oben sind benannte Ansichten. **Zuhause** ist die **Landing Page** 
 beim Aufruf der Seite aktiv: tageszeitabhängige **Begrüßung mit Vornamen**, darunter
 ein Subheader („Es sind noch x von y Wartungen offen … in diesem Jahr verbleiben
 noch x Arbeitstage", Mo–Fr) sowie das Wichtigste auf einen Blick – Kennzahlen und die
-Liste **Überfällig / Bald fällig / Eigene To-Dos**, klar getrennt. Die drei
-Standard-Tabs (*Alle · Wartungen · Eigene To-Dos*) bleiben bestehen; **`+`** legt einen
-eigenen, benannten Tab an. Jeder Tab speichert **seine** Filter- und
-Ansichtseinstellungen in `localStorage` (über Sitzungen hinweg). Favoriten (`★`)
-werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet **Farbe**, **Symbol**,
-*Als Standard · Anpinnen · Tab speichern · Umbenennen · Tab schließen*. Über die
-**Farbe** erhält der Tab einen farbigen Akzentbalken (statt des blauen); das
-**Symbol** stammt aus einer kleinen Auswahl – die vordefinierten Tabs haben
-Standard-Symbole. **Jeder Tab lässt sich als Standard festlegen** (es gilt der
-zuletzt festgelegte) und ist dann beim Aufruf der Seite aktiv. **Tab speichern**
-legt den Tab in eine Ablage (max. 5), die über **`+`** wieder geöffnet werden kann –
-so wächst nichts endlos an. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026)
-und/oder per **von-/bis-Datum** ein. Sobald die **Volltextsuche** benutzt wird,
-springt die App in den Tab **Alle** und sucht dort.
+Liste **Überfällig / Bald fällig / Eigene To-Dos**, klar getrennt. Daneben die
+**Standard-Tabs** (*Zuhause · Alle · Wartungen · Eigene To-Dos*) und **`+`** für eigene,
+benannte Tabs. Jeder Tab speichert **seine** Filter- und Ansichtseinstellungen in
+`localStorage` (über Sitzungen hinweg). **Tabs sind frei verschiebbar** (ziehen);
+der **Standard-Tab** bleibt **ganz links** und ist beim Aufruf der Seite aktiv
+(es gilt der zuletzt festgelegte). **Alle Tabs sind schließbar** – die vier
+Standard-Tabs sind immer über **`+` → Standard Tabs** aufrufbar, darunter
+**Eigene Tabs** (per *Tab speichern*, max. 5) und **Zuletzt geschlossen**.
+Rechtsklick oder Hover → `⋯` öffnet *Farbe … · Symbol … · Als Standard · Favorit ·
+Tab speichern · Umbenennen · Tab schließen*; **Farbe** (Akzentbalken statt Blau) und
+**Symbol** öffnen dabei je ein eigenes Auswahl-Popup, die vordefinierten Tabs haben
+Standard-Symbole. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/oder
+per **von-/bis-Datum** ein. Sobald die **Volltextsuche** benutzt wird, springt die
+App in den Tab **Alle** und sucht dort.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als

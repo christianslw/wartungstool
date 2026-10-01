@@ -70,30 +70,23 @@ function openTabMenu(id, x, y) {
   const el = document.createElement('div');
   el.className = 'ctx-menu';
   el.innerHTML =
-    '<div class="ctx-title">Farbe</div>' +
-    '<div class="ctx-swatches">' + TAB_COLORS.map(c =>
-      '<button type="button" class="swatch' + ((t.color || '') === c.color ? ' on' : '') + '" data-tabcolor="' + esc(c.color) + '" title="' + esc(c.label) + '"' +
-      (c.color ? ' style="background:' + esc(c.color) + '"' : '') + '></button>').join('') + '</div>' +
-    '<div class="ctx-title">Symbol</div>' +
-    '<div class="ctx-icons">' + Object.keys(TAB_ICONS).map(k =>
-      '<button type="button" class="ico' + (t.icon === k ? ' on' : '') + '" data-tabicon="' + esc(k) + '" title="' + esc(k) + '">' + svg(TAB_ICONS[k], 14) + '</button>').join('') + '</div>' +
+    '<button type="button" data-tabact="color">Farbe …</button>' +
+    '<button type="button" data-tabact="icon">Symbol …</button>' +
     '<div class="ctx-sep"></div>' +
     '<button type="button" data-tabact="default">' + (TABS.def === t.id ? 'Standard aufheben' : 'Als Standard festlegen') + '</button>' +
-    '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
-    (t.builtin ? '' :
-      '<button type="button" data-tabact="save">Tab speichern</button>' +
-      '<button type="button" data-tabact="rename">Umbenennen</button>' +
-      '<button type="button" data-tabact="close">Tab schließen</button>');
+    '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit markieren') + '</button>' +
+    '<button type="button" data-tabact="save">Tab speichern</button>' +
+    '<button type="button" data-tabact="rename">Umbenennen</button>' +
+    '<button type="button" data-tabact="close">Tab schließen</button>';
   el.style.left = Math.max(4, x || 0) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', async (ev) => {
-    const sw = ev.target.closest('[data-tabcolor]');
-    if (sw) { setTabColor(id, sw.dataset.tabcolor); closeTabMenu(); openTabMenu(id, x, y); return; }
-    const ic = ev.target.closest('[data-tabicon]');
-    if (ic) { setTabIcon(id, ic.dataset.tabicon); closeTabMenu(); openTabMenu(id, x, y); return; }
     const b = ev.target.closest('[data-tabact]');
     if (!b) return;
     const act = b.dataset.tabact;
+    const cx = ev.clientX || x, cy = ev.clientY || y;
+    if (act === 'color') { closeTabMenu(); return openPicker(id, cx, cy, 'color'); }
+    if (act === 'icon') { closeTabMenu(); return openPicker(id, cx, cy, 'icon'); }
     closeTabMenu();
     if (act === 'default') setDefaultTab(id);
     else if (act === 'fav') toggleFavTab(id);
@@ -113,29 +106,63 @@ function openTabMenu(id, x, y) {
   document.body.appendChild(el);
   tabMenuEl = el;
 }
+
+/** Auswahl-Popup fuer Farbe oder Symbol eines Tabs. */
+function openPicker(id, x, y, kind) {
+  closeTabMenu();
+  const t = TABS.list.find(z => z.id === id);
+  if (!t) return;
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML = '<div class="ctx-title">' + (kind === 'color' ? 'Farbe' : 'Symbol') + '</div>' +
+    (kind === 'color'
+      ? '<div class="ctx-swatches">' + TAB_COLORS.map(c =>
+          '<button type="button" class="swatch' + ((t.color || '') === c.color ? ' on' : '') + '" data-tabcolor="' + esc(c.color) + '" title="' + esc(c.label) + '"' +
+          (c.color ? ' style="background:' + esc(c.color) + '"' : '') + '></button>').join('') + '</div>'
+      : '<div class="ctx-icons">' + Object.keys(TAB_ICONS).map(k =>
+          '<button type="button" class="ico' + (t.icon === k ? ' on' : '') + '" data-tabicon="' + esc(k) + '" title="' + esc(k) + '">' + svg(TAB_ICONS[k], 14) + '</button>').join('') + '</div>');
+  el.style.left = Math.max(4, x || 0) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', (ev) => {
+    const sw = ev.target.closest('[data-tabcolor]');
+    if (sw) { setTabColor(id, sw.dataset.tabcolor); closeTabMenu(); return; }
+    const ic = ev.target.closest('[data-tabicon]');
+    if (ic) { setTabIcon(id, ic.dataset.tabicon); closeTabMenu(); return; }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+}
 function toastTab(text, detail) {
   try { toast(text, { tone: 'success', detail: detail }); } catch (e) {}
 }
 
-/** "+"-Menü: gespeicherte Tabs und neue Ansicht. */
+/** "+"-Menü: Standard Tabs, eigene Tabs, zuletzt geschlossene, neue Ansicht. */
 function openAddMenu(x, y) {
   closeTabMenu();
   const saved = TABS.saved || [];
-  const homeClosed = !homeOpen();
+  const stdNames = new Set([HOME_TAB.name].concat(STANDARD_TABS.map(s => s.name)));
+  const recent = (TABS.recent || []).filter(r => !stdNames.has(r.name));
   const el = document.createElement('div');
   el.className = 'ctx-menu';
   el.innerHTML =
-    ((saved.length || homeClosed) ? '<div class="ctx-title">Gespeicherte Tabs</div>' : '') +
-    (homeClosed ? '<button type="button" data-tabhome="1">Zuhause</button>' : '') +
-    saved.map(s => '<button type="button" data-tabopen="' + esc(s.name) + '">' + (s.fav ? '★ ' : '') + esc(s.name) + '</button>').join('') +
-    ((saved.length || homeClosed) ? '<div class="ctx-sep"></div>' : '') +
+    '<div class="ctx-title">Standard Tabs</div>' +
+    '<button type="button" data-tabstd="home">' + esc(HOME_TAB.name) + '</button>' +
+    STANDARD_TABS.map(s => '<button type="button" data-tabstd="' + esc(s.id) + '">' + esc(s.name) + '</button>').join('') +
+    (saved.length ? '<div class="ctx-sep"></div><div class="ctx-title">Eigene Tabs</div>' +
+      saved.map(s => '<button type="button" data-tabopen="' + esc(s.name) + '">' + (s.fav ? '★ ' : '') + esc(s.name) + '</button>').join('') : '') +
+    (recent.length ? '<div class="ctx-sep"></div><div class="ctx-title">Zuletzt geschlossen</div>' +
+      recent.map(s => '<button type="button" data-tabrecent="' + esc(s.name) + '">' + esc(s.name) + '</button>').join('') : '') +
+    '<div class="ctx-sep"></div>' +
     '<button type="button" data-tabnew="1">＋ Neue Ansicht …</button>';
   el.style.left = Math.max(4, x || 0) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', (ev) => {
+    const std = ev.target.closest('[data-tabstd]');
+    if (std) { closeTabMenu(); return openStandard(std.dataset.tabstd); }
     const op = ev.target.closest('[data-tabopen]');
     if (op) { closeTabMenu(); return reopenSaved(op.dataset.tabopen); }
-    if (ev.target.closest('[data-tabhome]')) { closeTabMenu(); addHomeTab(); render(); return; }
+    const rc = ev.target.closest('[data-tabrecent]');
+    if (rc) { closeTabMenu(); return reopenRecent(rc.dataset.tabrecent); }
     if (ev.target.closest('[data-tabnew]')) { closeTabMenu(); return newTabDialog(); }
   });
   document.body.appendChild(el);
@@ -180,6 +207,35 @@ $('#tabBar').addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const tab = e.target.closest('[data-tab]');
   if (tab) { e.preventDefault(); applyTab(tab.dataset.tab); }
+});
+
+/* Tabs frei verschieben (HTML5 Drag & Drop); der Standard-Tab bleibt links. */
+let dragTabId = null;
+$('#tabBar').addEventListener('dragstart', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (!tab || tab.dataset.tab === TABS.def) { e.preventDefault(); return; }
+  dragTabId = tab.dataset.tab;
+  if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragTabId); }
+  tab.classList.add('dragging');
+});
+$('#tabBar').addEventListener('dragover', e => {
+  if (!dragTabId) return;
+  if (e.target.closest('[data-tab]')) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'; }
+});
+$('#tabBar').addEventListener('drop', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (!tab || !dragTabId) return;
+  e.preventDefault();
+  let after = false;
+  if (tab.getBoundingClientRect) {
+    const r = tab.getBoundingClientRect();
+    after = (e.clientX || 0) > r.left + r.width / 2;
+  }
+  moveTab(dragTabId, tab.dataset.tab, after);
+});
+$('#tabBar').addEventListener('dragend', () => {
+  dragTabId = null;
+  $$('#tabBar .dragging').forEach(x => x.classList && x.classList.remove('dragging'));
 });
 
 $('#statusChips').addEventListener('click', e => {

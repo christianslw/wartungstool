@@ -149,22 +149,24 @@ Der Fortschrittsbalken kommt aus `fortschritt()` (`src/js/43-actions.js`).
 ## Tabs (benannte Ansichten)
 
 `src/js/45-tabs.js` hält eine Liste von Tabs in `localStorage`
-(`<storageKey>.tabs`). Der **Home-Tab** (`home`, Landing) ist beim Start aktiv
-(`init()` wählt ihn). Drei Standard-Tabs (`all`/`wartung`/`todo`) sind `builtin`
-und nicht schließbar; `+` legt eigene Tabs an. Jeder Tab speichert
-`TAB_SETTING_KEYS` (Bereich, Status, Suche, Personen, Mine, **Zeitraum**,
-Gruppierung, Ansicht, Sortierung). `syncActiveTab()` schreibt den Zustand bei
-jedem Rendern zurück, `applyTabState()` stellt ihn wieder her. Favoriten werden
-über `orderedTabs()` vorne angepinnt. Jeder Tab trägt optional `color` (Akzentbalken)
-und `icon` (aus `TAB_ICONS` in `10-dom.js`); `TABS.def` hält den **Standard-Tab**
-(aktiv beim Start, `setDefaultTab()`). `closeTab()` entfernt einen Tab;
-`saveTab()` legt ihn stattdessen in eine Ablage (`TABS.saved`, **max. 5**),
-die das `+`-Menü (`openAddMenu` in `90-events.js`) wieder öffnet. Die Volltextsuche
-(`sucheInAlle()` in `90-events.js`) wechselt in den Tab `all` und sucht dort. Die Landing
-rendert `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und
-`arbeitstageImJahr()` liegen in `43-actions.js`. Der Zeitraumfilter
-(`zeitraumJahr`, `von`, `bis`) wirkt in `42-selectors.js`/`zeitraumMatch()` auf
-die Frist `bis`.
+(`<storageKey>.tabs`). Der **Standard-Tab** (`TABS.def`, Vorgabe `home` = Landing)
+ist beim Start aktiv; ein geschlossener Standard-Tab wird dabei geoeffnet. Die vier
+Standard-Tabs (`home`/`all`/`wartung`/`todo`) sind immer ueber `openStandard()`
+bzw. das `+`-Menue erreichbar. Jeder Tab speichert `TAB_SETTING_KEYS` (Bereich,
+Status, Suche, Personen, Mine, **Zeitraum**, Gruppierung, Ansicht, Sortierung).
+`syncActiveTab()` schreibt den Zustand bei jedem Rendern zurück, `applyTabState()`
+stellt ihn wieder her. Tabs sind frei verschiebbar (`moveTab()`), `orderedTabs()`
+stellt den Standard-Tab nach links. Jeder Tab traegt optional `color` (Akzentbalken)
+und `icon` (aus `TAB_ICONS` in `10-dom.js`). **Alle** Tabs sind schliessbar:
+`closeTab()` entfernt und merkt sich den Tab unter `TABS.recent`
+("Zuletzt geschlossen", max. 5); `saveTab()` legt ihn stattdessen in `TABS.saved`
+("Eigene Tabs", max. 5). Das `+`-Menue (`openAddMenu` in `90-events.js`) oeffnet
+Standard-Tabs, eigene und zuletzt geschlossene wieder. Farbe/Symbol waehlt das
+Tab-Menue ueber `openPicker()`. Die Volltextsuche (`sucheInAlle()` in
+`90-events.js`) wechselt in den Tab `all` und sucht dort. Die Landing rendert
+`renderHome()` in `50-render.js`; `gruss()`, `vorname()` und `arbeitstageImJahr()`
+liegen in `43-actions.js`. Der Zeitraumfilter (`zeitraumJahr`, `von`, `bis`) wirkt
+in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`.
 
 ## Konventionen
 

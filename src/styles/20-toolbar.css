@@ -99,6 +99,9 @@
 .scope-tab.has-accent{border-left:3px solid var(--tab-accent);padding-left:9px}
 .scope-tab .tab-def{width:6px;height:6px;border-radius:50%;background:var(--tab-accent, var(--interactive));display:inline-block;flex:0 0 auto}
 .scope-tab.fav .tab-star{color:var(--warning);font-size:10px}
+.scope-tab[draggable="true"]{cursor:grab}
+.scope-tab.dragging{opacity:.45}
+.scope-tab.is-default{cursor:default}
 .scope-add{
   display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;
   color:var(--text-secondary);font-size:16px;flex:0 0 auto;

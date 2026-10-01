@@ -3,7 +3,11 @@ async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
   // Beim Aufruf der Seite ist der als Standard festgelegte Tab aktiv
-  // (Vorgabe: Zuhause).
+  // (Vorgabe: Zuhause); ein geschlossener Standard-Tab wird dabei geoeffnet.
+  if (TABS.def && !TABS.list.some(t => t.id === TABS.def)) {
+    const def = standardTabDef(TABS.def);
+    if (def) TABS.list.push(makeStandardTab(def));
+  }
   const defTab = TABS.list.find(t => t.id === TABS.def) || TABS.list.find(t => t.home) || TABS.list[0];
   if (defTab) TABS.active = defTab.id;
   applyTabState(activeTab());

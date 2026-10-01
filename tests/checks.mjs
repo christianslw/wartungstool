@@ -533,7 +533,7 @@ const T = ctx.WT.tabs.all().list.find(t => t.id === newId);
 ok('Neuer Tab angelegt und aktiv', !!T && !T.builtin && ctx.WT.tabs.all().active === newId, T && T.name);
 ok('Tab übernimmt die aktuellen Einstellungen', T.settings.group === 'status' && T.settings.bereich === 'wartung');
 ctx.toggleFavTab(newId);
-ok('Tab als Favorit angepinnt (vorne)', ctx.orderedTabs()[0].id === newId && T.fav === true);
+ok('Tab als Favorit markiert', T.fav === true && ctx.orderedTabs()[0].id === ctx.WT.tabs.all().def);
 ok('Tabs werden gespeichert', JSON.parse(store.get(tabsKey) || '{}').list.some(t => t.id === newId));
 ctx.applyTab('all');
 ok('Tab-Wechsel stellt Einstellungen her', state.bereich === 'alle');
@@ -543,7 +543,12 @@ ctx.renameTab(newId, 'TÜV');
 ok('Tab umbenennbar', ctx.WT.tabs.all().list.find(t => t.id === newId).name === 'TÜV');
 ctx.closeTab(newId);
 ok('Eigener Tab schließbar', !ctx.WT.tabs.all().list.some(t => t.id === newId));
-ok('Standard-Tabs bleiben bestehen', (() => { ctx.closeTab('all'); return ctx.WT.tabs.all().list.some(t => t.id === 'all'); })());
+ok('Standard-Tabs sind schließbar und wieder aufrufbar', (() => {
+  ctx.closeTab('all');
+  const weg = !ctx.WT.tabs.all().list.some(t => t.id === 'all');
+  ctx.openStandard('all');
+  return weg && ctx.WT.tabs.all().list.some(t => t.id === 'all');
+})());
 
 group('Tabs speichern und wieder öffnen');
 ctx.setBereich('wartung'); ctx.setGroup('task'); ctx.setView('tiles');
@@ -604,6 +609,32 @@ ok('Gelb nur für tatsächlich bald fällige Gruppen', (() => {
   const ist = (ctx.viewGroupedList(state.items).match(/is-soon/g) || []).length;
   return ist === erwartet;
 })(), 'is-soon: ' + ((ctx.viewGroupedList(state.items).match(/is-soon/g) || []).length));
+
+group('Tabs verschieben, schließen und wiederfinden');
+['home', 'all', 'wartung', 'todo'].forEach(id => ctx.openStandard(id));
+if (ctx.WT.tabs.all().def !== 'home') ctx.setDefaultTab('home');
+const ta = ctx.addTab('A'), tb = ctx.addTab('B'), tc = ctx.addTab('C');
+const order0 = ctx.orderedTabs().map(t => t.id);
+ctx.moveTab(tc, ta, false);
+const order1 = ctx.orderedTabs().map(t => t.id);
+ok('Tab frei verschiebbar', order1.indexOf(tc) < order1.indexOf(ta), order1.join(','));
+ok('Standard-Tab bleibt ganz links', order1[0] === ctx.WT.tabs.all().def, order1[0]);
+ctx.moveTab(ctx.WT.tabs.all().def, tb, true);
+ok('Standard-Tab selbst nicht verschiebbar', ctx.orderedTabs()[0].id === ctx.WT.tabs.all().def);
+ctx.closeTab(tc);
+ok('Geschlossener eigener Tab landet unter "Zuletzt geschlossen"',
+   (ctx.WT.tabs.all().recent || []).some(r => r.name === 'C') && !ctx.WT.tabs.all().list.some(t => t.id === tc));
+const wieder = ctx.reopenRecent('C');
+ok('Zuletzt geschlossener Tab wieder öffenbar', !!wieder && ctx.WT.tabs.all().active === wieder);
+ok('Plus-Menü bietet Standard Tabs, Eigene und Zuletzt geschlossen',
+   /Standard Tabs/.test(src) && /Zuletzt geschlossen/.test(src) && /Neue Ansicht/.test(src));
+ok('Tab-Menü trennt Farbe und Symbol als eigene Punkte',
+   /data-tabact="color">Farbe/.test(src) && /data-tabact="icon">Symbol/.test(src) && /function openPicker/.test(src));
+// Aufräumen: eigene Tabs schließen, Ablagen leeren
+['home', 'all', 'wartung', 'todo'];
+ctx.WT.tabs.all().list.slice().filter(t => !['home', 'all', 'wartung', 'todo'].includes(t.id)).forEach(t => ctx.closeTab(t.id));
+ctx.WT.tabs.all().recent = [];
+ctx.openStandard('all'); ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc');
 
 group('Namensformat und Scrollen');
 ok('Dialog fragt Nachname, Vorname', /Nachname, Vorname/.test(src) && !/Vor- und Nachname/.test(src));

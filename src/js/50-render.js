@@ -49,7 +49,7 @@ function renderTabs() {
     const cls = 'scope-tab' + (t.fav ? ' fav' : '') + (t.color ? ' has-accent' : '') + (TABS.def === t.id ? ' is-default' : '');
     const style = t.color ? ' style="--tab-accent:' + esc(t.color) + '"' : '';
     const ico = TAB_ICONS[t.icon] ? svg(TAB_ICONS[t.icon], 13) : '';
-    return '<div class="' + cls + '" role="tab" tabindex="0"' + style +
+    return '<div class="' + cls + '" role="tab" tabindex="0" draggable="true"' + style +
       ' data-tab="' + esc(t.id) + '" aria-selected="' + act + '" title="' + esc(t.name) + '">' +
       (TABS.def === t.id ? '<span class="tab-def" title="Standard-Ansicht"></span>' : '') +
       '<span class="tab-ic">' + ico + '</span>' +
