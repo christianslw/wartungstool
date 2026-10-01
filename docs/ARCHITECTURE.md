@@ -149,13 +149,19 @@ Der Fortschrittsbalken kommt aus `fortschritt()` (`src/js/43-actions.js`).
 ## Tabs (benannte Ansichten)
 
 `src/js/45-tabs.js` hält eine Liste von Tabs in `localStorage`
-(`<storageKey>.tabs`). Drei Standard-Tabs (`all`/`wartung`/`todo`) sind
-`builtin` und nicht schließbar; `+` legt eigene Tabs an. Jeder Tab speichert
+(`<storageKey>.tabs`). Der **Home-Tab** (`home`, Landing) ist beim Start aktiv
+(`init()` wählt ihn). Drei Standard-Tabs (`all`/`wartung`/`todo`) sind `builtin`
+und nicht schließbar; `+` legt eigene Tabs an. Jeder Tab speichert
 `TAB_SETTING_KEYS` (Bereich, Status, Suche, Personen, Mine, **Zeitraum**,
 Gruppierung, Ansicht, Sortierung). `syncActiveTab()` schreibt den Zustand bei
 jedem Rendern zurück, `applyTabState()` stellt ihn wieder her. Favoriten werden
-über `orderedTabs()` vorne angepinnt. Der Zeitraumfilter (`zeitraumJahr`, `von`,
-`bis`) wirkt in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`.
+über `orderedTabs()` vorne angepinnt. `closeTab()` entfernt einen Tab;
+`saveTab()` legt ihn stattdessen in eine Ablage (`TABS.saved`, **max. 5**),
+die das `+`-Menü (`openAddMenu` in `90-events.js`) wieder öffnet. Die Landing
+rendert `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und
+`arbeitstageImJahr()` liegen in `43-actions.js`. Der Zeitraumfilter
+(`zeitraumJahr`, `von`, `bis`) wirkt in `42-selectors.js`/`zeitraumMatch()` auf
+die Frist `bis`.
 
 ## Konventionen
 

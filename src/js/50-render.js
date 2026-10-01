@@ -146,6 +146,8 @@ function renderBody() {
     return;
   }
   const list = aktuelleListe();
+  const at = activeTab();
+  if (at && at.home) { host.innerHTML = renderHome(); return; }
   if (!list.length) {
     host.innerHTML = '<div style="padding:48px 16px;text-align:center;color:var(--text-helper)"><h3>Keine Positionen gefunden</h3><p style="font-size:12px;margin-top:6px">Überprüfen Sie die Filter oder das Suchfeld.</p></div>';
     return;
@@ -256,6 +258,43 @@ function viewBlobs(list) {
       sortItems(g.items).map(it => workRow(it, true)).join('') + '</section>';
   }).join('');
   return '<div class="blobs">' + blobs + '</div>' + detail;
+}
+
+/** Landing (Home-Tab): Begruessung, Kennzahlen und das Wichtigste auf einen Blick. */
+const HOME_LIMIT = 6;
+function renderHome() {
+  const f = fortschritt();
+  const offen = f.total - f.done;
+  const offenPct = f.total ? Math.round(offen / f.total * 100) : 0;
+  const c = countsForScope('wartung');
+  const ueber = sortItems(state.items.filter(i => !i.erledigt && statusOf(i) === 'over'), 'due', 'asc');
+  const bald = sortItems(state.items.filter(i => !i.erledigt && statusOf(i) === 'soon'), 'due', 'asc');
+  const todos = state.todos.filter(t => !t.erledigt).map(markToDo);
+
+  const kpi = (v, l, tone) => '<div class="kpi' + (tone ? ' ' + tone : '') + '"><b>' + v + '</b><span>' + esc(l) + '</span></div>';
+  const sec = (titel, items, tone, leer) => '<section class="home-sec' + (tone ? ' ' + tone : '') + '">' +
+    '<h2>' + esc(titel) + ' <span class="n">' + items.length + '</span></h2>' +
+    (items.length
+      ? '<div class="loc-rows">' + items.slice(0, HOME_LIMIT).map(it => workRow(it, true)).join('') + '</div>' +
+        (items.length > HOME_LIMIT ? '<p class="home-more t-helper">+' + (items.length - HOME_LIMIT) + ' weitere</p>' : '')
+      : '<p class="t-helper">' + esc(leer) + '</p>') +
+    '</section>';
+
+  return '<div class="home">' +
+    '<header class="home-hero">' +
+      '<h1>' + esc(gruss()) + '</h1>' +
+      '<p class="home-sub">Es sind noch <b>' + offen + '</b> von <b>' + f.total + '</b> Wartungen offen – das entspricht <b>' + offenPct + ' %</b>. ' +
+        'In diesem Jahr verbleiben noch <b>' + arbeitstageImJahr() + '</b> Arbeitstage.</p>' +
+      '<div class="home-bar"><div class="home-track"><i style="width:' + f.pct + '%"></i></div>' +
+        '<span>' + f.done + '/' + f.total + ' erledigt · ' + f.pct + ' %' + (f.personal ? ' (meine)' : '') + '</span></div>' +
+    '</header>' +
+    '<div class="home-kpis">' +
+      kpi(offen, 'offen') + kpi(c.over, 'überfällig', 'over') + kpi(c.soon, 'bald fällig', 'soon') + kpi(c.done, 'erledigt', 'done') +
+    '</div>' +
+    sec('Überfällig', ueber, 'over', 'Nichts überfällig – gut.') +
+    sec('Bald fällig', bald, 'soon', 'Nichts in Kürze fällig.') +
+    sec('Eigene To-Dos', todos, 'todo', 'Keine offenen To-Dos.') +
+  '</div>';
 }
 
 function workRow(it, showObject) {

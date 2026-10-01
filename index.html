@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- ==========================================================================
      GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
-     Quelle: src/   Bauen: node build.mjs   (Build 43276bb2)
+     Quelle: src/   Bauen: node build.mjs   (Build 35390555)
      ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
@@ -530,6 +530,32 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .blob-sub{font-size:10px;color:var(--text-helper);font-variant-numeric:tabular-nums}
 .blob-detail{padding:0 16px 24px}
 .blob-detail h3{font-size:13px;font-weight:600;margin:10px 0 4px;display:flex;gap:8px;align-items:baseline}
+
+/* ---- Home / Landing ----------------------------------------------------- */
+.home{padding:24px 16px 120px;max-width:1100px;margin:0 auto}
+.home-hero{margin-bottom:18px}
+.home-hero h1{font-size:26px;font-weight:600;line-height:1.2}
+.home-sub{margin-top:6px;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.home-sub b{color:var(--text-primary)}
+.home-bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11px;color:var(--text-helper)}
+.home-track{flex:1 1 auto;height:8px;background:var(--layer-03);border-radius:4px;overflow:hidden}
+.home-track > i{display:block;height:100%;background:var(--interactive-light);transition:width .3s ease}
+.home-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0 24px}
+.kpi{border:1px solid var(--border-subtle);background:var(--layer-01);border-radius:4px;padding:12px}
+.kpi b{display:block;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi span{font-size:11px;color:var(--text-helper)}
+.kpi.over{border-left:3px solid var(--error)} .kpi.over b{color:var(--error)}
+.kpi.soon{border-left:3px solid var(--warning)} .kpi.soon b{color:var(--warning)}
+.kpi.done{border-left:3px solid var(--success)} .kpi.done b{color:var(--success)}
+.home-sec{margin-bottom:20px}
+.home-sec h2{font-size:13px;font-weight:600;margin-bottom:6px;display:flex;gap:6px;align-items:baseline}
+.home-sec h2 .n{font-size:11px;color:var(--text-helper);font-weight:400}
+.home-sec .loc-rows{border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden}
+.home-sec.over h2{color:var(--error)}
+.home-sec.soon h2{color:var(--warning)}
+.home-more{margin-top:4px}
+.ctx-menu .ctx-title{padding:6px 10px 2px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
+.ctx-menu .ctx-sep{height:1px;background:var(--border-subtle);margin:4px 0}
 
 /* Wartungstool · Styles · Tabelle & Zeitplan */
 /* ==========================================================================
@@ -1619,6 +1645,35 @@ function fortschritt() {
   const done = list.filter(i => i.erledigt).length;
   return { total, done, pct: total ? Math.round(done / total * 100) : 0, personal: !!state.user };
 }
+
+/** Vorname aus "Nachname, Vorname" (oder aus einem einfachen Namen). */
+function vorname(name = state.user) {
+  const s = String(name || '').trim();
+  if (!s) return '';
+  const teile = s.split(',');
+  return (teile.length > 1 ? teile[1] : s.split(' ')[0]).trim();
+}
+
+/** Tageszeitabhaengiger Gruss mit Vornamen. */
+function gruss(name = state.user) {
+  const h = new Date().getHours();
+  const zeit = h < 11 ? 'Guten Morgen' : (h < 18 ? 'Guten Tag' : 'Guten Abend');
+  const v = vorname(name);
+  return zeit + (v ? ', ' + v : '');
+}
+
+/** Verbleibende Arbeitstage (Mo–Fr) bis Jahresende, Standard 5 Werktage/Woche. */
+function arbeitstageImJahr(heute = new Date()) {
+  const cur = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
+  const ende = new Date(heute.getFullYear(), 11, 31);
+  let n = 0;
+  while (cur <= ende) {
+    const wd = cur.getDay();
+    if (wd !== 0 && wd !== 6) n++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return n;
+}
 //# sourceURL=src/js/43-actions.js
 </script>
 
@@ -1703,13 +1758,17 @@ function applyDefaultPreset() {
 'use strict';
 /* Wartungstool · JS · Tabs (benannte Ansichten, clientseitig)
    ---------------------------------------------------------------------------
-   Die drei Standard-Tabs (Alle · Wartungen · Eigene To-Dos) plus beliebig
-   viele eigene Tabs. Jeder Tab merkt sich seine Filter- und Ansichts-
-   einstellungen; alles liegt in localStorage und bleibt ueber Sitzungen
-   erhalten. Tabs lassen sich als Favorit anpinnen (vorne) und - sofern nicht
-   Standard - schliessen. */
+   Der Home-Tab (Landing) ist beim Aufruf der Seite aktiv. Dazu die drei
+   Standard-Tabs (Alle · Wartungen · Eigene To-Dos) und beliebig viele eigene
+   Tabs. Jeder Tab merkt sich seine Filter- und Ansichtseinstellungen; alles
+   liegt in localStorage und bleibt ueber Sitzungen erhalten.
+
+   Schliessen entfernt einen Tab. Ueber "Tab speichern" (Drei-Punkte-Menue)
+   wandert er in eine kleine Ablage (max. 5) und laesst sich im "+"-Menue
+   wieder oeffnen - so waechst nichts endlos an. */
 
 const TABS_KEY = CONFIG.storageKey + '.tabs';
+const MAX_SAVED_TABS = 5;
 
 /* Felder, die ein Tab als Einstellungen speichert. */
 const TAB_SETTING_KEYS = [
@@ -1728,22 +1787,63 @@ const TAB_DEFAULTS = {
   zeitraumJahr: '', von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
 };
 
+const tabSettings = (bereich, extra) =>
+  Object.assign({}, TAB_DEFAULTS, { bereich, personen: [] }, extra || {});
+
+function normalizeTab(t) {
+  t.builtin = !!t.builtin;
+  t.home = !!t.home;
+  t.fav = !!t.fav;
+  t.settings = Object.assign({}, TAB_DEFAULTS, t.settings || {});
+  if (!Array.isArray(t.settings.personen)) t.settings.personen = [];
+  return t;
+}
+
 function defaultTabs() {
   return {
-    active: 'all',
-    list: STANDARD_TABS.map((t) => ({
-      id: t.id, name: t.name, builtin: true, fav: false,
-      settings: Object.assign({}, TAB_DEFAULTS, { bereich: t.bereich, personen: [] })
-    }))
+    active: 'home',
+    list: [
+      normalizeTab({ id: 'home', name: 'Zuhause', home: true, settings: tabSettings('alle', { view: 'home', group: 'none' }) }),
+      normalizeTab({ id: 'all', name: 'Alle', builtin: true, settings: tabSettings('alle') }),
+      normalizeTab({ id: 'wartung', name: 'Wartungen', builtin: true, settings: tabSettings('wartung') }),
+      normalizeTab({ id: 'todo', name: 'Eigene To-Dos', builtin: true, settings: tabSettings('todo') })
+    ],
+    saved: []
   };
 }
 
 function loadTabs() {
-  try {
-    const p = JSON.parse(localStorage.getItem(TABS_KEY) || 'null');
-    if (p && Array.isArray(p.list) && p.list.length && p.active) return p;
-  } catch (e) {}
-  return defaultTabs();
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem(TABS_KEY) || 'null'); } catch (e) {}
+  if (!p || !Array.isArray(p.list) || !p.list.length) return defaultTabs();
+
+  // Migration: frueher als "geschlossen" markierte Tabs in die Ablage uebernehmen.
+  const saved = (Array.isArray(p.saved) ? p.saved : []).slice();
+  for (const t of p.list) {
+    if (t && t.closed) saved.unshift({ name: t.name, fav: !!t.fav, home: !!t.home, settings: t.settings });
+  }
+  p.saved = dedupeSaved(saved).slice(0, MAX_SAVED_TABS);
+  p.list = p.list.filter((t) => t && !t.closed).map(normalizeTab);
+
+  if (!p.list.some((t) => t.home)) {
+    p.list.unshift(normalizeTab({ id: 'home', name: 'Zuhause', home: true, settings: tabSettings('alle', { view: 'home', group: 'none' }) }));
+  }
+  for (const st of STANDARD_TABS) {
+    if (!p.list.some((t) => t.id === st.id)) {
+      p.list.push(normalizeTab({ id: st.id, name: st.name, builtin: true, settings: tabSettings(st.bereich) }));
+    }
+  }
+  if (!p.active || !p.list.some((t) => t.id === p.active)) p.active = p.list[0].id;
+  return p;
+}
+
+function dedupeSaved(arr) {
+  const out = [];
+  for (const s of arr) {
+    if (!s || !s.name) continue;
+    if (!out.some((x) => x.name === s.name)) out.push(s);
+  }
+  return out;
 }
 
 let TABS = loadTabs();
@@ -1789,7 +1889,20 @@ function applyTab(id) {
   render();
 }
 
-/** Neuen Tab anlegen: uebernimmt die aktuellen Einstellungen; ein als
+/** Home-Tab anlegen bzw. aktivieren (Landing). */
+function addHomeTab() {
+  let t = TABS.list.find((x) => x.home);
+  if (!t) {
+    t = normalizeTab({ id: 'home', name: 'Zuhause', home: true, settings: tabSettings('alle', { view: 'home', group: 'none' }) });
+    TABS.list.unshift(t);
+  }
+  applyTabState(t);
+  saveTabs();
+  return t;
+}
+const homeOpen = () => TABS.list.some((t) => t.home);
+
+/** Neuen, eigenen Tab anlegen: uebernimmt die aktuellen Einstellungen; ein als
     Standard markiertes Preset gibt Gruppe/Sortierung/Ansicht vor. */
 function addTab(name) {
   syncActiveTab();
@@ -1805,7 +1918,7 @@ function addTab(name) {
     settings.sortKey = def.sortKey || settings.sortKey;
     settings.sortDir = def.sortDir || settings.sortDir;
   }
-  TABS.list.push({ id, name: clean, builtin: false, fav: false, settings });
+  TABS.list.push(normalizeTab({ id, name: clean, settings }));
   TABS.active = id;
   saveTabs();
   render();
@@ -1821,16 +1934,49 @@ function renameTab(id, name) {
   render();
 }
 
-function closeTab(id) {
-  const t = TABS.list.find((x) => x.id === id);
-  if (!t || t.builtin) return;
+/** Intern: Tab entfernen; aktiven Tab weiterziehen, nie ganz leer lassen. */
+function removeTab(id) {
   TABS.list = TABS.list.filter((x) => x.id !== id);
   if (TABS.active === id) {
     const next = TABS.list[0];
     if (next) applyTabState(next);
   }
+  if (!TABS.list.length) addHomeTab();
+  saveTabs();
+}
+
+/** Tab schliessen (nur eigene/Home; Standard-Ansichten bleiben). */
+function closeTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t || t.builtin) return;
+  removeTab(id);
+  render();
+}
+
+/** Tab speichern: legt eine wieder-oeffenbare Ablage an (max. 5), dann zu. */
+function saveTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t || t.builtin) return;
+  const rec = { name: t.name, fav: !!t.fav, home: !!t.home, settings: Object.assign({}, t.settings) };
+  TABS.saved = [rec].concat((TABS.saved || []).filter((s) => s.name !== rec.name)).slice(0, MAX_SAVED_TABS);
+  removeTab(id);
+  render();
+}
+
+/** Gespeicherten Tab wieder oeffnen (aus der Ablage entfernen). */
+function reopenSaved(name) {
+  const i = (TABS.saved || []).findIndex((s) => s.name === name);
+  if (i < 0) return;
+  const s = TABS.saved[i];
+  TABS.saved.splice(i, 1);
+  let id = 't' + Date.now().toString(36) + i;
+  while (TABS.list.some((t) => t.id === id)) id += 'x';
+  const t = normalizeTab({ id, name: s.name, home: !!s.home, fav: !!s.fav, settings: Object.assign({}, s.settings) });
+  TABS.list.push(t);
+  applyTabState(t);
   saveTabs();
   render();
+  return id;
 }
 
 function toggleFavTab(id) {
@@ -1841,13 +1987,14 @@ function toggleFavTab(id) {
   render();
 }
 
-/** Tabs in Anzeige-Reihenfolge: Favoriten zuerst (stabile Sortierung). */
+/** Tabs in Anzeige-Reihenfolge: Favoriten zuerst. */
 function orderedTabs() {
   return TABS.list.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0));
 }
 
-/** Anzahl Positionen in einem Tab (mit dessen Einstellungen). */
+/** Anzahl Positionen in einem Tab (Home zeigt die offenen Wartungen). */
 function tabCount(t) {
+  if (t.home) { const f = fortschritt(); return f.total - f.done; }
   return filtered(bereichListe(t.settings.bereich), t.settings).length;
 }
 
@@ -2013,6 +2160,8 @@ function renderBody() {
     return;
   }
   const list = aktuelleListe();
+  const at = activeTab();
+  if (at && at.home) { host.innerHTML = renderHome(); return; }
   if (!list.length) {
     host.innerHTML = '<div style="padding:48px 16px;text-align:center;color:var(--text-helper)"><h3>Keine Positionen gefunden</h3><p style="font-size:12px;margin-top:6px">Überprüfen Sie die Filter oder das Suchfeld.</p></div>';
     return;
@@ -2123,6 +2272,43 @@ function viewBlobs(list) {
       sortItems(g.items).map(it => workRow(it, true)).join('') + '</section>';
   }).join('');
   return '<div class="blobs">' + blobs + '</div>' + detail;
+}
+
+/** Landing (Home-Tab): Begruessung, Kennzahlen und das Wichtigste auf einen Blick. */
+const HOME_LIMIT = 6;
+function renderHome() {
+  const f = fortschritt();
+  const offen = f.total - f.done;
+  const offenPct = f.total ? Math.round(offen / f.total * 100) : 0;
+  const c = countsForScope('wartung');
+  const ueber = sortItems(state.items.filter(i => !i.erledigt && statusOf(i) === 'over'), 'due', 'asc');
+  const bald = sortItems(state.items.filter(i => !i.erledigt && statusOf(i) === 'soon'), 'due', 'asc');
+  const todos = state.todos.filter(t => !t.erledigt).map(markToDo);
+
+  const kpi = (v, l, tone) => '<div class="kpi' + (tone ? ' ' + tone : '') + '"><b>' + v + '</b><span>' + esc(l) + '</span></div>';
+  const sec = (titel, items, tone, leer) => '<section class="home-sec' + (tone ? ' ' + tone : '') + '">' +
+    '<h2>' + esc(titel) + ' <span class="n">' + items.length + '</span></h2>' +
+    (items.length
+      ? '<div class="loc-rows">' + items.slice(0, HOME_LIMIT).map(it => workRow(it, true)).join('') + '</div>' +
+        (items.length > HOME_LIMIT ? '<p class="home-more t-helper">+' + (items.length - HOME_LIMIT) + ' weitere</p>' : '')
+      : '<p class="t-helper">' + esc(leer) + '</p>') +
+    '</section>';
+
+  return '<div class="home">' +
+    '<header class="home-hero">' +
+      '<h1>' + esc(gruss()) + '</h1>' +
+      '<p class="home-sub">Es sind noch <b>' + offen + '</b> von <b>' + f.total + '</b> Wartungen offen – das entspricht <b>' + offenPct + ' %</b>. ' +
+        'In diesem Jahr verbleiben noch <b>' + arbeitstageImJahr() + '</b> Arbeitstage.</p>' +
+      '<div class="home-bar"><div class="home-track"><i style="width:' + f.pct + '%"></i></div>' +
+        '<span>' + f.done + '/' + f.total + ' erledigt · ' + f.pct + ' %' + (f.personal ? ' (meine)' : '') + '</span></div>' +
+    '</header>' +
+    '<div class="home-kpis">' +
+      kpi(offen, 'offen') + kpi(c.over, 'überfällig', 'over') + kpi(c.soon, 'bald fällig', 'soon') + kpi(c.done, 'erledigt', 'done') +
+    '</div>' +
+    sec('Überfällig', ueber, 'over', 'Nichts überfällig – gut.') +
+    sec('Bald fällig', bald, 'soon', 'Nichts in Kürze fällig.') +
+    sec('Eigene To-Dos', todos, 'todo', 'Keine offenen To-Dos.') +
+  '</div>';
 }
 
 function workRow(it, showObject) {
@@ -2926,8 +3112,10 @@ function openTabMenu(id, x, y) {
   el.className = 'ctx-menu';
   el.innerHTML =
     '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
-    '<button type="button" data-tabact="rename">Umbenennen</button>' +
-    (t.builtin ? '' : '<button type="button" data-tabact="close">Tab schließen</button>');
+    (t.builtin ? '' :
+      '<button type="button" data-tabact="save">Tab speichern</button>' +
+      '<button type="button" data-tabact="rename">Umbenennen</button>' +
+      '<button type="button" data-tabact="close">Tab schließen</button>');
   el.style.left = Math.max(4, x || 0) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', async (ev) => {
@@ -2936,6 +3124,7 @@ function openTabMenu(id, x, y) {
     const act = b.dataset.tabact;
     closeTabMenu();
     if (act === 'fav') toggleFavTab(id);
+    else if (act === 'save') { saveTab(id); toastTab('Tab gespeichert', t.name); }
     else if (act === 'close') closeTab(id);
     else if (act === 'rename') {
       const r = await modal({
@@ -2947,6 +3136,34 @@ function openTabMenu(id, x, y) {
       });
       if (r && r.name) renameTab(id, r.name);
     }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+}
+function toastTab(text, detail) {
+  try { toast(text, { tone: 'success', detail: detail }); } catch (e) {}
+}
+
+/** "+"-Menü: gespeicherte Tabs und neue Ansicht. */
+function openAddMenu(x, y) {
+  closeTabMenu();
+  const saved = TABS.saved || [];
+  const homeClosed = !homeOpen();
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML =
+    ((saved.length || homeClosed) ? '<div class="ctx-title">Gespeicherte Tabs</div>' : '') +
+    (homeClosed ? '<button type="button" data-tabhome="1">Zuhause</button>' : '') +
+    saved.map(s => '<button type="button" data-tabopen="' + esc(s.name) + '">' + (s.fav ? '★ ' : '') + esc(s.name) + '</button>').join('') +
+    ((saved.length || homeClosed) ? '<div class="ctx-sep"></div>' : '') +
+    '<button type="button" data-tabnew="1">＋ Neue Ansicht …</button>';
+  el.style.left = Math.max(4, x || 0) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', (ev) => {
+    const op = ev.target.closest('[data-tabopen]');
+    if (op) { closeTabMenu(); return reopenSaved(op.dataset.tabopen); }
+    if (ev.target.closest('[data-tabhome]')) { closeTabMenu(); addHomeTab(); render(); return; }
+    if (ev.target.closest('[data-tabnew]')) { closeTabMenu(); return newTabDialog(); }
   });
   document.body.appendChild(el);
   tabMenuEl = el;
@@ -2972,7 +3189,11 @@ $('#tabBar').addEventListener('click', e => {
     const r = menuBtn.getBoundingClientRect ? menuBtn.getBoundingClientRect() : { left: 4, bottom: 30 };
     return openTabMenu(menuBtn.dataset.tabmenu, r.left, r.bottom + 4);
   }
-  if (e.target.closest('#tabAdd')) return newTabDialog();
+  if (e.target.closest('#tabAdd')) {
+    const b = e.target.closest('#tabAdd');
+    const r = b.getBoundingClientRect ? b.getBoundingClientRect() : { left: 4, bottom: 30 };
+    return openAddMenu(r.left, r.bottom + 4);
+  }
   const tab = e.target.closest('[data-tab]');
   if (tab) applyTab(tab.dataset.tab);
 });
@@ -3156,7 +3377,8 @@ window.WT = {
 
   /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
   tabs: {
-    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, toggleFavTab, orderedTabs, tabCount
+    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, saveTab, reopenSaved,
+    addHomeTab, homeOpen, toggleFavTab, orderedTabs, tabCount
   },
 
   /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein
@@ -3195,6 +3417,9 @@ window.WT = {
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
+  // Beim Aufruf der Seite ist der Home-Tab aktiv (falls nicht geschlossen).
+  const homeTab = TABS.list.find(t => t.home && !t.closed);
+  if (homeTab) TABS.active = homeTab.id;
   applyTabState(activeTab());
   store = CONFIG.dataSource === 'api' ? ApiStore : LocalStore;
   state.loading = true; render();

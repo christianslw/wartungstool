@@ -63,3 +63,32 @@ function fortschritt() {
   const done = list.filter(i => i.erledigt).length;
   return { total, done, pct: total ? Math.round(done / total * 100) : 0, personal: !!state.user };
 }
+
+/** Vorname aus "Nachname, Vorname" (oder aus einem einfachen Namen). */
+function vorname(name = state.user) {
+  const s = String(name || '').trim();
+  if (!s) return '';
+  const teile = s.split(',');
+  return (teile.length > 1 ? teile[1] : s.split(' ')[0]).trim();
+}
+
+/** Tageszeitabhaengiger Gruss mit Vornamen. */
+function gruss(name = state.user) {
+  const h = new Date().getHours();
+  const zeit = h < 11 ? 'Guten Morgen' : (h < 18 ? 'Guten Tag' : 'Guten Abend');
+  const v = vorname(name);
+  return zeit + (v ? ', ' + v : '');
+}
+
+/** Verbleibende Arbeitstage (Mo–Fr) bis Jahresende, Standard 5 Werktage/Woche. */
+function arbeitstageImJahr(heute = new Date()) {
+  const cur = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
+  const ende = new Date(heute.getFullYear(), 11, 31);
+  let n = 0;
+  while (cur <= ende) {
+    const wd = cur.getDay();
+    if (wd !== 0 && wd !== 6) n++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return n;
+}

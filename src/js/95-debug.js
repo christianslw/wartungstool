@@ -38,7 +38,8 @@ window.WT = {
 
   /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
   tabs: {
-    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, toggleFavTab, orderedTabs, tabCount
+    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, saveTab, reopenSaved,
+    addHomeTab, homeOpen, toggleFavTab, orderedTabs, tabCount
   },
 
   /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein

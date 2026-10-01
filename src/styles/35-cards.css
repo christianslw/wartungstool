@@ -74,3 +74,29 @@
 .blob-sub{font-size:10px;color:var(--text-helper);font-variant-numeric:tabular-nums}
 .blob-detail{padding:0 16px 24px}
 .blob-detail h3{font-size:13px;font-weight:600;margin:10px 0 4px;display:flex;gap:8px;align-items:baseline}
+
+/* ---- Home / Landing ----------------------------------------------------- */
+.home{padding:24px 16px 120px;max-width:1100px;margin:0 auto}
+.home-hero{margin-bottom:18px}
+.home-hero h1{font-size:26px;font-weight:600;line-height:1.2}
+.home-sub{margin-top:6px;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.home-sub b{color:var(--text-primary)}
+.home-bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11px;color:var(--text-helper)}
+.home-track{flex:1 1 auto;height:8px;background:var(--layer-03);border-radius:4px;overflow:hidden}
+.home-track > i{display:block;height:100%;background:var(--interactive-light);transition:width .3s ease}
+.home-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0 24px}
+.kpi{border:1px solid var(--border-subtle);background:var(--layer-01);border-radius:4px;padding:12px}
+.kpi b{display:block;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi span{font-size:11px;color:var(--text-helper)}
+.kpi.over{border-left:3px solid var(--error)} .kpi.over b{color:var(--error)}
+.kpi.soon{border-left:3px solid var(--warning)} .kpi.soon b{color:var(--warning)}
+.kpi.done{border-left:3px solid var(--success)} .kpi.done b{color:var(--success)}
+.home-sec{margin-bottom:20px}
+.home-sec h2{font-size:13px;font-weight:600;margin-bottom:6px;display:flex;gap:6px;align-items:baseline}
+.home-sec h2 .n{font-size:11px;color:var(--text-helper);font-weight:400}
+.home-sec .loc-rows{border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden}
+.home-sec.over h2{color:var(--error)}
+.home-sec.soon h2{color:var(--warning)}
+.home-more{margin-top:4px}
+.ctx-menu .ctx-title{padding:6px 10px 2px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
+.ctx-menu .ctx-sep{height:1px;background:var(--border-subtle);margin:4px 0}

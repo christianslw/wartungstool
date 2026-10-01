@@ -100,6 +100,7 @@ const appScript = (() => {
 vm.runInContext(
   appScript
   + '\n;globalThis.__state = state; globalThis.__seed = seedData(); globalThis.__config = CONFIG;'
+  + '\nglobalThis.__initialTab = (activeTab() || {}).id;'
   + '\nglobalThis.__fmtDate = fmtDate; globalThis.__isoToDe = isoToDe; globalThis.__keyOf = keyOf;',
   ctx, { filename: 'app.js' });
 
@@ -122,9 +123,11 @@ const group = (t) => console.log('\n== ' + t + ' ==');
 
 /* --------------------------------------------------------------- Startzustand */
 group('Startzustand');
+ok('Home-Tab ist beim Start aktiv', ctx.__initialTab === 'home', ctx.__initialTab);
 ok('Stammdaten geladen', state.items.length === ERWARTET,
    state.items.length + ' (Quelle: ' + (EXT ? 'daten.js' : 'Testbestand') + ')');
-ok('Startansicht = Standort-Arbeitsliste', state.view === 'list' && state.group === 'object' && state.sortKey === 'status' && state.sortDir === 'asc');
+ctx.applyTab('all');
+ok('Arbeitsliste im Tab "Alle"', state.view === 'list' && state.group === 'object' && state.sortKey === 'status' && state.sortDir === 'asc');
 ok('15 (bzw. 11) Standorte werden gelistet', (host().match(/class="loc-head"/g) || []).length === ctx.groupItems(ctx.aktuelleListe(), 'object').length);
 ok('Fortschritt je Standort sichtbar', /\d+\/\d+/.test(host()));
 ok('Kein doppelter Prozentwert in der Zeile', !host().includes('loc-pct'));
@@ -401,8 +404,8 @@ ok('Ein hidden-Attribut wird immer respektiert', /\[hidden\]\{display:none !impo
 
 group('Kopfzone');
 const kopf = APP.slice(APP.indexOf('<header class="shell-header">'), APP.indexOf('<main class="content-body"'));
-ok('Tab-Reihenfolge: Alle, Wartungen, Eigene To-Dos',
-   (() => { const o = [...reg['#tabBar'].innerHTML.matchAll(/data-tab="([\w]+)"/g)].map(m => m[1]); return o.slice(0, 3).join(',') === 'all,wartung,todo'; })(),
+ok('Tab-Reihenfolge: Zuhause, Alle, Wartungen, Eigene To-Dos',
+   (() => { const o = [...reg['#tabBar'].innerHTML.matchAll(/data-tab="([\w]+)"/g)].map(m => m[1]); return o.slice(0, 4).join(',') === 'home,all,wartung,todo'; })(),
    [...reg['#tabBar'].innerHTML.matchAll(/data-tab="([\w]+)"/g)].map(m => m[1]).join(' → '));
 ok('Alle drei Tabs zeigen ihre Anzahl',
    (reg['#tabBar'].innerHTML.match(/<span class="n">\d+<\/span>/g) || []).length >= 3);
@@ -491,6 +494,20 @@ ok('Fortschritt zählt meine Wartungen', f.personal && f.total === meine.length 
 ctx.render();
 ok('Fortschrittsbalken oben vorhanden', /class="progress-strip"/.test(APP) && /\d+ \/ \d+ · \d+%/.test(reg['#psValue'].textContent));
 
+group('Home / Landing');
+ctx.addHomeTab(); ctx.render();
+const home = host();
+ok('Home zeigt Begrüßung und Subheader',
+   /class="home-hero"/.test(home) && /<h1>[^<]*<\/h1>/.test(home) &&
+   /von <b>\d+<\/b> Wartungen offen/.test(home) && /Arbeitstage/.test(home));
+ok('Home trennt Überfällig, Bald fällig und To-Dos',
+   /class="home-sec over/.test(home) && /class="home-sec soon/.test(home) && /class="home-sec todo/.test(home));
+ok('Home zeigt Kennzahlen', (home.match(/class="kpi/g) || []).length >= 4);
+ok('Begrüßung mit Vornamen', ctx.gruss('Salwa, Christian').includes('Christian') && /Guten (Morgen|Tag|Abend)/.test(ctx.gruss('Salwa, Christian')));
+ok('Arbeitstage zählen nur Werktage',
+   ctx.arbeitstageImJahr(new Date(2026, 11, 31)) === 1 && ctx.arbeitstageImJahr(new Date(2026, 11, 26)) === 4,
+   ctx.arbeitstageImJahr(new Date(2026, 11, 31)) + ' / ' + ctx.arbeitstageImJahr(new Date(2026, 11, 26)));
+
 /* --------------------------------------------------- Zeitraum, Tabs, Format */
 group('Zeitraum-Filter');
 const withBis = state.items.filter(i => i.bis);
@@ -527,6 +544,27 @@ ok('Tab umbenennbar', ctx.WT.tabs.all().list.find(t => t.id === newId).name === 
 ctx.closeTab(newId);
 ok('Eigener Tab schließbar', !ctx.WT.tabs.all().list.some(t => t.id === newId));
 ok('Standard-Tabs bleiben bestehen', (() => { ctx.closeTab('all'); return ctx.WT.tabs.all().list.some(t => t.id === 'all'); })());
+
+group('Tabs speichern und wieder öffnen');
+ctx.setBereich('wartung'); ctx.setGroup('task'); ctx.setView('tiles');
+const sid = ctx.addTab('Kacheln Tätigkeit');
+ctx.saveTab(sid);
+ok('Speichern legt Tab in die Ablage und schließt ihn',
+   (ctx.WT.tabs.all().saved || []).some(s => s.name === 'Kacheln Tätigkeit') &&
+   !ctx.WT.tabs.all().list.some(t => t.id === sid));
+const rid = ctx.reopenSaved('Kacheln Tätigkeit');
+ok('Gespeicherter Tab wieder geöffnet und aktiv',
+   !!rid && ctx.WT.tabs.all().active === rid && state.view === 'tiles' && state.group === 'task');
+for (let i = 0; i < 7; i++) { const x = ctx.addTab('S' + i); ctx.saveTab(x); }
+ok('Ablage wächst nicht endlos (max. 5)', (ctx.WT.tabs.all().saved || []).length === 5,
+   String((ctx.WT.tabs.all().saved || []).length));
+ctx.closeTab('home');
+ok('Home-Tab schließbar', !ctx.WT.tabs.all().list.some(t => t.home));
+ctx.addHomeTab(); ctx.render();
+ok('Home über das "+"-Menü wieder herstellbar', ctx.WT.tabs.all().list.some(t => t.home) && ctx.WT.tabs.all().active === 'home');
+// Aufräumen: eigene Tabs und Ablage leeren, zurück auf "Alle"
+ctx.WT.tabs.all().list.filter(t => !t.builtin && !t.home).forEach(t => ctx.closeTab(t.id));
+ctx.WT.tabs.all().saved = [];
 ctx.applyTab('all'); ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc'); ctx.setBereich('wartung');
 
 group('Namensformat und Scrollen');

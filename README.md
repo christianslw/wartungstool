@@ -97,10 +97,12 @@ in **Tabs** (benannte Ansichten), eine **zusammengefasste Steuerung** und einen
 
 1. **Titelleiste** (folgt dem Design, hell/dunkel): Programmname · **globale
    Suche** (Taste `/`) · Name · Drucken/Menü
-2. **Tab-Leiste**: die Standard-Ansichten *Alle · Wartungen · Eigene To-Dos*,
-   daneben **`+`** für eigene Tabs (benennen). Jeder Tab merkt sich **seine
-   Filter und Ansicht**; Favoriten (`★`) stehen vorne. Rechtsklick auf einen Tab
-   (oder Hover → `⋯`) öffnet *Anpinnen · Umbenennen · Schließen*.
+2. **Tab-Leiste**: Start ist **Zuhause** (Landing), dann die Standard-Ansichten
+   *Alle · Wartungen · Eigene To-Dos*, daneben **`+`** für eigene Tabs (benennen).
+   Jeder Tab merkt sich **seine Filter und Ansicht**; Favoriten (`★`) stehen vorne.
+   Rechtsklick auf einen Tab (oder Hover → `⋯`) öffnet *Anpinnen · **Tab speichern** ·
+   Umbenennen · Tab schließen*. Über **`+`** lassen sich gespeicherte Tabs wieder
+   öffnen (Ablage, max. 5 – wächst nicht endlos).
 3. **Ansicht & Filter** – **ein** Knopf öffnet darunter die Leiste mit Status-Pills,
    *Meine*, Personen, Tätigkeit, **Zeitraum** (Jahr + von/bis), den **drei
    Schritten** (Gruppieren · Sortieren · Ansicht) und **Presets**.
@@ -158,15 +160,19 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 **In allen Ansichten stehen offene Positionen oben**, abgeschlossene Gruppen
 unten.
 
-### Tabs & Zeitraum (clientseitig)
-Die **Tabs** oben sind benannte Ansichten. Die drei Standard-Tabs (*Alle · Wartungen ·
-Eigene To-Dos*) bleiben bestehen; **`+`** legt einen eigenen, benannten Tab an, der
-offen bleibt, bis er geschlossen wird. Jeder Tab speichert **seine** Filter- und
+### Tabs, Home & Zeitraum (clientseitig)
+Die **Tabs** oben sind benannte Ansichten. **Zuhause** ist die **Landing Page** und
+beim Aufruf der Seite aktiv: tageszeitabhängige **Begrüßung mit Vornamen**, darunter
+ein Subheader („Es sind noch x von y Wartungen offen … in diesem Jahr verbleiben
+noch x Arbeitstage", Mo–Fr) sowie das Wichtigste auf einen Blick – Kennzahlen und die
+Liste **Überfällig / Bald fällig / Eigene To-Dos**, klar getrennt. Die drei
+Standard-Tabs (*Alle · Wartungen · Eigene To-Dos*) bleiben bestehen; **`+`** legt einen
+eigenen, benannten Tab an. Jeder Tab speichert **seine** Filter- und
 Ansichtseinstellungen in `localStorage` (über Sitzungen hinweg). Favoriten (`★`)
-werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet *Anpinnen · Umbenennen ·
-Schließen*.
-Der **Zeitraum**-Filter grenzt nach dem Fristjahr (z. B. 2026) und/oder per
-**von-/bis-Datum** ein.
+werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet *Anpinnen · Tab speichern ·
+Umbenennen · Tab schließen*. **Tab speichern** legt den Tab in eine Ablage (max. 5),
+die über **`+`** wieder geöffnet werden kann – so wächst nichts endlos an. Das
+Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/oder per **von-/bis-Datum** ein.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als

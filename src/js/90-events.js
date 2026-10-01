@@ -64,8 +64,10 @@ function openTabMenu(id, x, y) {
   el.className = 'ctx-menu';
   el.innerHTML =
     '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
-    '<button type="button" data-tabact="rename">Umbenennen</button>' +
-    (t.builtin ? '' : '<button type="button" data-tabact="close">Tab schließen</button>');
+    (t.builtin ? '' :
+      '<button type="button" data-tabact="save">Tab speichern</button>' +
+      '<button type="button" data-tabact="rename">Umbenennen</button>' +
+      '<button type="button" data-tabact="close">Tab schließen</button>');
   el.style.left = Math.max(4, x || 0) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', async (ev) => {
@@ -74,6 +76,7 @@ function openTabMenu(id, x, y) {
     const act = b.dataset.tabact;
     closeTabMenu();
     if (act === 'fav') toggleFavTab(id);
+    else if (act === 'save') { saveTab(id); toastTab('Tab gespeichert', t.name); }
     else if (act === 'close') closeTab(id);
     else if (act === 'rename') {
       const r = await modal({
@@ -85,6 +88,34 @@ function openTabMenu(id, x, y) {
       });
       if (r && r.name) renameTab(id, r.name);
     }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+}
+function toastTab(text, detail) {
+  try { toast(text, { tone: 'success', detail: detail }); } catch (e) {}
+}
+
+/** "+"-Menü: gespeicherte Tabs und neue Ansicht. */
+function openAddMenu(x, y) {
+  closeTabMenu();
+  const saved = TABS.saved || [];
+  const homeClosed = !homeOpen();
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML =
+    ((saved.length || homeClosed) ? '<div class="ctx-title">Gespeicherte Tabs</div>' : '') +
+    (homeClosed ? '<button type="button" data-tabhome="1">Zuhause</button>' : '') +
+    saved.map(s => '<button type="button" data-tabopen="' + esc(s.name) + '">' + (s.fav ? '★ ' : '') + esc(s.name) + '</button>').join('') +
+    ((saved.length || homeClosed) ? '<div class="ctx-sep"></div>' : '') +
+    '<button type="button" data-tabnew="1">＋ Neue Ansicht …</button>';
+  el.style.left = Math.max(4, x || 0) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', (ev) => {
+    const op = ev.target.closest('[data-tabopen]');
+    if (op) { closeTabMenu(); return reopenSaved(op.dataset.tabopen); }
+    if (ev.target.closest('[data-tabhome]')) { closeTabMenu(); addHomeTab(); render(); return; }
+    if (ev.target.closest('[data-tabnew]')) { closeTabMenu(); return newTabDialog(); }
   });
   document.body.appendChild(el);
   tabMenuEl = el;
@@ -110,7 +141,11 @@ $('#tabBar').addEventListener('click', e => {
     const r = menuBtn.getBoundingClientRect ? menuBtn.getBoundingClientRect() : { left: 4, bottom: 30 };
     return openTabMenu(menuBtn.dataset.tabmenu, r.left, r.bottom + 4);
   }
-  if (e.target.closest('#tabAdd')) return newTabDialog();
+  if (e.target.closest('#tabAdd')) {
+    const b = e.target.closest('#tabAdd');
+    const r = b.getBoundingClientRect ? b.getBoundingClientRect() : { left: 4, bottom: 30 };
+    return openAddMenu(r.left, r.bottom + 4);
+  }
   const tab = e.target.closest('[data-tab]');
   if (tab) applyTab(tab.dataset.tab);
 });
