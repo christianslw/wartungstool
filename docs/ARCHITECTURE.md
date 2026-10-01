@@ -164,7 +164,16 @@ und `icon` (aus `TAB_ICONS` in `10-dom.js`). **Alle** Tabs sind schliessbar:
 Standard-Tabs, eigene und zuletzt geschlossene wieder. Farbe/Symbol waehlt das
 Tab-Menue ueber `openPicker()`. Die Volltextsuche (`sucheInAlle()` in
 `90-events.js`) sucht in der aktuellen Ansicht und wechselt nur aus dem Home-Tab
-(ohne Liste) in den Tab `all`. Das Verschieben zeigt waehrend des Ziehens eine
+(ohne Liste) in den Tab `all`. Merkmale aus der Liste lassen sich in die Suche
+ziehen: `dragAttr()` (`50-render.js`) zeichnet Standortnummer, Standortname,
+Taetigkeit und zustaendige Person als ziehbar aus; `90-events.js` uebernimmt den
+Wert beim Ablegen im Suchfeld (`suchePerDrag()`, eigener dataTransfer-Typ
+`application/x-wt-merkmal` trennt das vom Tab-Verschieben). Beim Tippen zeigt die
+Suche einen **Inline-Vorschlag** als Geistertext: `suchVorschlag()`/
+`suchKatalog()` (`42-selectors.js`) vervollstaendigen das letzte Wort aus
+Standortnummer, Standortname, Taetigkeit und Person; `renderSuggest()`
+(`50-render.js`) richtet den Geistertext am Eingabefeld aus, `akzeptiereVorschlag()`
+(`90-events.js`) uebernimmt ihn mit Pfeil-nach-rechts oder Tab. Das Verschieben zeigt waehrend des Ziehens eine
 Einfuege-Markierung (`drop-before`/`drop-after`). Die Landing rendert
 `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und `arbeitstageImJahr()`
 liegen in `43-actions.js`. Der Zeitraumfilter (`zeitraumJahr`, `von`, `bis`) wirkt

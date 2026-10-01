@@ -5,6 +5,16 @@
 .locs{padding-bottom:120px}
 .loc{border-bottom:1px solid var(--border-subtle)}
 
+/* Ziehbare Merkmale (Standortnummer, Standort, Tätigkeit, Person): lassen sich
+   in die Volltextsuche oben ziehen. */
+[data-drag]{cursor:grab}
+[data-drag]:active{cursor:grabbing}
+[data-drag]:hover{color:var(--interactive);text-decoration:underline;text-underline-offset:2px}
+[data-drag].drag-src{opacity:.45}
+body.dragging-attr [data-drag]{
+  outline:1px dashed var(--interactive-light);outline-offset:2px;border-radius:2px;
+}
+
 .loc-head{
   display:grid;
   grid-template-columns: 52px 60px minmax(180px, 1.8fr) minmax(160px, 1.4fr) 150px 140px 76px;

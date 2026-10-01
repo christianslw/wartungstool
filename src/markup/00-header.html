@@ -6,11 +6,13 @@
     <span class="hdr-sub">Technik Außeneinsatz</span>
   </div>
 
-  <div class="hdr-search">
+  <div class="hdr-search" id="searchBox">
     <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M13 4a9 9 0 1 0 5.66 16l6.17 6.17 1.41-1.41L20 18.59A9 9 0 0 0 13 4m0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14"/></svg>
-    <input id="search" type="text" autocomplete="off" spellcheck="false" placeholder="Suchen: Objekt, Nummer, Tätigkeit, Person..." aria-label="Suche">
+    <div class="search-ghost" id="searchGhost" aria-hidden="true"></div>
+    <input id="search" type="text" autocomplete="off" spellcheck="false" placeholder="Suchen oder Merkmal hierher ziehen …" aria-label="Suche" aria-autocomplete="inline">
     <button class="clr" id="searchClear" aria-label="Suche leeren"><svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4 14.6 16 8 22.6 9.4 24 16 17.4 22.6 24 24 22.6 17.4 16z"/></svg></button>
     <kbd class="searchkey" id="searchHint">/</kbd>
+    <span class="drop-hint" aria-hidden="true">Hier ablegen</span>
   </div>
 
   <div class="hdr-spacer"></div>

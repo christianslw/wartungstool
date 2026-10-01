@@ -198,3 +198,51 @@ function groupPreview(g) {
   const tasks = uniq(src.map(i => i.taetigkeit).filter(Boolean));
   return tasks.length ? tasks.slice(0, 2).join(' · ') + (tasks.length > 2 ? ' +' + (tasks.length - 2) : '') : 'Alle erledigt';
 }
+
+/* ==========================================================================
+   Volltextsuche: Inline-Vorschläge
+   --------------------------------------------------------------------------
+   Vervollständigt das zuletzt getippte Wort aus den Merkmalen der aktuellen
+   Liste (Standortnummer, Standortname, Tätigkeit, Zuständige Person). Der
+   Vorschlag wird als Geistertext hinter dem Suchfeld angezeigt und mit
+   Pfeil-nach-rechts oder Tab übernommen.
+   ========================================================================== */
+
+/** Bekannte Suchbegriffe der aktuellen Ansicht; die Häufigkeit bestimmt die
+    Reihenfolge der Vorschläge. */
+function suchKatalog() {
+  const zaehler = new Map();
+  const add = (v) => {
+    const t = String(v ?? '').trim();
+    const n = norm(t);
+    if (!n) return;
+    const cur = zaehler.get(n);
+    if (cur) cur.anzahl++;
+    else zaehler.set(n, { t, n, anzahl: 1 });
+  };
+  for (const it of bereichListe(state.bereich)) {
+    add(it.objekt_nr); add(it.objekt_name); add(it.taetigkeit); add(it.zustaendig);
+  }
+  return zaehler;
+}
+
+/** Inline-Vorschlag zum zuletzt getippten Wort – { text, rest } oder null.
+    `text` ist der vollständige Suchtext nach dem Übernehmen, `rest` nur der
+    angehängte Teil (für die Anzeige als Geistertext). */
+function suchVorschlag(value = state.query) {
+  const q = String(value ?? '');
+  const m = /(\S+)$/.exec(q);
+  if (!m) return null;
+  const wort = m[1], praefix = norm(wort);
+  if (!praefix) return null;
+  const kopf = q.slice(0, q.length - wort.length);
+  let best = null;
+  for (const e of suchKatalog().values()) {
+    if (e.n === praefix || e.n.indexOf(praefix) !== 0) continue;
+    if (!best || e.anzahl > best.anzahl || (e.anzahl === best.anzahl && e.t.length < best.t.length)) best = e;
+  }
+  if (!best) return null;
+  const text = kopf + best.t;
+  if (text === q) return null;
+  return { text, rest: text.slice(q.length), wort: best.t };
+}

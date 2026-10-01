@@ -39,6 +39,28 @@
 .hdr-search .clr:hover{color:var(--text-primary)}
 .hdr-search input:placeholder-shown + .clr{display:none}
 
+/* Merkmal aus der Liste hierher ziehen: Suchfeld als Ablege-Ziel markieren. */
+.hdr-search.drop-active{
+  border-color:var(--interactive);box-shadow:var(--ring);background:var(--layer-02);
+}
+.hdr-search .drop-hint{
+  display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-size:11px;font-weight:600;color:#ffffff;background:var(--interactive);
+  padding:2px 8px;border-radius:2px;white-space:nowrap;pointer-events:none;
+}
+.hdr-search.drop-active .drop-hint{display:inline-block}
+
+/* Inline-Vorschlag als Geistertext: getippter Teil unsichtbar (deckungsgleich
+   über der Eingabe), angehängter Teil dezent – bestätigt mit → oder Tab. */
+.search-ghost{
+  position:absolute;top:0;height:100%;display:none;align-items:center;
+  box-sizing:border-box;padding-right:30px;
+  font-size:13px;line-height:1;white-space:pre;overflow:hidden;pointer-events:none;
+}
+.search-ghost.on{display:flex}
+.search-ghost .sg-type{visibility:hidden}
+.search-ghost .sg-hint{color:var(--text-placeholder)}
+
 .hdr-spacer{flex:1 1 auto}
 
 .hdr-user{

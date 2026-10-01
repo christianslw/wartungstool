@@ -28,7 +28,7 @@ window.WT = {
 
   /* Fachliche Auswertung (src/js/20-util.js, 42-selectors.js) */
   model: { statusOf, dueInfo, matchesQuery, keyOf },
-  select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt },
+  select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt, suchVorschlag },
 
   /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
   view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline },

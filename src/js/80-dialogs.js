@@ -248,7 +248,7 @@ function exportJsonView() {
 }
 
 function shortcutsDialog() {
-  const rows = [['/', 'Suche fokussieren'], ['↑ ↓', 'Zeilen durchlaufen'], ['Enter', 'Details öffnen'],
+  const rows = [['/', 'Suche fokussieren'], ['→ / Tab', 'Suchvorschlag übernehmen'], ['↑ ↓', 'Zeilen durchlaufen'], ['Enter', 'Details öffnen'],
     ['E', 'Position abhaken'], ['M', 'Ansicht wechseln'], ['P', 'Drucken'], ['Esc', 'Schließen']];
   modal({
     title: 'Tastenkürzel',

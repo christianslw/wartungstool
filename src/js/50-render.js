@@ -149,6 +149,27 @@ function renderToolbar() {
   } else {
     act.innerHTML = '';
   }
+  renderSuggest();
+}
+
+/** Inline-Vorschlag der Volltextsuche als Geistertext hinter dem Suchfeld
+    anzeigen (übernommen mit Pfeil-nach-rechts oder Tab). */
+function renderSuggest() {
+  const input = $('#search'), ghost = $('#searchGhost');
+  if (!input || !ghost) return;
+  const hide = () => { if (ghost.classList) ghost.classList.remove('on'); ghost.innerHTML = ''; };
+  if (document.activeElement !== input) { hide(); return; }
+  const amEnde = input.selectionStart === null || input.selectionStart === input.value.length;
+  // Bei waagerecht verschobenem Text ließe sich der Geistertext nicht deckungsgleich
+  // anzeigen – dann lieber ausblenden.
+  const verschoben = input.scrollWidth && input.clientWidth && input.scrollWidth > input.clientWidth + 1;
+  const v = (amEnde && !verschoben) ? suchVorschlag(input.value || '') : null;
+  if (!v) { hide(); return; }
+  ghost.innerHTML = '<span class="sg-type">' + esc(input.value) + '</span>' +
+    '<span class="sg-hint">' + esc(v.rest) + '</span>';
+  ghost.style.left = (input.offsetLeft || 0) + 'px';
+  ghost.style.width = (input.offsetWidth || 0) + 'px';
+  if (ghost.classList) ghost.classList.add('on');
 }
 
 function renderBody() {
@@ -171,6 +192,14 @@ function renderBody() {
   host.innerHTML = viewGroupedList(list);
 }
 
+/** Merkmal als ziehbares Element auszeichnen (Ziel: Volltextsuche oben). */
+function dragAttr(value, label) {
+  const v = String(value ?? '').trim();
+  if (!v) return '';
+  const t = (label ? label + ': ' : '') + v + ' – in die Suche ziehen';
+  return ' draggable="true" data-drag="' + esc(v) + '" title="' + esc(t) + '"';
+}
+
 function tickControl(it) {
   const done = !!it.erledigt;
   return '<button class="tick' + (done ? ' on' : '') + '" data-tick="' + esc(keyOf(it)) + '" title="' + (done ? 'Erledigung zurücknehmen' : 'Als erledigt protokollieren') + '">' +
@@ -178,7 +207,7 @@ function tickControl(it) {
 }
 
 function erledigtInfo(it) {
-  if (!it.erledigt) return '<span class="loc-user">' + esc(it.zustaendig || '–') + '</span>';
+  if (!it.erledigt) return '<span class="loc-user"' + dragAttr(it.zustaendig, 'Zuständig') + '>' + esc(it.zustaendig || '–') + '</span>';
   const note = String(it.erledigt_notiz || '').trim();
   return '<div class="ecell"><span class="ecell-sub">' + esc(it.erledigt_am || '') + ' · ' + esc(it.erledigt_durch || 'Erledigt') + '</span>' +
     (note ? '<span class="ecell-note" title="' + esc(note) + '">' + esc(note) + '</span>' : '<button class="btn-note" data-note="' + esc(keyOf(it)) + '">' + svg(ICON.notes, 11) + ' Notiz</button>') +
@@ -208,7 +237,7 @@ function viewGroupedList(list) {
 
     const rows = sortItems(g.items).map(it => workRow(it, state.group === 'task')).join('');
     const nrCell = state.group === 'object'
-      ? '<span class="loc-nr">' + esc(g.nr || '–') + '</span>'
+      ? '<span class="loc-nr"' + dragAttr(g.nr, 'Standortnummer') + '>' + esc(g.nr || '–') + '</span>'
       : '<span class="loc-nr"><span class="tag gray mini">' + (state.group === 'task' ? 'Tätigkeit' : 'Gruppe') + '</span></span>';
 
     return '<section class="' + cls + '">' +
@@ -216,7 +245,7 @@ function viewGroupedList(list) {
         '<span class="loc-caret">' + svg(ICON.chevR, 14) + '</span>' +
         nrCell +
         '<div class="loc-title-col">' +
-          '<span class="loc-name">' + esc(g.label) + '</span>' +
+          '<span class="loc-name"' + ((state.group === 'object' || state.group === 'task') ? dragAttr(g.label, state.group === 'task' ? 'Tätigkeit' : 'Standort') : '') + '>' + esc(g.label) + '</span>' +
           (st.over ? '<span class="urgency-badge late">' + st.over + ' überfällig</span>' : '') +
           (st.open === 0 ? '<span class="urgency-badge done">Erledigt</span>' : '') +
         '</div>' +
@@ -313,8 +342,8 @@ function workRow(it, showObject) {
   const k = esc(keyOf(it));
   return '<div class="loc-row' + (it.erledigt ? ' done' : '') + (istToDo(it) ? ' ist-todo' : '') + '" data-id="' + k + '">' +
     tickControl(it) +
-    '<span class="loc-nr" style="opacity:.6">' + esc(it.objekt_nr || '') + '</span>' +
-    '<div class="loc-task"><span class="c-main" title="' + esc(it.taetigkeit) + '">' + esc(it.taetigkeit || '–') + '</span>' + (showObject ? '<span class="c-sub">' + esc(it.objekt_name) + '</span>' : '') + '</div>' +
+    '<span class="loc-nr" style="opacity:.6"' + dragAttr(it.objekt_nr, 'Standortnummer') + '>' + esc(it.objekt_nr || '') + '</span>' +
+    '<div class="loc-task"><span class="c-main"' + dragAttr(it.taetigkeit, 'Tätigkeit') + '>' + esc(it.taetigkeit || '–') + '</span>' + (showObject ? '<span class="c-sub"' + dragAttr(it.objekt_name, 'Standort') + '>' + esc(it.objekt_name) + '</span>' : '') + '</div>' +
     '<span class="loc-note" title="' + esc(it.kommentar) + '">' + esc(it.kommentar || '–') + '</span>' +
     dueCell(it) +
     erledigtInfo(it) +
@@ -330,8 +359,8 @@ function viewTable(list) {
     const k = esc(keyOf(it));
     return '<tr data-id="' + k + '" class="' + (it.erledigt ? 'done' : '') + '">' +
       '<td style="width:36px">' + tickControl(it) + '</td>' +
-      '<td><span class="c-main">' + esc(it.objekt_name || '–') + '</span><span class="c-sub">' + esc(it.objekt_nr || '') + '</span></td>' +
-      '<td><span class="c-main">' + esc(it.taetigkeit || '–') + '</span></td>' +
+      '<td><span class="c-main"' + dragAttr(it.objekt_name, 'Standort') + '>' + esc(it.objekt_name || '–') + '</span><span class="c-sub"' + dragAttr(it.objekt_nr, 'Standortnummer') + '>' + esc(it.objekt_nr || '') + '</span></td>' +
+      '<td><span class="c-main"' + dragAttr(it.taetigkeit, 'Tätigkeit') + '>' + esc(it.taetigkeit || '–') + '</span></td>' +
       '<td>' + dueCell(it) + '</td>' +
       '<td>' + erledigtInfo(it) + '</td>' +
       '<td style="text-align:right"><button class="td-act" data-term="' + k + '">' + svg(ICON.calendar, 14) + '</button></td>' +

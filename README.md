@@ -16,7 +16,7 @@ wartungstool/
 ├─ schema.sql          ← SQL-Schema (Wartungen, To-Dos, Anhänge)
 ├─ server.mjs          ← Testserver: SQLite + REST-API, ohne npm-Abhängigkeiten
 ├─ start.cmd           ← Doppelklick: Server starten und Browser öffnen
-├─ tests/checks.mjs    ← 126 Prüfungen der Frontend-Logik (node tests/checks.mjs)
+├─ tests/checks.mjs    ← 207 Prüfungen der Frontend-Logik (node tests/checks.mjs)
 ├─ tests/api.mjs       ← 26 Prüfungen gegen die API (node tests/api.mjs)
 ├─ docs/ARCHITECTURE.md← Aufbau, Stores, Weg zum bestehenden SQL-Backend
 └─ README.md
@@ -131,6 +131,8 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 | Aktion | Weg |
 |---|---|
 | Suchen | Suchfeld oben oder Taste `/` – sucht in der aktuellen Ansicht; im Tab **Zuhause** (ohne Liste) springt sie automatisch nach **Alle** |
+| **Suchvorschlag** | Beim Tippen vervollständigt die Suche das letzte Wort aus Standortnummer, Standortname, Tätigkeit und Person als **Inline-Vorschlag** (Geistertext) – übernehmen mit `→` oder `Tab` |
+| **Merkmal in die Suche ziehen** | Standortnummer, Standortname, Tätigkeit oder zuständige Person aus der Liste **in das Suchfeld ziehen** – der Wert wird als Suchbegriff übernommen; weitere Merkmale grenzen mit UND ein |
 | Filtern | Status-Pills, Personen, Tätigkeit, **Zeitraum** (Jahr, von/bis) im Knopf *Ansicht & Filter* |
 | **Abhaken** | Kästchen ganz links – Datum (per Kalender), Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
@@ -181,7 +183,10 @@ Standard-Symbole. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/o
 per **von-/bis-Datum** ein. Vorgabe ist dabei stets das **aktuelle Jahr**; eine
 manuelle Wahl (auch „alle Jahre“) bleibt je Tab erhalten. Die **Volltextsuche**
 sucht in der **aktuellen Ansicht**; nur im Tab **Zuhause** (der keine Liste hat)
-springt sie automatisch nach **Alle**.
+springt sie automatisch nach **Alle**. Merkmale aus der Liste (Standortnummer,
+Standortname, Tätigkeit, zuständige Person) lassen sich **direkt in das
+Suchfeld ziehen** und werden dort als Suchbegriff übernommen – mehrere
+gedroppte Merkmale grenzen das Ergebnis mit UND ein.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als
@@ -223,8 +228,9 @@ Tabellen die Zeile halten kann.
 **Startbereich ist „Alle"** – Wartungen und eigene To-Dos gemeinsam; über die
 Bereichsknöpfe lässt sich auf *Wartungen* oder *Eigene To-Dos* einschränken.
 
-**Tastenkürzel:** `/` Suche · `↑ ↓` Zeilen · `Enter` Details · `E` abhaken ·
-`N` Kommentar · `M` Ansicht · `P` drucken · `Esc` Filter zurück.
+**Tastenkürzel:** `/` Suche · `→`/`Tab` Suchvorschlag übernehmen · `↑ ↓` Zeilen ·
+`Enter` Details · `E` abhaken · `N` Kommentar · `M` Ansicht · `P` drucken ·
+`Esc` Filter zurück.
 
 ### Zentrale Konfiguration (Administration, ohne Oberfläche)
 ```
@@ -263,7 +269,7 @@ wird zurückgerollt statt fälschlich als gespeichert angezeigt.
 ## 6. Tests
 
 ```
-node tests/checks.mjs    # 126 Prüfungen der Frontend-Logik (ohne Browser)
+node tests/checks.mjs    # 207 Prüfungen der Frontend-Logik (ohne Browser)
 node tests/api.mjs       #  26 Prüfungen gegen die API (Server muss laufen)
 ```
 

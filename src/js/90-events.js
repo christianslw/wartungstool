@@ -61,6 +61,94 @@ function sucheInAlle(v) {
 $('#search').addEventListener('input', debounce(e => sucheInAlle(e.target.value), 110));
 $('#searchClear').addEventListener('click', () => { $('#search').value = ''; state.query = ''; render(); $('#search').focus(); });
 
+/* --- Inline-Vorschläge: sofort anzeigen, mit Pfeil-rechts/Tab übernehmen --- */
+/** Vorgeschlagenen Suchtext übernehmen und die Suche sofort ausführen. */
+function akzeptiereVorschlag(text) {
+  const input = $('#search');
+  input.value = text;
+  sucheInAlle(text);
+  input.focus();
+  try { input.setSelectionRange(text.length, text.length); } catch (e) {}
+  renderSuggest();
+}
+$('#search').addEventListener('input', () => renderSuggest());
+$('#search').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'Tab') return;
+  const input = e.target, v = suchVorschlag(input.value);
+  if (!v) return;
+  // Nur am Textende bestätigen – sonst normal Cursor bewegen/Tab weitergeben.
+  if (input.selectionStart !== null && input.selectionStart !== input.value.length) return;
+  e.preventDefault();
+  akzeptiereVorschlag(v.text);
+});
+['keyup', 'click', 'focus', 'blur'].forEach(ev =>
+  $('#search').addEventListener(ev, () => renderSuggest()));
+
+/* --- Merkmale aus der Liste in die Volltextsuche ziehen ------------------- */
+/* Die ziehbaren Merkmale werden in 50-render.js mit dragAttr() ausgezeichnet
+   (Standortnummer, Standortname, Tätigkeit, Zuständige Person). Der eigene
+   dataTransfer-Typ trennt sie vom Verschieben der Tabs. */
+const DRAG_TYPE = 'application/x-wt-merkmal';
+let dragWert = '';
+function dropMark(on) {
+  const box = $('#searchBox');
+  if (box && box.classList) box.classList.toggle('drop-active', !!on);
+}
+function attrDragMark(on) {
+  const b = document.body;
+  if (b && b.classList) b.classList.toggle('dragging-attr', !!on);
+}
+
+/** Gedropptes Merkmal als Suchbegriff übernehmen (Suche leer: setzen, sonst
+    ergänzen – die Volltextsuche verknüpft mehrere Begriffe mit UND). */
+function suchePerDrag(v) {
+  const wert = String(v || '').trim();
+  if (!wert) return;
+  const current = String(state.query || $('#search').value || '').trim();
+  const next = !current ? wert
+    : (norm(current).indexOf(norm(wert)) >= 0 ? current : current + ' ' + wert);
+  sucheInAlle(next);
+  $('#search').value = next;
+  $('#search').focus();
+}
+
+$('#tableHost').addEventListener('dragstart', e => {
+  const el = e.target.closest && e.target.closest('[data-drag]');
+  if (!el) return;
+  dragWert = el.dataset.drag || '';
+  if (!dragWert) return;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'copy';
+    try { e.dataTransfer.setData(DRAG_TYPE, dragWert); e.dataTransfer.setData('text/plain', dragWert); } catch (err) {}
+  }
+  if (el.classList) el.classList.add('drag-src');
+  attrDragMark(true);
+});
+$('#tableHost').addEventListener('dragend', e => {
+  const el = e.target.closest && e.target.closest('[data-drag]');
+  if (el && el.classList) el.classList.remove('drag-src');
+  dragWert = '';
+  attrDragMark(false);
+  dropMark(false);
+});
+
+$('#searchBox').addEventListener('dragover', e => {
+  const typen = (e.dataTransfer && e.dataTransfer.types) ? Array.from(e.dataTransfer.types) : [];
+  if (!dragWert && typen.indexOf(DRAG_TYPE) < 0) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  dropMark(true);
+});
+$('#searchBox').addEventListener('dragleave', e => { if (e.target === e.currentTarget) dropMark(false); });
+$('#searchBox').addEventListener('drop', e => {
+  e.preventDefault();
+  dropMark(false);
+  attrDragMark(false);
+  const v = (e.dataTransfer && e.dataTransfer.getData(DRAG_TYPE)) || dragWert;
+  dragWert = '';
+  suchePerDrag(v);
+});
+
 /* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
 let tabMenuEl = null;
 function closeTabMenu() {

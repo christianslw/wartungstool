@@ -631,6 +631,71 @@ ctx.sucheInAlle('VDE');
 ok('Suche aus Zuhause springt in den Tab "Alle"', ctx.WT.tabs.all().active === 'all' && state.bereich === 'alle' && state.query === 'VDE');
 state.query = ''; ctx.render();
 
+group('Merkmale in die Suche ziehen');
+ok('Suchfeld als Ablege-Ziel ausgezeichnet', /class="hdr-search" id="searchBox"/.test(APP));
+ok('Ziehbares Merkmal auszeichnen', (() => {
+  const d = ctx.dragAttr('4711', 'Standortnummer');
+  return d.indexOf('draggable="true"') >= 0 && d.indexOf('data-drag="4711"') >= 0 && d.indexOf('Standortnummer') >= 0;
+})());
+ok('Ohne Wert kein ziehbares Merkmal',
+   ctx.dragAttr('  ') === '' && ctx.dragAttr(null) === '' && ctx.dragAttr(undefined) === '');
+ctx.applyTab('all'); state.query = '';
+ctx.setGroup('object'); ctx.setAllExpanded(true);
+const ziehZeilen = host();
+const ziehKopf = ctx.viewGroupedList(ctx.aktuelleListe());
+const erstesItem = state.items.find(i => !i.erledigt) || state.items[0];
+ok('Standortnummer im Standortkopf ist ziehbar',
+   ziehKopf.indexOf('data-drag="' + erstesItem.objekt_nr + '"') >= 0, erstesItem.objekt_nr);
+ok('Arbeitszeile bietet Merkmale zum Ziehen (Nr., Tätigkeit, Standort, Person)',
+   (ziehZeilen.match(/data-drag="/g) || []).length >= 3 &&
+   (ziehZeilen.match(/draggable="true"/g) || []).length >= 3);
+ctx.setAllExpanded(false);
+const nr = state.items[0].objekt_nr;
+ctx.suchePerDrag(nr);
+ok('Gedroppte Standortnummer füllt die Suche', state.query === nr && ctx.WT.tabs.all().active === 'all', state.query);
+const vorher = state.query;
+ctx.suchePerDrag(nr);
+ok('Dasselbe Merkmal wird nicht doppelt', state.query === vorher);
+ctx.suchePerDrag(state.items[0].taetigkeit);
+ok('Weiteres Merkmal grenzt ein (UND-Suche)', state.query.indexOf(nr) === 0 && state.query.length > nr.length);
+ctx.addHomeTab();
+state.query = '';
+ctx.suchePerDrag('4711');
+ok('Drop aus Zuhause springt in den Tab "Alle"', ctx.WT.tabs.all().active === 'all' && state.query === '4711');
+ok('Ablegen setzt den Fokus ins Suchfeld', /searchBox/.test(src) && /drop-active/.test(css));
+state.query = ''; ctx.render();
+
+group('Inline-Vorschläge in der Suche');
+ok('Geistertext-Element im Suchfeld', /id="searchGhost"/.test(APP) && /\.search-ghost\{/.test(css));
+ok('Bestätigen mit Pfeil-rechts oder Tab',
+   /e\.key !== 'ArrowRight' && e\.key !== 'Tab'/.test(src) && /akzeptiereVorschlag/.test(src));
+ok('Vorschlag wird beim Rendern der Suche aktualisiert', /renderSuggest\(\)/.test(src));
+ok('Vorschlag nach Leerzeichen entfällt', ctx.suchVorschlag('Bad ') === null);
+ok('Ohne Eingabe kein Vorschlag', ctx.suchVorschlag('') === null && ctx.suchVorschlag('___gibt_es_nicht___') === null);
+ok('Standortnummer wird inline vervollständigt', (() => {
+  const nrs = uniq(state.items.map(i => i.objekt_nr).filter(Boolean));
+  const nr = nrs.find(n => n.length >= 3 && nrs.filter(x => x.slice(0, n.length - 1) === n.slice(0, n.length - 1)).length === 1);
+  if (!nr) return false;
+  const v = ctx.suchVorschlag(nr.slice(0, nr.length - 1));
+  return !!v && v.text === nr && v.rest === nr.slice(nr.length - 1);
+})(), (() => {
+  const nrs = uniq(state.items.map(i => i.objekt_nr).filter(Boolean));
+  const nr = nrs.find(n => n.length >= 3 && nrs.filter(x => x.slice(0, n.length - 1) === n.slice(0, n.length - 1)).length === 1);
+  return nr ? nr : 'keine eindeutige Nummer';
+})());
+ok('Tätigkeit wird ergänzt (Vorschlag beginnt mit dem Präfix)', (() => {
+  const item = state.items.find(i => (i.taetigkeit || '').length > 6);
+  if (!item) return false;
+  const praefix = item.taetigkeit.slice(0, 5);
+  const v = ctx.suchVorschlag(praefix);
+  return !!v && v.text.length > praefix.length && v.rest === v.text.slice(praefix.length);
+})(), (() => {
+  const item = state.items.find(i => (i.taetigkeit || '').length > 6);
+  const v = item ? ctx.suchVorschlag(item.taetigkeit.slice(0, 5)) : null;
+  return v ? v.text : 'kein Vorschlag';
+})());
+ctx.applyTab('all'); state.query = ''; ctx.render();
+
 group('Gruppen-Farblogik (Bugfix)');
 ctx.setGroup('object');
 ok('Gelb nur für tatsächlich bald fällige Gruppen', (() => {

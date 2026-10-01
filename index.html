@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- ==========================================================================
      GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
-     Quelle: src/   Bauen: node build.mjs   (Build e5f57207)
+     Quelle: src/   Bauen: node build.mjs   (Build 335c7005)
      ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
@@ -204,6 +204,28 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .hdr-search .clr:hover{color:var(--text-primary)}
 .hdr-search input:placeholder-shown + .clr{display:none}
 
+/* Merkmal aus der Liste hierher ziehen: Suchfeld als Ablege-Ziel markieren. */
+.hdr-search.drop-active{
+  border-color:var(--interactive);box-shadow:var(--ring);background:var(--layer-02);
+}
+.hdr-search .drop-hint{
+  display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-size:11px;font-weight:600;color:#ffffff;background:var(--interactive);
+  padding:2px 8px;border-radius:2px;white-space:nowrap;pointer-events:none;
+}
+.hdr-search.drop-active .drop-hint{display:inline-block}
+
+/* Inline-Vorschlag als Geistertext: getippter Teil unsichtbar (deckungsgleich
+   über der Eingabe), angehängter Teil dezent – bestätigt mit → oder Tab. */
+.search-ghost{
+  position:absolute;top:0;height:100%;display:none;align-items:center;
+  box-sizing:border-box;padding-right:30px;
+  font-size:13px;line-height:1;white-space:pre;overflow:hidden;pointer-events:none;
+}
+.search-ghost.on{display:flex}
+.search-ghost .sg-type{visibility:hidden}
+.search-ghost .sg-hint{color:var(--text-placeholder)}
+
 .hdr-spacer{flex:1 1 auto}
 
 .hdr-user{
@@ -386,6 +408,16 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
    ========================================================================== */
 .locs{padding-bottom:120px}
 .loc{border-bottom:1px solid var(--border-subtle)}
+
+/* Ziehbare Merkmale (Standortnummer, Standort, Tätigkeit, Person): lassen sich
+   in die Volltextsuche oben ziehen. */
+[data-drag]{cursor:grab}
+[data-drag]:active{cursor:grabbing}
+[data-drag]:hover{color:var(--interactive);text-decoration:underline;text-underline-offset:2px}
+[data-drag].drag-src{opacity:.45}
+body.dragging-attr [data-drag]{
+  outline:1px dashed var(--interactive-light);outline-offset:2px;border-radius:2px;
+}
 
 .loc-head{
   display:grid;
@@ -758,11 +790,13 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
     <span class="hdr-sub">Technik Außeneinsatz</span>
   </div>
 
-  <div class="hdr-search">
+  <div class="hdr-search" id="searchBox">
     <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M13 4a9 9 0 1 0 5.66 16l6.17 6.17 1.41-1.41L20 18.59A9 9 0 0 0 13 4m0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14"/></svg>
-    <input id="search" type="text" autocomplete="off" spellcheck="false" placeholder="Suchen: Objekt, Nummer, Tätigkeit, Person..." aria-label="Suche">
+    <div class="search-ghost" id="searchGhost" aria-hidden="true"></div>
+    <input id="search" type="text" autocomplete="off" spellcheck="false" placeholder="Suchen oder Merkmal hierher ziehen …" aria-label="Suche" aria-autocomplete="inline">
     <button class="clr" id="searchClear" aria-label="Suche leeren"><svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4 14.6 16 8 22.6 9.4 24 16 17.4 22.6 24 24 22.6 17.4 16z"/></svg></button>
     <kbd class="searchkey" id="searchHint">/</kbd>
+    <span class="drop-hint" aria-hidden="true">Hier ablegen</span>
   </div>
 
   <div class="hdr-spacer"></div>
@@ -1632,6 +1666,54 @@ function groupPreview(g) {
   const tasks = uniq(src.map(i => i.taetigkeit).filter(Boolean));
   return tasks.length ? tasks.slice(0, 2).join(' · ') + (tasks.length > 2 ? ' +' + (tasks.length - 2) : '') : 'Alle erledigt';
 }
+
+/* ==========================================================================
+   Volltextsuche: Inline-Vorschläge
+   --------------------------------------------------------------------------
+   Vervollständigt das zuletzt getippte Wort aus den Merkmalen der aktuellen
+   Liste (Standortnummer, Standortname, Tätigkeit, Zuständige Person). Der
+   Vorschlag wird als Geistertext hinter dem Suchfeld angezeigt und mit
+   Pfeil-nach-rechts oder Tab übernommen.
+   ========================================================================== */
+
+/** Bekannte Suchbegriffe der aktuellen Ansicht; die Häufigkeit bestimmt die
+    Reihenfolge der Vorschläge. */
+function suchKatalog() {
+  const zaehler = new Map();
+  const add = (v) => {
+    const t = String(v ?? '').trim();
+    const n = norm(t);
+    if (!n) return;
+    const cur = zaehler.get(n);
+    if (cur) cur.anzahl++;
+    else zaehler.set(n, { t, n, anzahl: 1 });
+  };
+  for (const it of bereichListe(state.bereich)) {
+    add(it.objekt_nr); add(it.objekt_name); add(it.taetigkeit); add(it.zustaendig);
+  }
+  return zaehler;
+}
+
+/** Inline-Vorschlag zum zuletzt getippten Wort – { text, rest } oder null.
+    `text` ist der vollständige Suchtext nach dem Übernehmen, `rest` nur der
+    angehängte Teil (für die Anzeige als Geistertext). */
+function suchVorschlag(value = state.query) {
+  const q = String(value ?? '');
+  const m = /(\S+)$/.exec(q);
+  if (!m) return null;
+  const wort = m[1], praefix = norm(wort);
+  if (!praefix) return null;
+  const kopf = q.slice(0, q.length - wort.length);
+  let best = null;
+  for (const e of suchKatalog().values()) {
+    if (e.n === praefix || e.n.indexOf(praefix) !== 0) continue;
+    if (!best || e.anzahl > best.anzahl || (e.anzahl === best.anzahl && e.t.length < best.t.length)) best = e;
+  }
+  if (!best) return null;
+  const text = kopf + best.t;
+  if (text === q) return null;
+  return { text, rest: text.slice(q.length), wort: best.t };
+}
 //# sourceURL=src/js/42-selectors.js
 </script>
 
@@ -2307,6 +2389,27 @@ function renderToolbar() {
   } else {
     act.innerHTML = '';
   }
+  renderSuggest();
+}
+
+/** Inline-Vorschlag der Volltextsuche als Geistertext hinter dem Suchfeld
+    anzeigen (übernommen mit Pfeil-nach-rechts oder Tab). */
+function renderSuggest() {
+  const input = $('#search'), ghost = $('#searchGhost');
+  if (!input || !ghost) return;
+  const hide = () => { if (ghost.classList) ghost.classList.remove('on'); ghost.innerHTML = ''; };
+  if (document.activeElement !== input) { hide(); return; }
+  const amEnde = input.selectionStart === null || input.selectionStart === input.value.length;
+  // Bei waagerecht verschobenem Text ließe sich der Geistertext nicht deckungsgleich
+  // anzeigen – dann lieber ausblenden.
+  const verschoben = input.scrollWidth && input.clientWidth && input.scrollWidth > input.clientWidth + 1;
+  const v = (amEnde && !verschoben) ? suchVorschlag(input.value || '') : null;
+  if (!v) { hide(); return; }
+  ghost.innerHTML = '<span class="sg-type">' + esc(input.value) + '</span>' +
+    '<span class="sg-hint">' + esc(v.rest) + '</span>';
+  ghost.style.left = (input.offsetLeft || 0) + 'px';
+  ghost.style.width = (input.offsetWidth || 0) + 'px';
+  if (ghost.classList) ghost.classList.add('on');
 }
 
 function renderBody() {
@@ -2329,6 +2432,14 @@ function renderBody() {
   host.innerHTML = viewGroupedList(list);
 }
 
+/** Merkmal als ziehbares Element auszeichnen (Ziel: Volltextsuche oben). */
+function dragAttr(value, label) {
+  const v = String(value ?? '').trim();
+  if (!v) return '';
+  const t = (label ? label + ': ' : '') + v + ' – in die Suche ziehen';
+  return ' draggable="true" data-drag="' + esc(v) + '" title="' + esc(t) + '"';
+}
+
 function tickControl(it) {
   const done = !!it.erledigt;
   return '<button class="tick' + (done ? ' on' : '') + '" data-tick="' + esc(keyOf(it)) + '" title="' + (done ? 'Erledigung zurücknehmen' : 'Als erledigt protokollieren') + '">' +
@@ -2336,7 +2447,7 @@ function tickControl(it) {
 }
 
 function erledigtInfo(it) {
-  if (!it.erledigt) return '<span class="loc-user">' + esc(it.zustaendig || '–') + '</span>';
+  if (!it.erledigt) return '<span class="loc-user"' + dragAttr(it.zustaendig, 'Zuständig') + '>' + esc(it.zustaendig || '–') + '</span>';
   const note = String(it.erledigt_notiz || '').trim();
   return '<div class="ecell"><span class="ecell-sub">' + esc(it.erledigt_am || '') + ' · ' + esc(it.erledigt_durch || 'Erledigt') + '</span>' +
     (note ? '<span class="ecell-note" title="' + esc(note) + '">' + esc(note) + '</span>' : '<button class="btn-note" data-note="' + esc(keyOf(it)) + '">' + svg(ICON.notes, 11) + ' Notiz</button>') +
@@ -2366,7 +2477,7 @@ function viewGroupedList(list) {
 
     const rows = sortItems(g.items).map(it => workRow(it, state.group === 'task')).join('');
     const nrCell = state.group === 'object'
-      ? '<span class="loc-nr">' + esc(g.nr || '–') + '</span>'
+      ? '<span class="loc-nr"' + dragAttr(g.nr, 'Standortnummer') + '>' + esc(g.nr || '–') + '</span>'
       : '<span class="loc-nr"><span class="tag gray mini">' + (state.group === 'task' ? 'Tätigkeit' : 'Gruppe') + '</span></span>';
 
     return '<section class="' + cls + '">' +
@@ -2374,7 +2485,7 @@ function viewGroupedList(list) {
         '<span class="loc-caret">' + svg(ICON.chevR, 14) + '</span>' +
         nrCell +
         '<div class="loc-title-col">' +
-          '<span class="loc-name">' + esc(g.label) + '</span>' +
+          '<span class="loc-name"' + ((state.group === 'object' || state.group === 'task') ? dragAttr(g.label, state.group === 'task' ? 'Tätigkeit' : 'Standort') : '') + '>' + esc(g.label) + '</span>' +
           (st.over ? '<span class="urgency-badge late">' + st.over + ' überfällig</span>' : '') +
           (st.open === 0 ? '<span class="urgency-badge done">Erledigt</span>' : '') +
         '</div>' +
@@ -2471,8 +2582,8 @@ function workRow(it, showObject) {
   const k = esc(keyOf(it));
   return '<div class="loc-row' + (it.erledigt ? ' done' : '') + (istToDo(it) ? ' ist-todo' : '') + '" data-id="' + k + '">' +
     tickControl(it) +
-    '<span class="loc-nr" style="opacity:.6">' + esc(it.objekt_nr || '') + '</span>' +
-    '<div class="loc-task"><span class="c-main" title="' + esc(it.taetigkeit) + '">' + esc(it.taetigkeit || '–') + '</span>' + (showObject ? '<span class="c-sub">' + esc(it.objekt_name) + '</span>' : '') + '</div>' +
+    '<span class="loc-nr" style="opacity:.6"' + dragAttr(it.objekt_nr, 'Standortnummer') + '>' + esc(it.objekt_nr || '') + '</span>' +
+    '<div class="loc-task"><span class="c-main"' + dragAttr(it.taetigkeit, 'Tätigkeit') + '>' + esc(it.taetigkeit || '–') + '</span>' + (showObject ? '<span class="c-sub"' + dragAttr(it.objekt_name, 'Standort') + '>' + esc(it.objekt_name) + '</span>' : '') + '</div>' +
     '<span class="loc-note" title="' + esc(it.kommentar) + '">' + esc(it.kommentar || '–') + '</span>' +
     dueCell(it) +
     erledigtInfo(it) +
@@ -2488,8 +2599,8 @@ function viewTable(list) {
     const k = esc(keyOf(it));
     return '<tr data-id="' + k + '" class="' + (it.erledigt ? 'done' : '') + '">' +
       '<td style="width:36px">' + tickControl(it) + '</td>' +
-      '<td><span class="c-main">' + esc(it.objekt_name || '–') + '</span><span class="c-sub">' + esc(it.objekt_nr || '') + '</span></td>' +
-      '<td><span class="c-main">' + esc(it.taetigkeit || '–') + '</span></td>' +
+      '<td><span class="c-main"' + dragAttr(it.objekt_name, 'Standort') + '>' + esc(it.objekt_name || '–') + '</span><span class="c-sub"' + dragAttr(it.objekt_nr, 'Standortnummer') + '>' + esc(it.objekt_nr || '') + '</span></td>' +
+      '<td><span class="c-main"' + dragAttr(it.taetigkeit, 'Tätigkeit') + '>' + esc(it.taetigkeit || '–') + '</span></td>' +
       '<td>' + dueCell(it) + '</td>' +
       '<td>' + erledigtInfo(it) + '</td>' +
       '<td style="text-align:right"><button class="td-act" data-term="' + k + '">' + svg(ICON.calendar, 14) + '</button></td>' +
@@ -3192,7 +3303,7 @@ function exportJsonView() {
 }
 
 function shortcutsDialog() {
-  const rows = [['/', 'Suche fokussieren'], ['↑ ↓', 'Zeilen durchlaufen'], ['Enter', 'Details öffnen'],
+  const rows = [['/', 'Suche fokussieren'], ['→ / Tab', 'Suchvorschlag übernehmen'], ['↑ ↓', 'Zeilen durchlaufen'], ['Enter', 'Details öffnen'],
     ['E', 'Position abhaken'], ['M', 'Ansicht wechseln'], ['P', 'Drucken'], ['Esc', 'Schließen']];
   modal({
     title: 'Tastenkürzel',
@@ -3269,6 +3380,94 @@ function sucheInAlle(v) {
 }
 $('#search').addEventListener('input', debounce(e => sucheInAlle(e.target.value), 110));
 $('#searchClear').addEventListener('click', () => { $('#search').value = ''; state.query = ''; render(); $('#search').focus(); });
+
+/* --- Inline-Vorschläge: sofort anzeigen, mit Pfeil-rechts/Tab übernehmen --- */
+/** Vorgeschlagenen Suchtext übernehmen und die Suche sofort ausführen. */
+function akzeptiereVorschlag(text) {
+  const input = $('#search');
+  input.value = text;
+  sucheInAlle(text);
+  input.focus();
+  try { input.setSelectionRange(text.length, text.length); } catch (e) {}
+  renderSuggest();
+}
+$('#search').addEventListener('input', () => renderSuggest());
+$('#search').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'Tab') return;
+  const input = e.target, v = suchVorschlag(input.value);
+  if (!v) return;
+  // Nur am Textende bestätigen – sonst normal Cursor bewegen/Tab weitergeben.
+  if (input.selectionStart !== null && input.selectionStart !== input.value.length) return;
+  e.preventDefault();
+  akzeptiereVorschlag(v.text);
+});
+['keyup', 'click', 'focus', 'blur'].forEach(ev =>
+  $('#search').addEventListener(ev, () => renderSuggest()));
+
+/* --- Merkmale aus der Liste in die Volltextsuche ziehen ------------------- */
+/* Die ziehbaren Merkmale werden in 50-render.js mit dragAttr() ausgezeichnet
+   (Standortnummer, Standortname, Tätigkeit, Zuständige Person). Der eigene
+   dataTransfer-Typ trennt sie vom Verschieben der Tabs. */
+const DRAG_TYPE = 'application/x-wt-merkmal';
+let dragWert = '';
+function dropMark(on) {
+  const box = $('#searchBox');
+  if (box && box.classList) box.classList.toggle('drop-active', !!on);
+}
+function attrDragMark(on) {
+  const b = document.body;
+  if (b && b.classList) b.classList.toggle('dragging-attr', !!on);
+}
+
+/** Gedropptes Merkmal als Suchbegriff übernehmen (Suche leer: setzen, sonst
+    ergänzen – die Volltextsuche verknüpft mehrere Begriffe mit UND). */
+function suchePerDrag(v) {
+  const wert = String(v || '').trim();
+  if (!wert) return;
+  const current = String(state.query || $('#search').value || '').trim();
+  const next = !current ? wert
+    : (norm(current).indexOf(norm(wert)) >= 0 ? current : current + ' ' + wert);
+  sucheInAlle(next);
+  $('#search').value = next;
+  $('#search').focus();
+}
+
+$('#tableHost').addEventListener('dragstart', e => {
+  const el = e.target.closest && e.target.closest('[data-drag]');
+  if (!el) return;
+  dragWert = el.dataset.drag || '';
+  if (!dragWert) return;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'copy';
+    try { e.dataTransfer.setData(DRAG_TYPE, dragWert); e.dataTransfer.setData('text/plain', dragWert); } catch (err) {}
+  }
+  if (el.classList) el.classList.add('drag-src');
+  attrDragMark(true);
+});
+$('#tableHost').addEventListener('dragend', e => {
+  const el = e.target.closest && e.target.closest('[data-drag]');
+  if (el && el.classList) el.classList.remove('drag-src');
+  dragWert = '';
+  attrDragMark(false);
+  dropMark(false);
+});
+
+$('#searchBox').addEventListener('dragover', e => {
+  const typen = (e.dataTransfer && e.dataTransfer.types) ? Array.from(e.dataTransfer.types) : [];
+  if (!dragWert && typen.indexOf(DRAG_TYPE) < 0) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  dropMark(true);
+});
+$('#searchBox').addEventListener('dragleave', e => { if (e.target === e.currentTarget) dropMark(false); });
+$('#searchBox').addEventListener('drop', e => {
+  e.preventDefault();
+  dropMark(false);
+  attrDragMark(false);
+  const v = (e.dataTransfer && e.dataTransfer.getData(DRAG_TYPE)) || dragWert;
+  dragWert = '';
+  suchePerDrag(v);
+});
 
 /* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
 let tabMenuEl = null;
@@ -3629,7 +3828,7 @@ window.WT = {
 
   /* Fachliche Auswertung (src/js/20-util.js, 42-selectors.js) */
   model: { statusOf, dueInfo, matchesQuery, keyOf },
-  select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt },
+  select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt, suchVorschlag },
 
   /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
   view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline },
