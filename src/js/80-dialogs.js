@@ -109,7 +109,7 @@ function completionDialog(it) {
       '<p class="t-body" style="margin-bottom:4px">' + esc(it.objekt_name || '') + '</p>' +
       '<p class="t-helper" style="margin-bottom:12px">' + esc(it.taetigkeit || '') + '</p>' +
       '<div class="fld"><label for="mDate">Erledigt am</label>' +
-        '<input class="inp" id="mDate" value="' + esc(fmtDate(new Date())) + '"></div>' +
+        '<input class="inp" id="mDate" type="date" value="' + fmtIso(new Date()) + '"></div>' +
       '<div class="fld"><label for="mBy">Erledigt durch</label>' +
         '<div class="combo-host" id="mBy" data-value="' + esc(state.user) + '"></div></div>' +
       '<div class="fld"><label for="mNote">Abschlusskommentar</label>' +
@@ -117,7 +117,7 @@ function completionDialog(it) {
     primary: 'Abschluss speichern',
     collect: (s) => ({
       erledigt: true,
-      erledigt_am: s.querySelector('#mDate').value.trim() || fmtDate(new Date()),
+      erledigt_am: isoToDe(s.querySelector('#mDate').value) || fmtDate(new Date()),
       erledigt_durch: s.querySelector('#mBy').dataset.value.trim() || state.user,
       erledigt_notiz: s.querySelector('#mNote').value.trim()
     }),
@@ -238,8 +238,13 @@ function exportCsv() {
   const csv = [cols.join(';')].concat(list.map(i => cols.map(c => q(i[c])).join(';'))).join('\r\n');
   download('wartungen_' + isoStamp() + '.csv', '\uFEFF' + csv, 'text/csv');
 }
+/** Vollstaendige JSON-Sicherung: immer der gesamte Bestand, unabhaengig von Filtern. */
 function exportJson() {
-  download('wartungen_' + isoStamp() + '.json', JSON.stringify(filtered(state.items), null, 2));
+  download('wartungen_' + isoStamp() + '.json', JSON.stringify(state.items, null, 2));
+}
+/** Optionale JSON-Datei der aktuellen (gefilterten) Ansicht. */
+function exportJsonView() {
+  download('wartungen_ansicht_' + isoStamp() + '.json', JSON.stringify(filtered(state.items), null, 2));
 }
 
 function shortcutsDialog() {

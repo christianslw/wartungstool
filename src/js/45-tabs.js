@@ -18,7 +18,7 @@ const MAX_RECENT_TABS = 5;
 /* Felder, die ein Tab als Einstellungen speichert. */
 const TAB_SETTING_KEYS = [
   'bereich', 'status', 'query', 'art', 'objekt', 'taetigkeit', 'personen', 'mine',
-  'zeitraumJahr', 'von', 'bis', 'group', 'view', 'sortKey', 'sortDir'
+  'zeitraumJahr', 'zeitraumJahrManual', 'von', 'bis', 'group', 'view', 'sortKey', 'sortDir'
 ];
 
 const HOME_TAB = { id: 'home', name: 'Zuhause', home: true, icon: 'home' };
@@ -30,7 +30,7 @@ const STANDARD_TABS = [
 
 const TAB_DEFAULTS = {
   status: 'alle', query: '', art: '', objekt: '', taetigkeit: '', personen: [], mine: false,
-  zeitraumJahr: '', von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
+  zeitraumJahr: aktuellesJahr(), zeitraumJahrManual: false, von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
 };
 
 const tabSettings = (bereich, extra) =>
@@ -131,6 +131,8 @@ function applyTabState(t) {
   if (!t) return;
   const s = Object.assign({}, TAB_DEFAULTS, t.settings);
   for (const k of TAB_SETTING_KEYS) state[k] = Array.isArray(s[k]) ? s[k].slice() : s[k];
+  // Jahresfilter-Vorgabe: ohne manuelle Wahl stets das aktuelle Kalenderjahr.
+  if (!state.zeitraumJahrManual) state.zeitraumJahr = aktuellesJahr();
   state.expanded = new Set();
   state.collapsed = new Set();
   TABS.active = t.id;
@@ -319,7 +321,10 @@ function orderedTabs() {
 /** Anzahl Positionen in einem Tab (Home zeigt die offenen Wartungen). */
 function tabCount(t) {
   if (t.home) { const f = fortschritt(); return f.total - f.done; }
-  return filtered(bereichListe(t.settings.bereich), t.settings).length;
+  const s = Object.assign({}, t.settings);
+  // Wie beim Anwenden: ohne manuelle Wahl gilt das aktuelle Kalenderjahr.
+  if (!s.zeitraumJahrManual) s.zeitraumJahr = aktuellesJahr();
+  return filtered(bereichListe(s.bereich), s).length;
 }
 
 /** Verfuegbare Jahre fuer den Zeitraumfilter (aus den Fristen). */

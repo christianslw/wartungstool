@@ -85,7 +85,7 @@ function renderToolbar() {
 
   // Zusammenfassen: ein Knopf, darunter die Leiste mit allen Optionen.
   const anyFilter = !!(state.query || state.taetigkeit || state.personen.length || state.mine ||
-    state.status !== 'alle' || state.zeitraumJahr || state.von || state.bis);
+    state.status !== 'alle' || state.zeitraumJahrManual || state.von || state.bis);
   $('#viewActiveDot').hidden = !anyFilter;
   $('#btnViewPanel').classList.toggle('has-active', anyFilter);
   $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
@@ -98,8 +98,13 @@ function renderToolbar() {
   };
   fill('#fltTask', uniq(bereichListe(state.bereich).map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
 
+  const jahre = tabYears();
+  for (const y of [aktuellesJahr(), state.zeitraumJahr]) {
+    if (y && !jahre.some(x => String(x) === String(y))) jahre.push(Number(y));
+  }
+  jahre.sort((a, b) => a - b);
   const jsel = $('#fltJahr');
-  jsel.innerHTML = '<option value="">alle Jahre</option>' + tabYears().map(y =>
+  jsel.innerHTML = '<option value="">alle Jahre</option>' + jahre.map(y =>
     '<option value="' + y + '"' + (String(y) === String(state.zeitraumJahr) ? ' selected' : '') + '>' + y + '</option>').join('');
   const von = $('#fltVon'), bis = $('#fltBis');
   if (document.activeElement !== von) von.value = state.von || '';
@@ -131,7 +136,7 @@ function renderToolbar() {
   }
 
   const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine ||
-    state.personen.length || state.zeitraumJahr || state.von || state.bis;
+    state.personen.length || state.zeitraumJahrManual || state.von || state.bis;
   $('#btnReset').hidden = !any;
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
 

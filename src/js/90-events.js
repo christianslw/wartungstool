@@ -313,7 +313,7 @@ $('#btnViewPanel').addEventListener('click', () => {
 
 $('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
-  if (e.target.id === 'fltJahr') state.zeitraumJahr = e.target.value;
+  if (e.target.id === 'fltJahr') { state.zeitraumJahr = e.target.value; state.zeitraumJahrManual = true; }
   render();
 });
 $('#viewPanel').addEventListener('input', e => {
@@ -322,7 +322,8 @@ $('#viewPanel').addEventListener('input', e => {
 });
 $('#btnReset').addEventListener('click', () => {
   state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
-  state.personen = []; state.zeitraumJahr = ''; state.von = ''; state.bis = '';
+  state.personen = []; state.zeitraumJahr = aktuellesJahr(); state.zeitraumJahrManual = false;
+  state.von = ''; state.bis = '';
   $('#search').value = '';
   render();
 });
@@ -361,6 +362,7 @@ menu.addEventListener('click', e => {
   const a = b.dataset.act;
   if (a === 'csv') exportCsv();
   if (a === 'json') exportJson();
+  if (a === 'jsonview') exportJsonView();
   if (a === 'keyboard') shortcutsDialog();
   if (a === 'settings') settingsDialog();
 });

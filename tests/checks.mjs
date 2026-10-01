@@ -194,6 +194,8 @@ ctx.modal = async (o) => {
 await ctx.markDone(item.id);
 ok('Fragt beim Abschluss nach einem Kommentar', /Abschlusskommentar/.test(dialogBody));
 ok('Abschlussdialog hat Kommentarfeld', /id="mNote"/.test(dialogBody) && /Abschlusskommentar/.test(dialogBody));
+ok('Abschlussdialog: Datum per Kalender-Auswahlfeld',
+   /id="mDate" type="date"/.test(dialogBody) && /erledigt_am:\s*isoToDe\(s\.querySelector\('#mDate'\)\.value\)/.test(src));
 ok('Kommentar ist optional', /erledigt_notiz:\s*s\.querySelector\('#mNote'\)\.value\.trim\(\)/.test(src));
 ok('Personenfeld als durchsuchbare Combobox', /combo-host/.test(dialogBody));
 ok('erledigt gesetzt', state.items.find(i => i.id === item.id).erledigt === true);
@@ -381,12 +383,27 @@ ok('Status überfällig', ctx.statusOf({ erledigt: false, bis: '01.01.2020' }) =
 ok('Status bald fällig', ctx.statusOf({ erledigt: false, bis: heute }) === 'soon');
 let cap = '';
 sandbox.Blob = class { constructor(p) { cap = p.join(''); } };
+state.zeitraumJahr = ''; state.zeitraumJahrManual = true; // Export prüft den Gesamtbestand
 ctx.exportCsv();
 const lines = cap.replace(/^\uFEFF/, '').split('\r\n');
 ok('CSV mit Kopfzeile und allen Zeilen', lines.length === state.items.length + 1, lines.length);
 ok('CSV enthält Erledigungs-Spalten', lines[0].endsWith(';erledigt_am'));
 ctx.exportJson();
-ok('JSON-Export enthält alle Felder', Object.keys(JSON.parse(cap)[0]).length === 17, Object.keys(JSON.parse(cap)[0]).length);
+const allJson = JSON.parse(cap);
+ok('JSON-Export enthält alle Felder', Object.keys(allJson[0]).length === 17, Object.keys(allJson[0]).length);
+ok('JSON-Sicherung enthält den gesamten Bestand (filterunabhängig)',
+   allJson.length === state.items.length, allJson.length + '/' + state.items.length);
+// Optionale Sicherung der aktuellen Ansicht: folgt dem gesetzten Filter.
+state.zeitraumJahr = String(new Date().getFullYear());
+ctx.exportJsonView();
+const viewJson = JSON.parse(cap);
+const jahrTreffer = state.items.filter(i => {
+  const d = ctx.parseDate(i.bis);
+  return d && d.getFullYear() === new Date().getFullYear();
+}).length;
+ok('JSON der aktuellen Ansicht folgt dem Filter',
+   viewJson.length === jahrTreffer && viewJson.length < allJson.length, viewJson.length + '/' + allJson.length);
+state.zeitraumJahr = ''; state.zeitraumJahrManual = true;
 
 /* --------------------------------------------------------------- Struktur */
 group('Dateistruktur');
@@ -436,6 +453,7 @@ ok('Fortschritt bleibt sichtbar', /loc-mini-track/.test(css) && /linearProgress/
 /* --------------------------------------------------- Drei Schritte & Presets */
 group('Drei Schritte: Gruppieren · Sortieren · Ansicht');
 state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.personen = []; state.mine = false;
+state.zeitraumJahr = ''; state.zeitraumJahrManual = true; // Gruppierung über den Gesamtbestand
 ctx.setBereich('wartung');
 ctx.setGroup('task'); ctx.setView('list'); ctx.setAllExpanded(false);
 const taskGroups = ctx.groupItems(ctx.aktuelleListe(), 'task');
@@ -510,6 +528,16 @@ ok('Arbeitstage zählen nur Werktage',
 
 /* --------------------------------------------------- Zeitraum, Tabs, Format */
 group('Zeitraum-Filter');
+// Vorgabe: Ohne manuelle Wahl gilt stets das aktuelle Kalenderjahr; eine
+// manuelle Wahl (auch „alle Jahre“) bleibt beim Tab-Wechsel erhalten.
+const allTab = ctx.WT.tabs.all().list.find(t => t.id === 'all');
+allTab.settings.zeitraumJahr = '1999'; allTab.settings.zeitraumJahrManual = false;
+ctx.WT.tabs.applyTab('all');
+ok('Ohne manuelle Wahl gilt das aktuelle Jahr',
+   state.zeitraumJahr === String(new Date().getFullYear()), state.zeitraumJahr);
+allTab.settings.zeitraumJahr = '1999'; allTab.settings.zeitraumJahrManual = true;
+ctx.WT.tabs.applyTab('all');
+ok('Manuell gewähltes Jahr bleibt erhalten', state.zeitraumJahr === '1999', state.zeitraumJahr);
 const withBis = state.items.filter(i => i.bis);
 const jahr = ctx.parseDate(withBis[0].bis).getFullYear();
 state.zeitraumJahr = String(jahr); state.von = ''; state.bis = '';

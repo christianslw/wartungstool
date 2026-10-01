@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- ==========================================================================
      GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
-     Quelle: src/   Bauen: node build.mjs   (Build 4c522af5)
+     Quelle: src/   Bauen: node build.mjs   (Build e5f57207)
      ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
@@ -781,7 +781,8 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
   </button>
   <div class="menu" id="menuPop" role="menu" hidden>
     <button role="menuitem" data-act="csv"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M19 21h-6v2h6zm0-4h-6v2h6zm-6-4v2h6v-2z"/><path d="M6 28V4h14l6 6v18zM8 6v20h16V11h-5V6z"/></svg>CSV exportieren (Excel)</button>
-    <button role="menuitem" data-act="json"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V10h2v12zm12-12h2v12h-2zm-6 3 2-3h2l-3 4.5 3 4.5h-2l-2-3-2 3h-2l3-4.5L11 10h2z"/></svg>JSON-Sicherung</button>
+    <button role="menuitem" data-act="json"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V10h2v12zm12-12h2v12h-2zm-6 3 2-3h2l-3 4.5 3 4.5h-2l-2-3-2 3h-2l3-4.5L11 10h2z"/></svg>JSON-Sicherung (gesamt)</button>
+    <button role="menuitem" data-act="jsonview"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V10h2v12zm12-12h2v12h-2zm-6 3 2-3h2l-3 4.5 3 4.5h-2l-2-3-2 3h-2l3-4.5L11 10h2z"/></svg>JSON der aktuellen Ansicht</button>
     <div class="sep"></div>
     <button role="menuitem" data-act="settings"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M16 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12m0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/></svg>Einstellungen</button>
     <button role="menuitem" data-act="keyboard"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M28 24H4V8h24zM6 22h20V10H6z"/></svg>Tastenkürzel</button>
@@ -1028,6 +1029,8 @@ function parseDate(s) {
 const p2 = (n) => String(n).padStart(2, '0');
 const fmtDate = (d) => d ? p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() : '';
 const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+/** Aktuelles Kalenderjahr als Zeichenkette (Vorgabe des Jahresfilters). */
+const aktuellesJahr = () => String(new Date().getFullYear());
 const dayDiff = (a, b) => Math.round((a - b) / 86400000);
 const isoStamp = () => { const d = new Date(); return d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()); };
 
@@ -1404,7 +1407,7 @@ function applyTheme() {
 const state = {
   items: [], todos: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
-  zeitraumJahr: '', von: '', bis: '',
+  zeitraumJahr: aktuellesJahr(), zeitraumJahrManual: false, von: '', bis: '',
   mine: false,
   /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
   group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',
@@ -1830,7 +1833,7 @@ const MAX_RECENT_TABS = 5;
 /* Felder, die ein Tab als Einstellungen speichert. */
 const TAB_SETTING_KEYS = [
   'bereich', 'status', 'query', 'art', 'objekt', 'taetigkeit', 'personen', 'mine',
-  'zeitraumJahr', 'von', 'bis', 'group', 'view', 'sortKey', 'sortDir'
+  'zeitraumJahr', 'zeitraumJahrManual', 'von', 'bis', 'group', 'view', 'sortKey', 'sortDir'
 ];
 
 const HOME_TAB = { id: 'home', name: 'Zuhause', home: true, icon: 'home' };
@@ -1842,7 +1845,7 @@ const STANDARD_TABS = [
 
 const TAB_DEFAULTS = {
   status: 'alle', query: '', art: '', objekt: '', taetigkeit: '', personen: [], mine: false,
-  zeitraumJahr: '', von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
+  zeitraumJahr: aktuellesJahr(), zeitraumJahrManual: false, von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
 };
 
 const tabSettings = (bereich, extra) =>
@@ -1943,6 +1946,8 @@ function applyTabState(t) {
   if (!t) return;
   const s = Object.assign({}, TAB_DEFAULTS, t.settings);
   for (const k of TAB_SETTING_KEYS) state[k] = Array.isArray(s[k]) ? s[k].slice() : s[k];
+  // Jahresfilter-Vorgabe: ohne manuelle Wahl stets das aktuelle Kalenderjahr.
+  if (!state.zeitraumJahrManual) state.zeitraumJahr = aktuellesJahr();
   state.expanded = new Set();
   state.collapsed = new Set();
   TABS.active = t.id;
@@ -2131,7 +2136,10 @@ function orderedTabs() {
 /** Anzahl Positionen in einem Tab (Home zeigt die offenen Wartungen). */
 function tabCount(t) {
   if (t.home) { const f = fortschritt(); return f.total - f.done; }
-  return filtered(bereichListe(t.settings.bereich), t.settings).length;
+  const s = Object.assign({}, t.settings);
+  // Wie beim Anwenden: ohne manuelle Wahl gilt das aktuelle Kalenderjahr.
+  if (!s.zeitraumJahrManual) s.zeitraumJahr = aktuellesJahr();
+  return filtered(bereichListe(s.bereich), s).length;
 }
 
 /** Verfuegbare Jahre fuer den Zeitraumfilter (aus den Fristen). */
@@ -2235,7 +2243,7 @@ function renderToolbar() {
 
   // Zusammenfassen: ein Knopf, darunter die Leiste mit allen Optionen.
   const anyFilter = !!(state.query || state.taetigkeit || state.personen.length || state.mine ||
-    state.status !== 'alle' || state.zeitraumJahr || state.von || state.bis);
+    state.status !== 'alle' || state.zeitraumJahrManual || state.von || state.bis);
   $('#viewActiveDot').hidden = !anyFilter;
   $('#btnViewPanel').classList.toggle('has-active', anyFilter);
   $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
@@ -2248,8 +2256,13 @@ function renderToolbar() {
   };
   fill('#fltTask', uniq(bereichListe(state.bereich).map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
 
+  const jahre = tabYears();
+  for (const y of [aktuellesJahr(), state.zeitraumJahr]) {
+    if (y && !jahre.some(x => String(x) === String(y))) jahre.push(Number(y));
+  }
+  jahre.sort((a, b) => a - b);
   const jsel = $('#fltJahr');
-  jsel.innerHTML = '<option value="">alle Jahre</option>' + tabYears().map(y =>
+  jsel.innerHTML = '<option value="">alle Jahre</option>' + jahre.map(y =>
     '<option value="' + y + '"' + (String(y) === String(state.zeitraumJahr) ? ' selected' : '') + '>' + y + '</option>').join('');
   const von = $('#fltVon'), bis = $('#fltBis');
   if (document.activeElement !== von) von.value = state.von || '';
@@ -2281,7 +2294,7 @@ function renderToolbar() {
   }
 
   const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine ||
-    state.personen.length || state.zeitraumJahr || state.von || state.bis;
+    state.personen.length || state.zeitraumJahrManual || state.von || state.bis;
   $('#btnReset').hidden = !any;
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
 
@@ -3040,7 +3053,7 @@ function completionDialog(it) {
       '<p class="t-body" style="margin-bottom:4px">' + esc(it.objekt_name || '') + '</p>' +
       '<p class="t-helper" style="margin-bottom:12px">' + esc(it.taetigkeit || '') + '</p>' +
       '<div class="fld"><label for="mDate">Erledigt am</label>' +
-        '<input class="inp" id="mDate" value="' + esc(fmtDate(new Date())) + '"></div>' +
+        '<input class="inp" id="mDate" type="date" value="' + fmtIso(new Date()) + '"></div>' +
       '<div class="fld"><label for="mBy">Erledigt durch</label>' +
         '<div class="combo-host" id="mBy" data-value="' + esc(state.user) + '"></div></div>' +
       '<div class="fld"><label for="mNote">Abschlusskommentar</label>' +
@@ -3048,7 +3061,7 @@ function completionDialog(it) {
     primary: 'Abschluss speichern',
     collect: (s) => ({
       erledigt: true,
-      erledigt_am: s.querySelector('#mDate').value.trim() || fmtDate(new Date()),
+      erledigt_am: isoToDe(s.querySelector('#mDate').value) || fmtDate(new Date()),
       erledigt_durch: s.querySelector('#mBy').dataset.value.trim() || state.user,
       erledigt_notiz: s.querySelector('#mNote').value.trim()
     }),
@@ -3169,8 +3182,13 @@ function exportCsv() {
   const csv = [cols.join(';')].concat(list.map(i => cols.map(c => q(i[c])).join(';'))).join('\r\n');
   download('wartungen_' + isoStamp() + '.csv', '\uFEFF' + csv, 'text/csv');
 }
+/** Vollstaendige JSON-Sicherung: immer der gesamte Bestand, unabhaengig von Filtern. */
 function exportJson() {
-  download('wartungen_' + isoStamp() + '.json', JSON.stringify(filtered(state.items), null, 2));
+  download('wartungen_' + isoStamp() + '.json', JSON.stringify(state.items, null, 2));
+}
+/** Optionale JSON-Datei der aktuellen (gefilterten) Ansicht. */
+function exportJsonView() {
+  download('wartungen_ansicht_' + isoStamp() + '.json', JSON.stringify(filtered(state.items), null, 2));
 }
 
 function shortcutsDialog() {
@@ -3504,7 +3522,7 @@ $('#btnViewPanel').addEventListener('click', () => {
 
 $('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
-  if (e.target.id === 'fltJahr') state.zeitraumJahr = e.target.value;
+  if (e.target.id === 'fltJahr') { state.zeitraumJahr = e.target.value; state.zeitraumJahrManual = true; }
   render();
 });
 $('#viewPanel').addEventListener('input', e => {
@@ -3513,7 +3531,8 @@ $('#viewPanel').addEventListener('input', e => {
 });
 $('#btnReset').addEventListener('click', () => {
   state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
-  state.personen = []; state.zeitraumJahr = ''; state.von = ''; state.bis = '';
+  state.personen = []; state.zeitraumJahr = aktuellesJahr(); state.zeitraumJahrManual = false;
+  state.von = ''; state.bis = '';
   $('#search').value = '';
   render();
 });
@@ -3552,6 +3571,7 @@ menu.addEventListener('click', e => {
   const a = b.dataset.act;
   if (a === 'csv') exportCsv();
   if (a === 'json') exportJson();
+  if (a === 'jsonview') exportJsonView();
   if (a === 'keyboard') shortcutsDialog();
   if (a === 'settings') settingsDialog();
 });

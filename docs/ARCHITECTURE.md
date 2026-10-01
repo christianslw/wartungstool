@@ -168,7 +168,8 @@ Tab-Menue ueber `openPicker()`. Die Volltextsuche (`sucheInAlle()` in
 Einfuege-Markierung (`drop-before`/`drop-after`). Die Landing rendert
 `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und `arbeitstageImJahr()`
 liegen in `43-actions.js`. Der Zeitraumfilter (`zeitraumJahr`, `von`, `bis`) wirkt
-in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`.
+in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`; ohne manuelle Wahl
+(`zeitraumJahrManual`) gilt dabei immer das aktuelle Kalenderjahr.
 
 ## Konventionen
 

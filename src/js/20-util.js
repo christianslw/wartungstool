@@ -20,6 +20,8 @@ function parseDate(s) {
 const p2 = (n) => String(n).padStart(2, '0');
 const fmtDate = (d) => d ? p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() : '';
 const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+/** Aktuelles Kalenderjahr als Zeichenkette (Vorgabe des Jahresfilters). */
+const aktuellesJahr = () => String(new Date().getFullYear());
 const dayDiff = (a, b) => Math.round((a - b) / 86400000);
 const isoStamp = () => { const d = new Date(); return d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()); };
 

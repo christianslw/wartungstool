@@ -132,12 +132,12 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 |---|---|
 | Suchen | Suchfeld oben oder Taste `/` – sucht in der aktuellen Ansicht; im Tab **Zuhause** (ohne Liste) springt sie automatisch nach **Alle** |
 | Filtern | Status-Pills, Personen, Tätigkeit, **Zeitraum** (Jahr, von/bis) im Knopf *Ansicht & Filter* |
-| **Abhaken** | Kästchen ganz links – Datum, Name und der **Abschlusskommentar** werden abgefragt |
+| **Abhaken** | Kästchen ganz links – Datum (per Kalender), Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
 | Kommentar ändern | „Kommentar" in der Zeile oder Detailleiste (Wartungen) bzw. im To-Do-Dialog |
 | Anhänge | Detailleiste der Wartung bzw. im To-Do-Dialog – mit Kommentar je Anhang |
 | Details ansehen | Zeile anklicken oder `Enter` |
-| Drucken / CSV / JSON | `P` bzw. Menü `⋯` |
+| Drucken / CSV / JSON | `P` bzw. Menü `⋯` – *JSON-Sicherung (gesamt)* umfasst immer den kompletten Bestand, *JSON der aktuellen Ansicht* folgt den aktiven Filtern |
 | Einstellungen | Menü `⋯` → *Einstellungen* (Design, Terminadresse, eigener Name) |
 
 ### Drei Schritte: Gruppieren · Sortieren · Ansicht
@@ -178,8 +178,10 @@ Rechtsklick oder Hover → `⋯` öffnet *Farbe … · Symbol … · Als Standar
 Tab speichern · Umbenennen · Tab schließen*; **Farbe** (Akzentbalken statt Blau) und
 **Symbol** öffnen dabei je ein eigenes Auswahl-Popup, die vordefinierten Tabs haben
 Standard-Symbole. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/oder
-per **von-/bis-Datum** ein. Die **Volltextsuche** sucht in der **aktuellen Ansicht**;
-nur im Tab **Zuhause** (der keine Liste hat) springt sie automatisch nach **Alle**.
+per **von-/bis-Datum** ein. Vorgabe ist dabei stets das **aktuelle Jahr**; eine
+manuelle Wahl (auch „alle Jahre“) bleibt je Tab erhalten. Die **Volltextsuche**
+sucht in der **aktuellen Ansicht**; nur im Tab **Zuhause** (der keine Liste hat)
+springt sie automatisch nach **Alle**.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als
