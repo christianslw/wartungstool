@@ -183,7 +183,8 @@ function groupStats(g) {
   const total = g.items.length;
   const done = g.items.filter(i => i.erledigt).length;
   const over = g.items.filter(i => !i.erledigt && statusOf(i) === 'over').length;
-  return { total, done, open: total - done, over, pct: total ? Math.round(done / total * 100) : 0 };
+  const soon = g.items.filter(i => !i.erledigt && statusOf(i) === 'soon').length;
+  return { total, done, open: total - done, over, soon, pct: total ? Math.round(done / total * 100) : 0 };
 }
 
 /** Vorschauzeile einer Gruppe (kürzeste Info für den Kopf). */

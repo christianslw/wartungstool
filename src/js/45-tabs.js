@@ -36,6 +36,13 @@ function normalizeTab(t) {
   t.builtin = !!t.builtin;
   t.home = !!t.home;
   t.fav = !!t.fav;
+  t.color = t.color || '';
+  if (!t.icon || !TAB_ICONS[t.icon]) {
+    t.icon = t.home ? 'home'
+      : t.id === 'all' ? 'list'
+        : t.id === 'wartung' ? 'bolt'
+          : t.id === 'todo' ? 'check' : 'list';
+  }
   t.settings = Object.assign({}, TAB_DEFAULTS, t.settings || {});
   if (!Array.isArray(t.settings.personen)) t.settings.personen = [];
   return t;
@@ -44,6 +51,7 @@ function normalizeTab(t) {
 function defaultTabs() {
   return {
     active: 'home',
+    def: 'home',
     list: [
       normalizeTab({ id: 'home', name: 'Zuhause', home: true, settings: tabSettings('alle', { view: 'home', group: 'none' }) }),
       normalizeTab({ id: 'all', name: 'Alle', builtin: true, settings: tabSettings('alle') }),
@@ -76,6 +84,7 @@ function loadTabs() {
     }
   }
   if (!p.active || !p.list.some((t) => t.id === p.active)) p.active = p.list[0].id;
+  if (!p.def || !p.list.some((t) => t.id === p.def)) p.def = (p.list.find((t) => t.home) || p.list[0] || {}).id || '';
   return p;
 }
 
@@ -199,7 +208,7 @@ function closeTab(id) {
 function saveTab(id) {
   const t = TABS.list.find((x) => x.id === id);
   if (!t || t.builtin) return;
-  const rec = { name: t.name, fav: !!t.fav, home: !!t.home, settings: Object.assign({}, t.settings) };
+  const rec = { name: t.name, fav: !!t.fav, home: !!t.home, color: t.color || '', icon: t.icon || '', settings: Object.assign({}, t.settings) };
   TABS.saved = [rec].concat((TABS.saved || []).filter((s) => s.name !== rec.name)).slice(0, MAX_SAVED_TABS);
   removeTab(id);
   render();
@@ -213,7 +222,7 @@ function reopenSaved(name) {
   TABS.saved.splice(i, 1);
   let id = 't' + Date.now().toString(36) + i;
   while (TABS.list.some((t) => t.id === id)) id += 'x';
-  const t = normalizeTab({ id, name: s.name, home: !!s.home, fav: !!s.fav, settings: Object.assign({}, s.settings) });
+  const t = normalizeTab({ id, name: s.name, home: !!s.home, fav: !!s.fav, color: s.color || '', icon: s.icon || '', settings: Object.assign({}, s.settings) });
   TABS.list.push(t);
   applyTabState(t);
   saveTabs();
@@ -225,6 +234,33 @@ function toggleFavTab(id) {
   const t = TABS.list.find((x) => x.id === id);
   if (!t) return;
   t.fav = !t.fav;
+  saveTabs();
+  render();
+}
+
+/** Akzentfarbe eines Tabs setzen ('' = Standard/Blau). */
+function setTabColor(id, color) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t) return;
+  t.color = color || '';
+  saveTabs();
+  render();
+}
+
+/** Symbol eines Tabs setzen (Schluessel aus TAB_ICONS). */
+function setTabIcon(id, icon) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t || !TAB_ICONS[icon]) return;
+  t.icon = icon;
+  saveTabs();
+  render();
+}
+
+/** Tab als Standard festlegen (nur einer; erneutes Setzen hebt auf). */
+function setDefaultTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t) return;
+  TABS.def = TABS.def === id ? '' : id;
   saveTabs();
   render();
 }

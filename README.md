@@ -100,9 +100,9 @@ in **Tabs** (benannte Ansichten), eine **zusammengefasste Steuerung** und einen
 2. **Tab-Leiste**: Start ist **Zuhause** (Landing), dann die Standard-Ansichten
    *Alle · Wartungen · Eigene To-Dos*, daneben **`+`** für eigene Tabs (benennen).
    Jeder Tab merkt sich **seine Filter und Ansicht**; Favoriten (`★`) stehen vorne.
-   Rechtsklick auf einen Tab (oder Hover → `⋯`) öffnet *Anpinnen · **Tab speichern** ·
-   Umbenennen · Tab schließen*. Über **`+`** lassen sich gespeicherte Tabs wieder
-   öffnen (Ablage, max. 5 – wächst nicht endlos).
+   Rechtsklick auf einen Tab (oder Hover → `⋯`) öffnet *Farbe · Symbol · **Als Standard** ·
+   Anpinnen · Tab speichern · Umbenennen · Tab schließen*. Über **`+`** lassen sich
+   gespeicherte Tabs wieder öffnen (Ablage, max. 5 – wächst nicht endlos).
 3. **Ansicht & Filter** – **ein** Knopf öffnet darunter die Leiste mit Status-Pills,
    *Meine*, Personen, Tätigkeit, **Zeitraum** (Jahr + von/bis), den **drei
    Schritten** (Gruppieren · Sortieren · Ansicht) und **Presets**.
@@ -129,7 +129,7 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 
 | Aktion | Weg |
 |---|---|
-| Suchen | Suchfeld oben oder Taste `/` |
+| Suchen | Suchfeld oben oder Taste `/` – springt automatisch in den Tab **Alle** und sucht dort |
 | Filtern | Status-Pills, Personen, Tätigkeit, **Zeitraum** (Jahr, von/bis) im Knopf *Ansicht & Filter* |
 | **Abhaken** | Kästchen ganz links – Datum, Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
@@ -169,10 +169,16 @@ Liste **Überfällig / Bald fällig / Eigene To-Dos**, klar getrennt. Die drei
 Standard-Tabs (*Alle · Wartungen · Eigene To-Dos*) bleiben bestehen; **`+`** legt einen
 eigenen, benannten Tab an. Jeder Tab speichert **seine** Filter- und
 Ansichtseinstellungen in `localStorage` (über Sitzungen hinweg). Favoriten (`★`)
-werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet *Anpinnen · Tab speichern ·
-Umbenennen · Tab schließen*. **Tab speichern** legt den Tab in eine Ablage (max. 5),
-die über **`+`** wieder geöffnet werden kann – so wächst nichts endlos an. Das
-Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/oder per **von-/bis-Datum** ein.
+werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet **Farbe**, **Symbol**,
+*Als Standard · Anpinnen · Tab speichern · Umbenennen · Tab schließen*. Über die
+**Farbe** erhält der Tab einen farbigen Akzentbalken (statt des blauen); das
+**Symbol** stammt aus einer kleinen Auswahl – die vordefinierten Tabs haben
+Standard-Symbole. **Jeder Tab lässt sich als Standard festlegen** (es gilt der
+zuletzt festgelegte) und ist dann beim Aufruf der Seite aktiv. **Tab speichern**
+legt den Tab in eine Ablage (max. 5), die über **`+`** wieder geöffnet werden kann –
+so wächst nichts endlos an. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026)
+und/oder per **von-/bis-Datum** ein. Sobald die **Volltextsuche** benutzt wird,
+springt die App in den Tab **Alle** und sucht dort.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als

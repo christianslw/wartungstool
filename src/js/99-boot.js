@@ -2,9 +2,10 @@
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
-  // Beim Aufruf der Seite ist der Home-Tab aktiv (falls nicht geschlossen).
-  const homeTab = TABS.list.find(t => t.home && !t.closed);
-  if (homeTab) TABS.active = homeTab.id;
+  // Beim Aufruf der Seite ist der als Standard festgelegte Tab aktiv
+  // (Vorgabe: Zuhause).
+  const defTab = TABS.list.find(t => t.id === TABS.def) || TABS.list.find(t => t.home) || TABS.list[0];
+  if (defTab) TABS.active = defTab.id;
   applyTabState(activeTab());
   store = CONFIG.dataSource === 'api' ? ApiStore : LocalStore;
   state.loading = true; render();

@@ -567,6 +567,44 @@ ctx.WT.tabs.all().list.filter(t => !t.builtin && !t.home).forEach(t => ctx.close
 ctx.WT.tabs.all().saved = [];
 ctx.applyTab('all'); ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc'); ctx.setBereich('wartung');
 
+group('Tab-Farbe, Symbol und Standard');
+ctx.setTabColor('wartung', '#da1e28');
+ok('Tab bekommt Akzentfarbe', ctx.WT.tabs.all().list.find(t => t.id === 'wartung').color === '#da1e28');
+ok('Akzentfarbe steht im Tab', /data-tab="wartung"[\s\S]{0,80}--tab-accent:#da1e28/.test(reg['#tabBar'].innerHTML) || /--tab-accent:#da1e28/.test(reg['#tabBar'].innerHTML));
+ctx.setTabColor('wartung', '');
+ok('Farbe zurücksetzbar', ctx.WT.tabs.all().list.find(t => t.id === 'wartung').color === '');
+ctx.setTabIcon('wartung', 'star');
+ok('Tab-Symbol wählbar', ctx.WT.tabs.all().list.find(t => t.id === 'wartung').icon === 'star');
+ok('Vordefinierte Tabs haben Standardsymbole',
+   ctx.WT.tabs.all().list.find(t => t.id === 'home').icon === 'home' &&
+   ctx.WT.tabs.all().list.find(t => t.id === 'all').icon === 'list' &&
+   ctx.WT.tabs.all().list.find(t => t.id === 'todo').icon === 'check');
+ok('Tab-Menü bietet Farben und Symbole',
+   /data-tabcolor=/.test(src) && /data-tabicon=/.test(src) && /Als Standard festlegen/.test(src));
+ctx.setDefaultTab('wartung');
+ok('Tab als Standard festgelegt', ctx.WT.tabs.all().def === 'wartung');
+ctx.setDefaultTab('all');
+ok('Nur der zuletzt festgelegte Tab ist Standard', ctx.WT.tabs.all().def === 'all');
+ctx.setDefaultTab('all');
+ok('Standard aufhebbar', ctx.WT.tabs.all().def === '');
+ctx.setDefaultTab('home');
+
+group('Volltextsuche springt in "Alle"');
+ctx.applyTab('wartung');
+ctx.sucheInAlle('Filter');
+ok('Suche wechselt in den Tab "Alle"', ctx.WT.tabs.all().active === 'all' && state.bereich === 'alle');
+ok('Suchbegriff übernommen', state.query === 'Filter');
+state.query = ''; ctx.render();
+
+group('Gruppen-Farblogik (Bugfix)');
+ctx.setGroup('object');
+ok('Gelb nur für tatsächlich bald fällige Gruppen', (() => {
+  const groups = ctx.groupItems(state.items, 'object');
+  const erwartet = groups.filter(g => { const s = ctx.groupStats(g); return s.over === 0 && s.soon > 0; }).length;
+  const ist = (ctx.viewGroupedList(state.items).match(/is-soon/g) || []).length;
+  return ist === erwartet;
+})(), 'is-soon: ' + ((ctx.viewGroupedList(state.items).match(/is-soon/g) || []).length));
+
 group('Namensformat und Scrollen');
 ok('Dialog fragt Nachname, Vorname', /Nachname, Vorname/.test(src) && !/Vor- und Nachname/.test(src));
 ok('Scrollbereich der Liste hat overflow:auto', /\.content-body\{[^}]*overflow:auto/.test(css));

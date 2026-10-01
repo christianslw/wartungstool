@@ -47,7 +47,14 @@ $('#tableHost').addEventListener('click', async e => {
   if (open) return openPanel(findByKey(open.dataset.open).id);
 });
 
-$('#search').addEventListener('input', debounce(e => { state.query = e.target.value; render(); }, 110));
+/* Volltextsuche: springt in den Tab "Alle" und sucht dort. */
+function sucheInAlle(v) {
+  const all = TABS.list.find(t => t.id === 'all');
+  if (all && TABS.active !== 'all') applyTabState(all);
+  state.query = v;
+  render();
+}
+$('#search').addEventListener('input', debounce(e => sucheInAlle(e.target.value), 110));
 $('#searchClear').addEventListener('click', () => { $('#search').value = ''; state.query = ''; render(); $('#search').focus(); });
 
 /* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
@@ -63,6 +70,15 @@ function openTabMenu(id, x, y) {
   const el = document.createElement('div');
   el.className = 'ctx-menu';
   el.innerHTML =
+    '<div class="ctx-title">Farbe</div>' +
+    '<div class="ctx-swatches">' + TAB_COLORS.map(c =>
+      '<button type="button" class="swatch' + ((t.color || '') === c.color ? ' on' : '') + '" data-tabcolor="' + esc(c.color) + '" title="' + esc(c.label) + '"' +
+      (c.color ? ' style="background:' + esc(c.color) + '"' : '') + '></button>').join('') + '</div>' +
+    '<div class="ctx-title">Symbol</div>' +
+    '<div class="ctx-icons">' + Object.keys(TAB_ICONS).map(k =>
+      '<button type="button" class="ico' + (t.icon === k ? ' on' : '') + '" data-tabicon="' + esc(k) + '" title="' + esc(k) + '">' + svg(TAB_ICONS[k], 14) + '</button>').join('') + '</div>' +
+    '<div class="ctx-sep"></div>' +
+    '<button type="button" data-tabact="default">' + (TABS.def === t.id ? 'Standard aufheben' : 'Als Standard festlegen') + '</button>' +
     '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
     (t.builtin ? '' :
       '<button type="button" data-tabact="save">Tab speichern</button>' +
@@ -71,11 +87,16 @@ function openTabMenu(id, x, y) {
   el.style.left = Math.max(4, x || 0) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', async (ev) => {
+    const sw = ev.target.closest('[data-tabcolor]');
+    if (sw) { setTabColor(id, sw.dataset.tabcolor); closeTabMenu(); openTabMenu(id, x, y); return; }
+    const ic = ev.target.closest('[data-tabicon]');
+    if (ic) { setTabIcon(id, ic.dataset.tabicon); closeTabMenu(); openTabMenu(id, x, y); return; }
     const b = ev.target.closest('[data-tabact]');
     if (!b) return;
     const act = b.dataset.tabact;
     closeTabMenu();
-    if (act === 'fav') toggleFavTab(id);
+    if (act === 'default') setDefaultTab(id);
+    else if (act === 'fav') toggleFavTab(id);
     else if (act === 'save') { saveTab(id); toastTab('Tab gespeichert', t.name); }
     else if (act === 'close') closeTab(id);
     else if (act === 'rename') {

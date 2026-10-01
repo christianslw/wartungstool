@@ -19,7 +19,7 @@
 }
 .scope-tab:hover{color:var(--text-primary)}
 .scope-tab[aria-selected="true"]{
-  color:var(--text-primary);font-weight:600;border-bottom-color:var(--interactive);
+  color:var(--text-primary);font-weight:600;border-bottom-color:var(--tab-accent, var(--interactive));
 }
 .scope-tab .n{
   font-size:11px;font-weight:400;color:var(--text-helper);font-variant-numeric:tabular-nums;
@@ -94,6 +94,10 @@
 }
 .scope-tab:hover .tab-menu,.scope-tab:focus-within .tab-menu{opacity:1}
 .scope-tab .tab-menu:hover{background:var(--hover-2);color:var(--text-primary)}
+.scope-tab .tab-ic{display:inline-flex;align-items:center;color:var(--text-helper)}
+.scope-tab[aria-selected="true"] .tab-ic{color:var(--tab-accent, var(--interactive))}
+.scope-tab.has-accent{border-left:3px solid var(--tab-accent);padding-left:9px}
+.scope-tab .tab-def{width:6px;height:6px;border-radius:50%;background:var(--tab-accent, var(--interactive));display:inline-block;flex:0 0 auto}
 .scope-tab.fav .tab-star{color:var(--warning);font-size:10px}
 .scope-add{
   display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;
@@ -128,3 +132,13 @@
   color:var(--text-primary);border-radius:2px;
 }
 .ctx-menu button:hover{background:var(--hover-2)}
+.ctx-menu .ctx-title{padding:6px 10px 2px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
+.ctx-menu .ctx-sep{height:1px;background:var(--border-subtle);margin:4px 0}
+.ctx-menu .ctx-swatches{display:flex;flex-wrap:wrap;gap:6px;padding:2px 10px 6px}
+.ctx-menu .swatch{width:18px;height:18px;border-radius:50%;border:1px solid var(--border-subtle);background:var(--layer-03);padding:0}
+.ctx-menu .swatch.on{outline:2px solid var(--interactive);outline-offset:1px}
+.ctx-menu .swatch[data-tabcolor=""]{background:linear-gradient(135deg,transparent 44%,var(--border-strong) 44%,var(--border-strong) 56%,transparent 56%)}
+.ctx-menu .ctx-icons{display:flex;flex-wrap:wrap;gap:2px;padding:2px 8px 6px}
+.ctx-menu .ico{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:2px;color:var(--text-secondary);padding:0}
+.ctx-menu .ico:hover{background:var(--hover-2);color:var(--text-primary)}
+.ctx-menu .ico.on{background:var(--layer-03);color:var(--interactive)}

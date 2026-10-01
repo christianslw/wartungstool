@@ -22,5 +22,35 @@ const ICON = {
   warn   : '<path d="M16 3 30 27H2zm0 2.3L4.3 25h23.4zM15 11h2v8h-2zm0 10h2v2h-2z"/>',
   info   : '<path d="M16 4a12 12 0 1 0 0 24 12 12 0 0 0 0-24m0 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20m-1 4h2v2h-2zm0 4h2v8h-2z"/>'
 };
+
+/* Kleine Auswahl an Symbolen fuer Tabs (viewBox 0 0 32 32). */
+const TAB_ICONS = {
+  home:     '<path d="M16 3 2 15h4v13h8v-8h4v8h8V15h4z"/>',
+  list:     '<path d="M5 7h3v3H5zm5 0h17v3H10zM5 14h3v3H5zm5 0h17v3H10zM5 21h3v3H5zm5 0h17v3H10z"/>',
+  check:    '<path d="M12.6 24 4 15.4l1.7-1.7 6.9 6.9L26.3 6.9 28 8.6z"/>',
+  calendar: '<path d="M26 6h-4V4h-2v2h-8V4h-2v2H6v22h20zm-18 8h16v12H8zm0-6h2v2h2V8h8v2h2V8h2v4H8z"/>',
+  notes:    '<path d="M24 4H8v24h9v-2H10V6h12v7h2zM14 10h8v2h-8zm0 4h8v2h-8zm0 4h5v2h-5z"/><path d="M22 18h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/>',
+  warn:     '<path d="M16 3 30 27H2zm0 2.3L4.3 25h23.4zM15 11h2v8h-2zm0 10h2v2h-2z"/>',
+  star:     '<path d="M16 4l3.6 7.3 8.1 1.2-5.9 5.7 1.4 8L16 23l-7.2 3.8 1.4-8L4.3 12.5l8.1-1.2z"/>',
+  clock:    '<path d="M16 4a12 12 0 1 0 0 24 12 12 0 0 0 0-24m0 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20m-1 4h2v6h5v2h-7z"/>',
+  flag:     '<path d="M8 4h2v24H8zm3 1h14l-3 5 3 5H11z"/>',
+  pin:      '<path d="M16 3a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7m0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10"/>',
+  folder:   '<path d="M4 6h9l3 3h12v17H4z"/>',
+  bolt:     '<path d="M18 3 7 18h6l-1 11 11-15h-6z"/>'
+};
+
+/* Farbpalette fuer den Akzentbalken (leerer Wert = Standard/Blau). */
+const TAB_COLORS = [
+  { key: 'standard', label: 'Standard', color: '' },
+  { key: 'red', label: 'Rot', color: '#da1e28' },
+  { key: 'orange', label: 'Orange', color: '#ff832b' },
+  { key: 'yellow', label: 'Gelb', color: '#f1c21b' },
+  { key: 'green', label: 'Grün', color: '#24a148' },
+  { key: 'teal', label: 'Türkis', color: '#009d9a' },
+  { key: 'blue', label: 'Blau', color: '#0f62fe' },
+  { key: 'purple', label: 'Violett', color: '#8a3ffc' },
+  { key: 'gray', label: 'Grau', color: '#8d8d8d' }
+];
+
 const svg = (d, size = 16, cls = '') =>
   '<svg class="' + cls + '" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">' + d + '</svg>';

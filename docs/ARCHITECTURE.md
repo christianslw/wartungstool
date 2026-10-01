@@ -155,9 +155,12 @@ und nicht schließbar; `+` legt eigene Tabs an. Jeder Tab speichert
 `TAB_SETTING_KEYS` (Bereich, Status, Suche, Personen, Mine, **Zeitraum**,
 Gruppierung, Ansicht, Sortierung). `syncActiveTab()` schreibt den Zustand bei
 jedem Rendern zurück, `applyTabState()` stellt ihn wieder her. Favoriten werden
-über `orderedTabs()` vorne angepinnt. `closeTab()` entfernt einen Tab;
+über `orderedTabs()` vorne angepinnt. Jeder Tab trägt optional `color` (Akzentbalken)
+und `icon` (aus `TAB_ICONS` in `10-dom.js`); `TABS.def` hält den **Standard-Tab**
+(aktiv beim Start, `setDefaultTab()`). `closeTab()` entfernt einen Tab;
 `saveTab()` legt ihn stattdessen in eine Ablage (`TABS.saved`, **max. 5**),
-die das `+`-Menü (`openAddMenu` in `90-events.js`) wieder öffnet. Die Landing
+die das `+`-Menü (`openAddMenu` in `90-events.js`) wieder öffnet. Die Volltextsuche
+(`sucheInAlle()` in `90-events.js`) wechselt in den Tab `all` und sucht dort. Die Landing
 rendert `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und
 `arbeitstageImJahr()` liegen in `43-actions.js`. Der Zeitraumfilter
 (`zeitraumJahr`, `von`, `bis`) wirkt in `42-selectors.js`/`zeitraumMatch()` auf

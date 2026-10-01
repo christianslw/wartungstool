@@ -46,10 +46,15 @@ function renderTabs() {
   if (!host) return;
   host.innerHTML = orderedTabs().map(t => {
     const act = t.id === TABS.active;
-    return '<div class="scope-tab' + (t.fav ? ' fav' : '') + (t.builtin ? '' : ' custom') + '" role="tab" tabindex="0"' +
+    const cls = 'scope-tab' + (t.fav ? ' fav' : '') + (t.color ? ' has-accent' : '') + (TABS.def === t.id ? ' is-default' : '');
+    const style = t.color ? ' style="--tab-accent:' + esc(t.color) + '"' : '';
+    const ico = TAB_ICONS[t.icon] ? svg(TAB_ICONS[t.icon], 13) : '';
+    return '<div class="' + cls + '" role="tab" tabindex="0"' + style +
       ' data-tab="' + esc(t.id) + '" aria-selected="' + act + '" title="' + esc(t.name) + '">' +
-      (t.fav ? '<span class="tab-star" title="Favorit">★</span>' : '') +
+      (TABS.def === t.id ? '<span class="tab-def" title="Standard-Ansicht"></span>' : '') +
+      '<span class="tab-ic">' + ico + '</span>' +
       '<span class="tab-name">' + esc(t.name) + '</span>' +
+      (t.fav ? '<span class="tab-star" title="Favorit">★</span>' : '') +
       '<span class="n">' + tabCount(t) + '</span>' +
       '<button type="button" class="tab-menu" data-tabmenu="' + esc(t.id) + '" title="Tab-Optionen" aria-label="Tab-Optionen">⋯</button>' +
     '</div>';
@@ -58,6 +63,8 @@ function renderTabs() {
 
 function renderToolbar() {
   const c = countsForScope(state.bereich);
+  const searchEl = $('#search');
+  if (document.activeElement !== searchEl) searchEl.value = state.query || '';
   const segs = [
     { key: 'alle', label: 'Alle' },
     { key: 'over', label: 'Überfällig' },
@@ -191,8 +198,8 @@ function viewGroupedList(list) {
     let cls = 'loc';
     if (isOpen) cls += ' open';
     if (st.over) cls += ' is-overdue';
-    else if (st.open > 0) cls += ' is-soon';
-    else cls += ' is-finished';
+    else if (st.soon) cls += ' is-soon';
+    else if (st.open === 0) cls += ' is-finished';
 
     const rows = sortItems(g.items).map(it => workRow(it, state.group === 'task')).join('');
     const nrCell = state.group === 'object'
