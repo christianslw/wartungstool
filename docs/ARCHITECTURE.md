@@ -163,7 +163,9 @@ und `icon` (aus `TAB_ICONS` in `10-dom.js`). **Alle** Tabs sind schliessbar:
 ("Eigene Tabs", max. 5). Das `+`-Menue (`openAddMenu` in `90-events.js`) oeffnet
 Standard-Tabs, eigene und zuletzt geschlossene wieder. Farbe/Symbol waehlt das
 Tab-Menue ueber `openPicker()`. Die Volltextsuche (`sucheInAlle()` in
-`90-events.js`) wechselt in den Tab `all` und sucht dort. Die Landing rendert
+`90-events.js`) sucht in der aktuellen Ansicht und wechselt nur aus dem Home-Tab
+(ohne Liste) in den Tab `all`. Das Verschieben zeigt waehrend des Ziehens eine
+Einfuege-Markierung (`drop-before`/`drop-after`). Die Landing rendert
 `renderHome()` in `50-render.js`; `gruss()`, `vorname()` und `arbeitstageImJahr()`
 liegen in `43-actions.js`. Der Zeitraumfilter (`zeitraumJahr`, `von`, `bis`) wirkt
 in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`.

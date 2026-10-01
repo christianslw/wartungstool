@@ -15,7 +15,7 @@
   display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 10px 0 12px;
   font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;
   border-bottom:2px solid transparent;transition:color .12s, border-color .12s;
-  white-space:nowrap;flex:0 0 auto;
+  white-space:nowrap;flex:0 0 auto;position:relative;
 }
 .scope-tab:hover{color:var(--text-primary)}
 .scope-tab[aria-selected="true"]{
@@ -100,7 +100,13 @@
 .scope-tab .tab-def{width:6px;height:6px;border-radius:50%;background:var(--tab-accent, var(--interactive));display:inline-block;flex:0 0 auto}
 .scope-tab.fav .tab-star{color:var(--warning);font-size:10px}
 .scope-tab[draggable="true"]{cursor:grab}
-.scope-tab.dragging{opacity:.45}
+.scope-tab.dragging{opacity:.4;cursor:grabbing;box-shadow:var(--shadow-2)}
+.scope-tabs.dragging-active{cursor:grabbing}
+.scope-tab.drop-before::before,.scope-tab.drop-after::after{
+  content:'';position:absolute;top:5px;bottom:5px;width:3px;border-radius:2px;background:var(--interactive);
+}
+.scope-tab.drop-before::before{left:-2px}
+.scope-tab.drop-after::after{right:-2px}
 .scope-tab.is-default{cursor:default}
 .scope-add{
   display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;

@@ -47,10 +47,14 @@ $('#tableHost').addEventListener('click', async e => {
   if (open) return openPanel(findByKey(open.dataset.open).id);
 });
 
-/* Volltextsuche: springt in den Tab "Alle" und sucht dort. */
+/* Volltextsuche: nur im Home-Tab (ohne Liste) nach "Alle" springen, sonst in
+   der aktuellen Ansicht suchen. */
 function sucheInAlle(v) {
-  const all = TABS.list.find(t => t.id === 'all');
-  if (all && TABS.active !== 'all') applyTabState(all);
+  const at = activeTab();
+  if (at && at.home) {
+    const all = TABS.list.find(t => t.id === 'all');
+    if (all) applyTabState(all);
+  }
   state.query = v;
   render();
 }
@@ -211,30 +215,48 @@ $('#tabBar').addEventListener('keydown', e => {
 
 /* Tabs frei verschieben (HTML5 Drag & Drop); der Standard-Tab bleibt links. */
 let dragTabId = null;
+function clearDropMarks() {
+  $$('#tabBar .drop-before, #tabBar .drop-after').forEach(x => {
+    if (x.classList) { x.classList.remove('drop-before'); x.classList.remove('drop-after'); }
+  });
+}
+const dropAfter = (tab, clientX) => {
+  if (!tab.getBoundingClientRect) return false;
+  const r = tab.getBoundingClientRect();
+  return (clientX || 0) > r.left + r.width / 2;
+};
 $('#tabBar').addEventListener('dragstart', e => {
   const tab = e.target.closest('[data-tab]');
   if (!tab || tab.dataset.tab === TABS.def) { e.preventDefault(); return; }
   dragTabId = tab.dataset.tab;
   if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragTabId); }
   tab.classList.add('dragging');
+  $('#tabBar').classList.add('dragging-active');
 });
 $('#tabBar').addEventListener('dragover', e => {
   if (!dragTabId) return;
-  if (e.target.closest('[data-tab]')) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'; }
+  const tab = e.target.closest('[data-tab]');
+  if (!tab || tab.dataset.tab === dragTabId) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  clearDropMarks();
+  if (tab.dataset.tab !== TABS.def) tab.classList.add(dropAfter(tab, e.clientX) ? 'drop-after' : 'drop-before');
 });
 $('#tabBar').addEventListener('drop', e => {
   const tab = e.target.closest('[data-tab]');
   if (!tab || !dragTabId) return;
   e.preventDefault();
-  let after = false;
-  if (tab.getBoundingClientRect) {
-    const r = tab.getBoundingClientRect();
-    after = (e.clientX || 0) > r.left + r.width / 2;
-  }
+  const after = dropAfter(tab, e.clientX);
+  clearDropMarks();
   moveTab(dragTabId, tab.dataset.tab, after);
+});
+$('#tabBar').addEventListener('dragleave', e => {
+  if (e.target === e.currentTarget) clearDropMarks();
 });
 $('#tabBar').addEventListener('dragend', () => {
   dragTabId = null;
+  clearDropMarks();
+  $('#tabBar').classList.remove('dragging-active');
   $$('#tabBar .dragging').forEach(x => x.classList && x.classList.remove('dragging'));
 });
 

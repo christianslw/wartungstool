@@ -130,7 +130,7 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 
 | Aktion | Weg |
 |---|---|
-| Suchen | Suchfeld oben oder Taste `/` – springt automatisch in den Tab **Alle** und sucht dort |
+| Suchen | Suchfeld oben oder Taste `/` – sucht in der aktuellen Ansicht; im Tab **Zuhause** (ohne Liste) springt sie automatisch nach **Alle** |
 | Filtern | Status-Pills, Personen, Tätigkeit, **Zeitraum** (Jahr, von/bis) im Knopf *Ansicht & Filter* |
 | **Abhaken** | Kästchen ganz links – Datum, Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
@@ -178,8 +178,8 @@ Rechtsklick oder Hover → `⋯` öffnet *Farbe … · Symbol … · Als Standar
 Tab speichern · Umbenennen · Tab schließen*; **Farbe** (Akzentbalken statt Blau) und
 **Symbol** öffnen dabei je ein eigenes Auswahl-Popup, die vordefinierten Tabs haben
 Standard-Symbole. Das Zeitraum-Feld grenzt nach dem Fristjahr (z. B. 2026) und/oder
-per **von-/bis-Datum** ein. Sobald die **Volltextsuche** benutzt wird, springt die
-App in den Tab **Alle** und sucht dort.
+per **von-/bis-Datum** ein. Die **Volltextsuche** sucht in der **aktuellen Ansicht**;
+nur im Tab **Zuhause** (der keine Liste hat) springt sie automatisch nach **Alle**.
 
 ### Presets (clientseitig)
 Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als

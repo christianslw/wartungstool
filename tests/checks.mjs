@@ -594,11 +594,13 @@ ctx.setDefaultTab('all');
 ok('Standard aufhebbar', ctx.WT.tabs.all().def === '');
 ctx.setDefaultTab('home');
 
-group('Volltextsuche springt in "Alle"');
+group('Volltextsuche');
 ctx.applyTab('wartung');
-ctx.sucheInAlle('Filter');
-ok('Suche wechselt in den Tab "Alle"', ctx.WT.tabs.all().active === 'all' && state.bereich === 'alle');
-ok('Suchbegriff übernommen', state.query === 'Filter');
+ctx.sucheInAlle('VDE');
+ok('Suche bleibt in der aktuellen Ansicht', ctx.WT.tabs.all().active === 'wartung' && state.query === 'VDE' && state.bereich === 'wartung');
+ctx.addHomeTab();
+ctx.sucheInAlle('VDE');
+ok('Suche aus Zuhause springt in den Tab "Alle"', ctx.WT.tabs.all().active === 'all' && state.bereich === 'alle' && state.query === 'VDE');
 state.query = ''; ctx.render();
 
 group('Gruppen-Farblogik (Bugfix)');
