@@ -2,6 +2,7 @@
 const state = {
   items: [], todos: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
+  zeitraumJahr: '', von: '', bis: '',
   mine: false,
   /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
   group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',

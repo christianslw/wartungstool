@@ -249,11 +249,11 @@ ok('Kopfzeile folgt dem Design (hell/dunkel) statt fest dunkel',
 ok('Zebra-Zeilen: abwechselnde Schattierung definiert',
    /--row-alt:#fbfbfb/.test(APP) && /tbody tr:nth-child\(even\)\{background:var\(--row-alt\)/.test(APP));
 ok('Standardbereich ist "Alle"',
-   /data-bereich="alle" aria-selected="true"/.test(APP) && /bereich:\s*'alle'/.test(src));
+   ctx.WT.tabs.all().active === 'all' && ctx.WT.tabs.all().list[0].settings.bereich === 'alle' && /id="tabBar"/.test(APP));
 
 /* --------------------------------------------------------------- To-Dos */
 group('Eigene To-Dos (getrennt von den Wartungen)');
-ok('Eigener Bereichsschalter', /id="bereichSwitch"/.test(APP));
+ok('Eigener Bereichsschalter', /id="tabBar"/.test(APP) && /STANDARD_TABS/.test(src));
 ok('Bezeichnung "Eigene To-Dos"', /Eigene To-Dos/.test(APP) && !/Zusatzaufgabe/.test(APP));
 // Regression: todoDialog schattierte früher "objects" (Temporal Dead Zone)
 let tBody = '', tCalled = false;
@@ -272,8 +272,8 @@ ok('Eigener Speicher, getrennt von den Wartungen',
    state.items.every(i => i.taetigkeit !== 'Blitzschutzableiter erneuern'));
 ctx.setBereich('todo');
 ok('Bereich umgeschaltet', state.bereich === 'todo');
-ok('Aktiver Bereich ist markiert (kein Titel nötig)',
-   /data-bereich="todo" aria-pressed="true"/.test(APP) || reg['#bereichSwitch'] instanceof Object);
+ok('Aktiver Tab ist markiert (kein Titel nötig)',
+   /data-tab="todo" aria-selected="true"/.test(reg['#tabBar'].innerHTML));
 ok('To-Do erscheint mit Frist und Standort', host().includes('Blitzschutzableiter erneuern') && host().includes('Bad Mergentheim'));
 ok('Anlege-Knopf sichtbar (To-Dos sind keine Stammdaten)', !reg['#btnNewTodo'].hidden);
 ok('To-Dos nutzen dieselben Ansichten wie die Wartungen',
@@ -297,6 +297,7 @@ group('Bereich "Alle" mischt Wartungen und To-Dos');
 const t2 = await ctx.saveTodo({ taetigkeit: 'Blitzschutzableiter erneuern', bis: '15.10.2026',
   zustaendig: 'Salwa, Christian', objekt_nr: '9200', objekt_name: 'Bad Mergentheim' });
 ctx.setBereich('alle');
+ctx.setAllExpanded(true);
 const gemischt = host();
 ok('Alle Bereiche zusammen', state.items.length > 0 && gemischt.includes('Blitzschutzableiter erneuern'));
 ok('Wartungen sind weiterhin enthalten', gemischt.includes(state.items[0].taetigkeit));
@@ -400,16 +401,15 @@ ok('Ein hidden-Attribut wird immer respektiert', /\[hidden\]\{display:none !impo
 
 group('Kopfzone');
 const kopf = APP.slice(APP.indexOf('<header class="shell-header">'), APP.indexOf('<main class="content-body"'));
-ok('Bereichs-Reihenfolge: Alle, Wartungen, Eigene To-Dos',
-   (() => { const o = [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]); return o.join(',') === 'alle,wartung,todo'; })(),
-   [...kopf.matchAll(/data-bereich="(\w+)"/g)].map(m => m[1]).join(' → '));
-ok('Alle drei Bereiche zeigen ihre Anzahl',
-   (kopf.match(/class="n" id="nScope(Alle|Wartung|Todo)"/g) || []).length === 3,
-   (kopf.match(/id="nScope/g) || []).length + ' Zähler');
+ok('Tab-Reihenfolge: Alle, Wartungen, Eigene To-Dos',
+   (() => { const o = [...reg['#tabBar'].innerHTML.matchAll(/data-tab="([\w]+)"/g)].map(m => m[1]); return o.slice(0, 3).join(',') === 'all,wartung,todo'; })(),
+   [...reg['#tabBar'].innerHTML.matchAll(/data-tab="([\w]+)"/g)].map(m => m[1]).join(' → '));
+ok('Alle drei Tabs zeigen ihre Anzahl',
+   (reg['#tabBar'].innerHTML.match(/<span class="n">\d+<\/span>/g) || []).length >= 3);
 ok('Keine doppelten Kennzahlen mehr', !/page-stats|id="pageStats"/.test(APP));
-ok('Kopf konsolidiert: Suche oben, Toolbar mit Ansichten darunter',
-   /class="hdr-search"/.test(kopf) && /id="viewSwitch"/.test(kopf) &&
-   /class="toolbar-row"/.test(kopf) && /class="filter-drawer"/.test(APP));
+ok('Kopf konsolidiert: Suche oben, Tabs + Sammel-Knopf darunter',
+   /class="hdr-search"/.test(kopf) && /id="tabBar"/.test(kopf) &&
+   /class="toolbar-row"/.test(kopf) && /id="btnViewPanel"/.test(kopf) && /class="view-panel"/.test(APP));
 ok('Suche ist hervorgehoben', /hdr-search/.test(APP) && /searchkey/.test(APP));
 ok('Filterzeile enthält Status-Chips', /id="statusChips"/.test(kopf));
 ok('Status-Pills: Alle, Überfällig, Bald, Offen, Erledigt',
@@ -418,7 +418,7 @@ ok('Status-Pills: Alle, Überfällig, Bald, Offen, Erledigt',
      /key: 'open'/.test(g[1]) && /key: 'done'/.test(g[1]); })());
 ok('Status-Pill setzt den Filter (Alle = zurücksetzen)',
    /state\.status = b\.dataset\.status/.test(src));
-ok('Feinfilter im ausklappbaren Panel', /id="filterDrawer"/.test(kopf) && /id="btnFilterToggle"/.test(kopf) && /id="fltUser"/.test(kopf));
+ok('Filter/Ansicht im ausklappbaren Panel', /id="viewPanel"/.test(kopf) && /id="btnViewPanel"/.test(kopf) && /id="fltUser"/.test(kopf));
 ok('Objekt-Auswahl entfernt (Suche deckt Objekt ab)',
    !/id="fltObj"/.test(APP) && !/alle Objekte/.test(APP));
 ok('Zeilenkopf als festes Spalten-Grid',
@@ -490,6 +490,48 @@ ok('Fortschritt zählt meine Wartungen', f.personal && f.total === meine.length 
    f.done + '/' + f.total);
 ctx.render();
 ok('Fortschrittsbalken oben vorhanden', /class="progress-strip"/.test(APP) && /\d+ \/ \d+ · \d+%/.test(reg['#psValue'].textContent));
+
+/* --------------------------------------------------- Zeitraum, Tabs, Format */
+group('Zeitraum-Filter');
+const withBis = state.items.filter(i => i.bis);
+const jahr = ctx.parseDate(withBis[0].bis).getFullYear();
+state.zeitraumJahr = String(jahr); state.von = ''; state.bis = '';
+ok('Jahr filtert auf das Frist-Jahr',
+   ctx.filtered(state.items).length === withBis.filter(i => ctx.parseDate(i.bis).getFullYear() === jahr).length,
+   ctx.filtered(state.items).length + ' Treffer in ' + jahr);
+state.zeitraumJahr = ''; state.von = '01.01.2026'; state.bis = '31.12.2026';
+ok('von/bis grenzt den Zeitraum ein',
+   ctx.filtered(state.items).length > 0 && ctx.filtered(state.items).every(i => {
+     const d = ctx.parseDate(i.bis);
+     return d && d >= ctx.parseDate('01.01.2026') && d <= ctx.parseDate('31.12.2026');
+   }));
+state.zeitraumJahr = ''; state.von = ''; state.bis = '';
+ok('Zeitraumfelder im Panel', /id="fltJahr"/.test(APP) && /id="fltVon"/.test(APP) && /id="fltBis"/.test(APP));
+
+group('Tabs (gespeicherte Ansichten)');
+ctx.setBereich('wartung'); ctx.setGroup('status'); ctx.setView('list');
+const tabsKey = ctx.__config.storageKey + '.tabs';
+const newId = ctx.addTab('Prüfungen 2026');
+const T = ctx.WT.tabs.all().list.find(t => t.id === newId);
+ok('Neuer Tab angelegt und aktiv', !!T && !T.builtin && ctx.WT.tabs.all().active === newId, T && T.name);
+ok('Tab übernimmt die aktuellen Einstellungen', T.settings.group === 'status' && T.settings.bereich === 'wartung');
+ctx.toggleFavTab(newId);
+ok('Tab als Favorit angepinnt (vorne)', ctx.orderedTabs()[0].id === newId && T.fav === true);
+ok('Tabs werden gespeichert', JSON.parse(store.get(tabsKey) || '{}').list.some(t => t.id === newId));
+ctx.applyTab('all');
+ok('Tab-Wechsel stellt Einstellungen her', state.bereich === 'alle');
+ctx.applyTab(newId);
+ok('Zurück im eigenen Tab', state.bereich === 'wartung' && state.group === 'status');
+ctx.renameTab(newId, 'TÜV');
+ok('Tab umbenennbar', ctx.WT.tabs.all().list.find(t => t.id === newId).name === 'TÜV');
+ctx.closeTab(newId);
+ok('Eigener Tab schließbar', !ctx.WT.tabs.all().list.some(t => t.id === newId));
+ok('Standard-Tabs bleiben bestehen', (() => { ctx.closeTab('all'); return ctx.WT.tabs.all().list.some(t => t.id === 'all'); })());
+ctx.applyTab('all'); ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc'); ctx.setBereich('wartung');
+
+group('Namensformat und Scrollen');
+ok('Dialog fragt Nachname, Vorname', /Nachname, Vorname/.test(src) && !/Vor- und Nachname/.test(src));
+ok('Scrollbereich der Liste hat overflow:auto', /\.content-body\{[^}]*overflow:auto/.test(css));
 
 console.log('\n' + (fails
   ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs

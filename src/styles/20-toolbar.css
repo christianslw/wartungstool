@@ -9,12 +9,13 @@
   position:relative;z-index:10;
 }
 
-.scope-tabs{display:flex;align-items:flex-end;height:100%;gap:4px;flex:0 0 auto}
+.scope-tabs{display:flex;align-items:flex-end;height:100%;gap:4px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.scope-tabs::-webkit-scrollbar{display:none}
 .scope-tab{
-  display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px;
-  font-size:13px;font-weight:500;color:var(--text-secondary);
+  display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 10px 0 12px;
+  font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;
   border-bottom:2px solid transparent;transition:color .12s, border-color .12s;
-  white-space:nowrap;
+  white-space:nowrap;flex:0 0 auto;
 }
 .scope-tab:hover{color:var(--text-primary)}
 .scope-tab[aria-selected="true"]{
@@ -87,12 +88,43 @@
 .btn-cta:hover{background:var(--interactive-hover)}
 .btn-cta:active{background:var(--interactive-active)}
 
-.filter-drawer{
-  display:flex;align-items:center;gap:8px;padding:6px 16px;background:var(--layer-01);
-  border-bottom:1px solid var(--border-subtle);flex-wrap:wrap;font-size:12px;
+.scope-tab .tab-menu{
+  display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:2px;color:var(--text-helper);opacity:0;transition:opacity .1s, background .1s;
 }
-.filter-drawer .sel select{
+.scope-tab:hover .tab-menu,.scope-tab:focus-within .tab-menu{opacity:1}
+.scope-tab .tab-menu:hover{background:var(--hover-2);color:var(--text-primary)}
+.scope-tab.fav .tab-star{color:var(--warning);font-size:10px}
+.scope-add{
+  display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;
+  color:var(--text-secondary);font-size:16px;flex:0 0 auto;
+}
+.scope-add:hover{color:var(--text-primary);background:var(--hover-1)}
+
+/* Ausklappbare Leiste: Status, Filter, Gruppieren/Sortieren/Ansicht, Presets */
+.view-panel{
+  background:var(--layer-01);border-bottom:1px solid var(--border-subtle);
+  padding:8px 16px;display:flex;flex-direction:column;gap:8px;font-size:12px;flex:0 0 auto;
+}
+.vp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.view-panel .sel select{
   height:28px;background:var(--layer-02);border:1px solid var(--border-subtle);
   padding:0 24px 0 8px;font-size:11px;color:var(--text-primary);
 }
-.filter-drawer .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
+.view-panel .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
+.inp-sm{
+  height:28px;width:112px;background:var(--layer-02);border:1px solid var(--border-subtle);
+  padding:0 8px;font-size:11px;color:var(--text-primary);
+}
+
+/* Kontextmenü an Tabs (Favorit, Umbenennen, Schließen) */
+.ctx-menu{
+  position:fixed;z-index:calc(var(--z-overlay, 1000) + 5);min-width:180px;
+  background:var(--layer-02);border:1px solid var(--border-subtle);box-shadow:var(--shadow-2);
+  padding:4px;display:flex;flex-direction:column;
+}
+.ctx-menu button{
+  display:block;width:100%;text-align:left;padding:6px 10px;font-size:12px;
+  color:var(--text-primary);border-radius:2px;
+}
+.ctx-menu button:hover{background:var(--hover-2)}

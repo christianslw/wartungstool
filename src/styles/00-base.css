@@ -123,6 +123,14 @@ body{
   font-size:13px;line-height:18px;letter-spacing:.16px;-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;overflow:hidden;
 }
+
+/* Scrollbereich der Ansichten: Kopf, Toolbar und Fußzeile bleiben stehen. */
+.content-body{flex:1 1 auto;overflow:auto;scrollbar-gutter:stable;min-height:0}
+@media print{
+  body{overflow:visible;display:block}
+  .content-body{overflow:visible;display:block}
+  .content-body,.locs,.tbl-wrap,.tiles,.blobs,.plan{padding:0 !important}
+}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 a{color:var(--link);text-decoration:none}

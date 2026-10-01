@@ -91,19 +91,23 @@ In der Produktion zusätzlich über Spaltenrechte (siehe `schema.sql`).
 
 ## 4. Bedienung
 
-**Leitidee:** Die App ist ein Arbeitsmittel, kein Datenbrowser. Der Kopf besteht
-nur aus einer Leiste plus einer Filterzeile:
+**Leitidee:** Die App ist ein Arbeitsmittel, kein Datenbrowser. Sie gliedert sich
+in **Tabs** (benannte Ansichten), eine **zusammengefasste Steuerung** und einen
+**Fortschrittsbalken**:
 
 1. **Titelleiste** (folgt dem Design, hell/dunkel): Programmname · **globale
    Suche** (Taste `/`) · Name · Drucken/Menü
-2. **Werkzeugleiste**: Bereich (`Alle · Wartungen · Eigene To-Dos`, je mit
-   Anzahl) · Status-Pills (`Alle · Überfällig · Bald · Offen · Erledigt`, mit
-   Zahlen) · **Filter** · die **drei Schritte** (Gruppieren · Sortieren ·
-   Ansicht) · **Presets** · *Neues To-Do*
-3. **Fortschrittsbalken**: Gesamtfortschritt der Wartungen – eigene, sonst alle.
+2. **Tab-Leiste**: die Standard-Ansichten *Alle · Wartungen · Eigene To-Dos*,
+   daneben **`+`** für eigene Tabs (benennen). Jeder Tab merkt sich **seine
+   Filter und Ansicht**; Favoriten (`★`) stehen vorne. Rechtsklick auf einen Tab
+   (oder Hover → `⋯`) öffnet *Anpinnen · Umbenennen · Schließen*.
+3. **Ansicht & Filter** – **ein** Knopf öffnet darunter die Leiste mit Status-Pills,
+   *Meine*, Personen, Tätigkeit, **Zeitraum** (Jahr + von/bis), den **drei
+   Schritten** (Gruppieren · Sortieren · Ansicht) und **Presets**.
+4. **Fortschrittsbalken**: Gesamtfortschritt der Wartungen – eigene, sonst alle.
 
-Die **Feinfilter** (Personen, Tätigkeit, *Meine*) liegen platzsparend
-im ausklappbaren **Filter-Panel**; der Filter-Knopf zeigt aktive Feinfilter an.
+Alle Tabs und Einstellungen werden **clientseitig gespeichert** (`localStorage`)
+und bleiben über Sitzungen erhalten.
 
 Die **Standortzeilen** sitzen in einem **festen Spalten-Grid**:
 
@@ -124,7 +128,7 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 | Aktion | Weg |
 |---|---|
 | Suchen | Suchfeld oben oder Taste `/` |
-| Filtern | Status-Pills + Bereichs-Umschalter; Feinfilter über **Filter** |
+| Filtern | Status-Pills, Personen, Tätigkeit, **Zeitraum** (Jahr, von/bis) im Knopf *Ansicht & Filter* |
 | **Abhaken** | Kästchen ganz links – Datum, Name und der **Abschlusskommentar** werden abgefragt |
 | **Termin disponieren** | Kalender-Symbol in der Zeile **oder im Standortkopf** (pauschaler Termin) |
 | Kommentar ändern | „Kommentar" in der Zeile oder Detailleiste (Wartungen) bzw. im To-Do-Dialog |
@@ -154,11 +158,21 @@ Ganz unten, dezent in der Mitte, zeigt eine schmale Fußzeile die **Datenquelle*
 **In allen Ansichten stehen offene Positionen oben**, abgeschlossene Gruppen
 unten.
 
+### Tabs & Zeitraum (clientseitig)
+Die **Tabs** oben sind benannte Ansichten. Die drei Standard-Tabs (*Alle · Wartungen ·
+Eigene To-Dos*) bleiben bestehen; **`+`** legt einen eigenen, benannten Tab an, der
+offen bleibt, bis er geschlossen wird. Jeder Tab speichert **seine** Filter- und
+Ansichtseinstellungen in `localStorage` (über Sitzungen hinweg). Favoriten (`★`)
+werden vorne angepinnt; Rechtsklick oder Hover → `⋯` bietet *Anpinnen · Umbenennen ·
+Schließen*.
+Der **Zeitraum**-Filter grenzt nach dem Fristjahr (z. B. 2026) und/oder per
+**von-/bis-Datum** ein.
+
 ### Presets (clientseitig)
-Die Kombination aus Gruppieren, Sortieren und Ansicht lässt sich als **Preset**
-speichern (`＋`), im Dropdown wählen, mit `★` **als Standard** festlegen und mit
-`×` löschen. Gespeichert wird im Browser (`localStorage`), ein Standard wird beim
-Start automatisch angewandt. Es sind **keine Stammdaten** – reine Anzeigepräferenz.
+Zusätzlich lässt sich die Kombination aus Gruppieren, Sortieren und Ansicht als
+**Preset** speichern (`＋`), im Dropdown wählen, mit `★` **als Standard** festlegen
+und mit `×` löschen. Ein Standard-Preset gibt die Anzeige vor, mit der **neue Tabs**
+starten. Alles liegt in `localStorage` – reine Anzeigepräferenz, keine Stammdaten.
 
 **To-Dos** nutzen exakt dieselben Gruppierungen und Ansichten und sind nur durch
 ihr Kennzeichen „To-Do" unterscheidbar. Im Bereich **Alle** erscheinen Wartungen

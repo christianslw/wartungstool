@@ -4,8 +4,9 @@
    verstreuter Namen im Globalen Namensraum. In der Konsole:
 
        WT.state.items.length
-       WT.setView('plan')
-       WT.aktuelleZahlen('alle')
+       WT.view.setView('tiles')
+       WT.select.aktuelleZahlen('alle')
+       WT.tabs.all().list
        WT.store                 // aktueller Store (Local/Api)
        WT.resetCache()          // localStorage-Bestand verwerfen + neu laden
 
@@ -35,6 +36,11 @@ window.WT = {
   /* Presets (src/js/44-presets.js) */
   presets: { loadPresets, applyPreset, saveCurrentPreset, deletePreset, setDefaultPreset, applyDefaultPreset },
 
+  /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
+  tabs: {
+    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, toggleFavTab, orderedTabs, tabCount
+  },
+
   /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein
      bestehendes SQL-Backend: gleiche Methoden wie LocalStore implementieren. */
   stores: { LocalStore, ApiStore },
@@ -54,8 +60,9 @@ window.WT = {
     return {
       quelle: store === ApiStore ? 'SQL-Backend' : (hasDataFile() ? 'daten.js' : 'Testbestand'),
       online: state.online,
-      bereich: state.bereich, ansicht: state.view, status: state.status,
+      bereich: state.bereich, tab: (activeTab() || {}).name, ansicht: state.view, status: state.status,
       gruppe: state.group, sortierung: state.sortKey + ' ' + state.sortDir,
+      zeitraum: [state.zeitraumJahr, state.von, state.bis].filter(Boolean).join(' '),
       positionen: state.items.length, todos: state.todos.length,
       zahlen: countsForScope(state.bereich)
     };

@@ -2,7 +2,7 @@
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
-  applyDefaultPreset();
+  applyTabState(activeTab());
   store = CONFIG.dataSource === 'api' ? ApiStore : LocalStore;
   state.loading = true; render();
 

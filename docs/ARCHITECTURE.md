@@ -41,6 +41,7 @@ src/
    ├─ 42-selectors.js       Filter, Gruppierung, Kennzahlen
    ├─ 43-actions.js         setView / setGroup / setSort / setBereich / fortschritt
    ├─ 44-presets.js         Presets (Gruppieren+Sortieren+Ansicht), Standard
+   ├─ 45-tabs.js            Tabs (benannte Ansichten), Zeitraum-Jahre, Persistenz
    ├─ 50-render.js          Rendering aller Ansichten
    ├─ 60-detail.js          Detailpanel, Anhänge, Combo-Box
    ├─ 70-termin.js          Outlook-/ICS-Disposition
@@ -144,6 +145,17 @@ Die Darstellung wird allein durch vier Felder in `state` gesteuert:
 in `src/js/50-render.js` rendern Liste, Kacheln oder Blasen. Presets
 (`src/js/44-presets.js`) speichern genau diese vier Felder in `localStorage`.
 Der Fortschrittsbalken kommt aus `fortschritt()` (`src/js/43-actions.js`).
+
+## Tabs (benannte Ansichten)
+
+`src/js/45-tabs.js` hält eine Liste von Tabs in `localStorage`
+(`<storageKey>.tabs`). Drei Standard-Tabs (`all`/`wartung`/`todo`) sind
+`builtin` und nicht schließbar; `+` legt eigene Tabs an. Jeder Tab speichert
+`TAB_SETTING_KEYS` (Bereich, Status, Suche, Personen, Mine, **Zeitraum**,
+Gruppierung, Ansicht, Sortierung). `syncActiveTab()` schreibt den Zustand bei
+jedem Rendern zurück, `applyTabState()` stellt ihn wieder her. Favoriten werden
+über `orderedTabs()` vorne angepinnt. Der Zeitraumfilter (`zeitraumJahr`, `von`,
+`bis`) wirkt in `42-selectors.js`/`zeitraumMatch()` auf die Frist `bis`.
 
 ## Konventionen
 

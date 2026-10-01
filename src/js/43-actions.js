@@ -32,9 +32,12 @@ function toggleSortDir() {
   render();
 }
 
-/** Bereich wechseln: 'alle' | 'wartung' | 'todo'. */
+/** Bereich wechseln: 'alle' | 'wartung' | 'todo'.
+    Aktiviert den zugehörigen Standard-Tab, falls vorhanden. */
 function setBereich(b) {
   if (state.bereich === b) return;
+  const t = TABS.list.find(x => x.builtin && x.settings.bereich === b);
+  if (t) { applyTabState(t); render(); return; }
   state.bereich = b;
   render();
 }

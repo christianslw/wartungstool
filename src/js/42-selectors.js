@@ -6,26 +6,42 @@ function statusMatch(it, s) {
   return statusOf(it) === s;
 }
 
-function filtered(srcList) {
-  const q = norm(state.query);
+function filtered(srcList, s = state) {
+  const q = norm(s.query);
   return srcList.filter(it => {
     if (!matchesQuery(it, q)) return false;
-    if (state.art && it.objekt_art !== state.art) return false;
-    if (state.objekt && it.objekt_name !== state.objekt) return false;
-    if (state.taetigkeit && it.taetigkeit !== state.taetigkeit) return false;
-    if (state.personen.length && !state.personen.includes(it.zustaendig)) return false;
-    if (state.mine && (!state.user || norm(it.zustaendig) !== norm(state.user))) return false;
-    if (!statusMatch(it, state.status)) return false;
+    if (s.art && it.objekt_art !== s.art) return false;
+    if (s.objekt && it.objekt_name !== s.objekt) return false;
+    if (s.taetigkeit && it.taetigkeit !== s.taetigkeit) return false;
+    if (s.personen && s.personen.length && !s.personen.includes(it.zustaendig)) return false;
+    if (s.mine && (!state.user || norm(it.zustaendig) !== norm(state.user))) return false;
+    if (!statusMatch(it, s.status)) return false;
+    if (!zeitraumMatch(it, s)) return false;
     return true;
   });
 }
 
+/** Positionen eines Bereichs (ohne Filter). */
+function bereichListe(bereich) {
+  if (bereich === 'todo') return state.todos.map(markToDo);
+  if (bereich === 'wartung') return state.items;
+  return state.items.concat(state.todos.map(markToDo));
+}
+
 function aktuelleListe() {
-  let list = [];
-  if (state.bereich === 'todo') list = state.todos.map(markToDo);
-  else if (state.bereich === 'wartung') list = state.items;
-  else list = state.items.concat(state.todos.map(markToDo));
-  return filtered(list);
+  return filtered(bereichListe(state.bereich));
+}
+
+/** Zeitraumfilter: Jahr und/oder von-/bis-Datum (bezogen auf die Frist `bis`). */
+function zeitraumMatch(it, s) {
+  if (!s.zeitraumJahr && !s.von && !s.bis) return true;
+  const d = parseDate(it.bis);
+  if (!d) return false;
+  if (s.zeitraumJahr && String(d.getFullYear()) !== String(s.zeitraumJahr)) return false;
+  const von = parseDate(s.von), bis = parseDate(s.bis);
+  if (von && d < von) return false;
+  if (bis && d > bis) return false;
+  return true;
 }
 
 function countsForScope(scope) {

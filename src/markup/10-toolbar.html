@@ -1,43 +1,14 @@
-<!-- Chrome Zeile 2: Toolbar -->
+<!-- Chrome Zeile 2: Toolbar (Tabs + zusammengefasste Steuerung) -->
 <div class="toolbar-row">
-  <div class="scope-tabs" id="bereichSwitch" role="tablist" aria-label="Bereich">
-    <button role="tab" class="scope-tab" data-bereich="alle" aria-selected="true">Alle <span class="n" id="nScopeAlle">0</span></button>
-    <button role="tab" class="scope-tab" data-bereich="wartung" aria-selected="false">Wartungen <span class="n" id="nScopeWartung">0</span></button>
-    <button role="tab" class="scope-tab" data-bereich="todo" aria-selected="false">Eigene To-Dos <span class="n" id="nScopeTodo">0</span></button>
-  </div>
-
-  <div class="tb-center">
-    <div class="status-seg" id="statusChips" role="group" aria-label="Statusfilter"></div>
-    <button class="btn-mine" id="chipMine" title="Nur mir zugewiesene Positionen">
-      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
-      Meine <span class="n" id="chipMineN" hidden>0</span>
-    </button>
-  </div>
+  <div class="scope-tabs" id="tabBar" role="tablist" aria-label="Ansichten"></div>
 
   <div class="tb-right">
-    <button class="btn-filter-toggle" id="btnFilterToggle" aria-expanded="false" title="Feinfilter ein-/ausblenden">
-      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg>
-      <span>Filter</span>
-      <span class="dot" id="filterActiveDot" hidden></span>
-    </button>
-
-    <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
-      <button class="view-btn" data-view="list" aria-pressed="true" title="Listenansicht">Liste</button>
-      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe">Kacheln</button>
-      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt">Blobs</button>
-    </div>
-
-    <span class="step" data-label="Gruppe"><select id="groupSel" aria-label="Gruppieren nach"></select></span>
-    <span class="step" data-label="Sortierung"><select id="sortSel" aria-label="Sortieren nach"></select></span>
-    <button class="btn-ic" id="sortDir" title="auf-/absteigend">↑</button>
-
-    <span class="step" data-label="Preset"><select id="presetSel" aria-label="Preset"></select></span>
-    <button class="btn-ic" id="presetSave" title="Aktuelle Kombination speichern">＋</button>
-    <button class="btn-ic" id="presetDefault" title="Als Standard festlegen">★</button>
-    <button class="btn-ic" id="presetDelete" title="Preset löschen">×</button>
-
     <span id="viewAction"></span>
-
+    <button class="btn-filter-toggle" id="btnViewPanel" aria-expanded="false" title="Filter, Gruppierung, Sortierung und Ansicht">
+      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg>
+      <span>Ansicht &amp; Filter</span>
+      <span class="dot" id="viewActiveDot" hidden></span>
+    </button>
     <button class="btn-cta" id="btnNewTodo">
       <svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M15 6h2v9h9v2h-9v9h-2v-9H6v-2h9z"/></svg>
       <span>Neues To-Do</span>

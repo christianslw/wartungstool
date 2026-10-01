@@ -50,9 +50,80 @@ $('#tableHost').addEventListener('click', async e => {
 $('#search').addEventListener('input', debounce(e => { state.query = e.target.value; render(); }, 110));
 $('#searchClear').addEventListener('click', () => { $('#search').value = ''; state.query = ''; render(); $('#search').focus(); });
 
-$('#bereichSwitch').addEventListener('click', e => {
-  const b = e.target.closest('[data-bereich]');
-  if (b) { state.bereich = b.dataset.bereich; state.status = 'alle'; render(); }
+/* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
+let tabMenuEl = null;
+function closeTabMenu() {
+  if (tabMenuEl && tabMenuEl.remove) tabMenuEl.remove();
+  tabMenuEl = null;
+}
+function openTabMenu(id, x, y) {
+  closeTabMenu();
+  const t = TABS.list.find(z => z.id === id);
+  if (!t) return;
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML =
+    '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
+    '<button type="button" data-tabact="rename">Umbenennen</button>' +
+    (t.builtin ? '' : '<button type="button" data-tabact="close">Tab schließen</button>');
+  el.style.left = Math.max(4, x || 0) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-tabact]');
+    if (!b) return;
+    const act = b.dataset.tabact;
+    closeTabMenu();
+    if (act === 'fav') toggleFavTab(id);
+    else if (act === 'close') closeTab(id);
+    else if (act === 'rename') {
+      const r = await modal({
+        title: 'Tab umbenennen',
+        bodyHtml: '<div class="fld"><label for="tName">Name</label><input class="inp" id="tName" value="' + esc(t.name) + '"></div>',
+        primary: 'Speichern',
+        collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
+        validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+      });
+      if (r && r.name) renameTab(id, r.name);
+    }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+}
+function newTabDialog() {
+  return modal({
+    title: 'Neue Ansicht',
+    bodyHtml: '<p class="t-helper" style="margin-bottom:10px">Eigener Tab: übernimmt die aktuellen Filter und die Ansicht und bleibt gespeichert.</p>' +
+      '<div class="fld"><label for="tName">Name</label><input class="inp" id="tName" value="Neue Ansicht"></div>',
+    primary: 'Anlegen',
+    collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
+    validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+  }).then((r) => { if (r && r.name) { addTab(r.name); toast('Tab angelegt', { tone: 'success', detail: r.name }); } });
+}
+document.addEventListener('mousedown', (e) => {
+  if (tabMenuEl && e.target.closest && !e.target.closest('.ctx-menu')) closeTabMenu();
+});
+
+$('#tabBar').addEventListener('click', e => {
+  const menuBtn = e.target.closest('[data-tabmenu]');
+  if (menuBtn) {
+    e.stopPropagation();
+    const r = menuBtn.getBoundingClientRect ? menuBtn.getBoundingClientRect() : { left: 4, bottom: 30 };
+    return openTabMenu(menuBtn.dataset.tabmenu, r.left, r.bottom + 4);
+  }
+  if (e.target.closest('#tabAdd')) return newTabDialog();
+  const tab = e.target.closest('[data-tab]');
+  if (tab) applyTab(tab.dataset.tab);
+});
+$('#tabBar').addEventListener('contextmenu', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (!tab) return;
+  e.preventDefault();
+  openTabMenu(tab.dataset.tab, e.clientX || 0, e.clientY || 0);
+});
+$('#tabBar').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { e.preventDefault(); applyTab(tab.dataset.tab); }
 });
 
 $('#statusChips').addEventListener('click', e => {
@@ -101,17 +172,23 @@ $('#presetDelete').addEventListener('click', () => {
   toast('Preset gelöscht', { tone: 'warning', detail: name });
 });
 
-$('#btnFilterToggle').addEventListener('click', () => {
+$('#btnViewPanel').addEventListener('click', () => {
   state.filterOpen = !state.filterOpen;
   renderToolbar();
 });
 
-$('.filter-drawer').addEventListener('change', e => {
+$('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
+  if (e.target.id === 'fltJahr') state.zeitraumJahr = e.target.value;
   render();
 });
+$('#viewPanel').addEventListener('input', e => {
+  if (e.target.id === 'fltVon') { e.target.value = maskDate(e.target.value); state.von = e.target.value; render(); }
+  if (e.target.id === 'fltBis') { e.target.value = maskDate(e.target.value); state.bis = e.target.value; render(); }
+});
 $('#btnReset').addEventListener('click', () => {
-  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false; state.personen = [];
+  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
+  state.personen = []; state.zeitraumJahr = ''; state.von = ''; state.bis = '';
   $('#search').value = '';
   render();
 });
@@ -157,6 +234,7 @@ menu.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   if (e.key === 'Escape') {
+    if (tabMenuEl) { closeTabMenu(); return; }
     if (typing) { e.target.blur(); return; }
     if ($('#overlay').children.length) return;
     state.query = ''; state.status = 'alle'; $('#search').value = ''; render();

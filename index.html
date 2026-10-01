@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- ==========================================================================
      GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
-     Quelle: src/   Bauen: node build.mjs   (Build 17f91ecb)
+     Quelle: src/   Bauen: node build.mjs   (Build 43276bb2)
      ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
@@ -137,6 +137,14 @@ body{
   font-size:13px;line-height:18px;letter-spacing:.16px;-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;overflow:hidden;
 }
+
+/* Scrollbereich der Ansichten: Kopf, Toolbar und Fußzeile bleiben stehen. */
+.content-body{flex:1 1 auto;overflow:auto;scrollbar-gutter:stable;min-height:0}
+@media print{
+  body{overflow:visible;display:block}
+  .content-body{overflow:visible;display:block}
+  .content-body,.locs,.tbl-wrap,.tiles,.blobs,.plan{padding:0 !important}
+}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 a{color:var(--link);text-decoration:none}
@@ -229,12 +237,13 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
   position:relative;z-index:10;
 }
 
-.scope-tabs{display:flex;align-items:flex-end;height:100%;gap:4px;flex:0 0 auto}
+.scope-tabs{display:flex;align-items:flex-end;height:100%;gap:4px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.scope-tabs::-webkit-scrollbar{display:none}
 .scope-tab{
-  display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px;
-  font-size:13px;font-weight:500;color:var(--text-secondary);
+  display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 10px 0 12px;
+  font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;
   border-bottom:2px solid transparent;transition:color .12s, border-color .12s;
-  white-space:nowrap;
+  white-space:nowrap;flex:0 0 auto;
 }
 .scope-tab:hover{color:var(--text-primary)}
 .scope-tab[aria-selected="true"]{
@@ -307,15 +316,46 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 .btn-cta:hover{background:var(--interactive-hover)}
 .btn-cta:active{background:var(--interactive-active)}
 
-.filter-drawer{
-  display:flex;align-items:center;gap:8px;padding:6px 16px;background:var(--layer-01);
-  border-bottom:1px solid var(--border-subtle);flex-wrap:wrap;font-size:12px;
+.scope-tab .tab-menu{
+  display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:2px;color:var(--text-helper);opacity:0;transition:opacity .1s, background .1s;
 }
-.filter-drawer .sel select{
+.scope-tab:hover .tab-menu,.scope-tab:focus-within .tab-menu{opacity:1}
+.scope-tab .tab-menu:hover{background:var(--hover-2);color:var(--text-primary)}
+.scope-tab.fav .tab-star{color:var(--warning);font-size:10px}
+.scope-add{
+  display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;
+  color:var(--text-secondary);font-size:16px;flex:0 0 auto;
+}
+.scope-add:hover{color:var(--text-primary);background:var(--hover-1)}
+
+/* Ausklappbare Leiste: Status, Filter, Gruppieren/Sortieren/Ansicht, Presets */
+.view-panel{
+  background:var(--layer-01);border-bottom:1px solid var(--border-subtle);
+  padding:8px 16px;display:flex;flex-direction:column;gap:8px;font-size:12px;flex:0 0 auto;
+}
+.vp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.view-panel .sel select{
   height:28px;background:var(--layer-02);border:1px solid var(--border-subtle);
   padding:0 24px 0 8px;font-size:11px;color:var(--text-primary);
 }
-.filter-drawer .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
+.view-panel .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
+.inp-sm{
+  height:28px;width:112px;background:var(--layer-02);border:1px solid var(--border-subtle);
+  padding:0 8px;font-size:11px;color:var(--text-primary);
+}
+
+/* Kontextmenü an Tabs (Favorit, Umbenennen, Schließen) */
+.ctx-menu{
+  position:fixed;z-index:calc(var(--z-overlay, 1000) + 5);min-width:180px;
+  background:var(--layer-02);border:1px solid var(--border-subtle);box-shadow:var(--shadow-2);
+  padding:4px;display:flex;flex-direction:column;
+}
+.ctx-menu button{
+  display:block;width:100%;text-align:left;padding:6px 10px;font-size:12px;
+  color:var(--text-primary);border-radius:2px;
+}
+.ctx-menu button:hover{background:var(--hover-2)}
 
 /* Wartungstool · Styles · Standortliste / Progress Rings */
 /* ==========================================================================
@@ -699,46 +739,17 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
   </div>
 </header>
 
-<!-- Chrome Zeile 2: Toolbar -->
+<!-- Chrome Zeile 2: Toolbar (Tabs + zusammengefasste Steuerung) -->
 <div class="toolbar-row">
-  <div class="scope-tabs" id="bereichSwitch" role="tablist" aria-label="Bereich">
-    <button role="tab" class="scope-tab" data-bereich="alle" aria-selected="true">Alle <span class="n" id="nScopeAlle">0</span></button>
-    <button role="tab" class="scope-tab" data-bereich="wartung" aria-selected="false">Wartungen <span class="n" id="nScopeWartung">0</span></button>
-    <button role="tab" class="scope-tab" data-bereich="todo" aria-selected="false">Eigene To-Dos <span class="n" id="nScopeTodo">0</span></button>
-  </div>
-
-  <div class="tb-center">
-    <div class="status-seg" id="statusChips" role="group" aria-label="Statusfilter"></div>
-    <button class="btn-mine" id="chipMine" title="Nur mir zugewiesene Positionen">
-      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
-      Meine <span class="n" id="chipMineN" hidden>0</span>
-    </button>
-  </div>
+  <div class="scope-tabs" id="tabBar" role="tablist" aria-label="Ansichten"></div>
 
   <div class="tb-right">
-    <button class="btn-filter-toggle" id="btnFilterToggle" aria-expanded="false" title="Feinfilter ein-/ausblenden">
-      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg>
-      <span>Filter</span>
-      <span class="dot" id="filterActiveDot" hidden></span>
-    </button>
-
-    <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
-      <button class="view-btn" data-view="list" aria-pressed="true" title="Listenansicht">Liste</button>
-      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe">Kacheln</button>
-      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt">Blobs</button>
-    </div>
-
-    <span class="step" data-label="Gruppe"><select id="groupSel" aria-label="Gruppieren nach"></select></span>
-    <span class="step" data-label="Sortierung"><select id="sortSel" aria-label="Sortieren nach"></select></span>
-    <button class="btn-ic" id="sortDir" title="auf-/absteigend">↑</button>
-
-    <span class="step" data-label="Preset"><select id="presetSel" aria-label="Preset"></select></span>
-    <button class="btn-ic" id="presetSave" title="Aktuelle Kombination speichern">＋</button>
-    <button class="btn-ic" id="presetDefault" title="Als Standard festlegen">★</button>
-    <button class="btn-ic" id="presetDelete" title="Preset löschen">×</button>
-
     <span id="viewAction"></span>
-
+    <button class="btn-filter-toggle" id="btnViewPanel" aria-expanded="false" title="Filter, Gruppierung, Sortierung und Ansicht">
+      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg>
+      <span>Ansicht &amp; Filter</span>
+      <span class="dot" id="viewActiveDot" hidden></span>
+    </button>
     <button class="btn-cta" id="btnNewTodo">
       <svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M15 6h2v9h9v2h-9v9h-2v-9H6v-2h9z"/></svg>
       <span>Neues To-Do</span>
@@ -746,12 +757,40 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
   </div>
 </div>
 
-<!-- Ausklappbarer Filter-Drawer -->
-<div class="filter-drawer" id="filterDrawer" hidden>
-  <span class="combo-host" id="fltUser" style="width:160px"></span>
-  <span class="sel"><select id="fltTask"><option value="">alle Tätigkeiten</option></select></span>
-  <button class="btn btn-sm btn-ghost" id="btnReset" hidden>Filter zurücksetzen</button>
-  <span class="summary-info" id="resultInfo"></span>
+<!-- Ausklappbare Leiste: Status, Filter, Gruppieren/Sortieren/Ansicht, Presets -->
+<div class="view-panel" id="viewPanel" hidden>
+  <div class="vp-row">
+    <div class="status-seg" id="statusChips" role="group" aria-label="Statusfilter"></div>
+    <button class="btn-mine" id="chipMine" title="Nur mir zugewiesene Positionen">
+      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
+      Meine <span class="n" id="chipMineN" hidden>0</span>
+    </button>
+  </div>
+
+  <div class="vp-row">
+    <span class="step" data-label="Gruppe"><select id="groupSel" aria-label="Gruppieren nach"></select></span>
+    <span class="step" data-label="Sortierung"><select id="sortSel" aria-label="Sortieren nach"></select></span>
+    <button class="btn-ic" id="sortDir" title="auf-/absteigend">↑</button>
+    <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
+      <button class="view-btn" data-view="list" aria-pressed="true" title="Listenansicht">Liste</button>
+      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe">Kacheln</button>
+      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt">Blobs</button>
+    </div>
+    <span class="step" data-label="Preset"><select id="presetSel" aria-label="Preset"></select></span>
+    <button class="btn-ic" id="presetSave" title="Aktuelle Kombination speichern">＋</button>
+    <button class="btn-ic" id="presetDefault" title="Als Standard festlegen">★</button>
+    <button class="btn-ic" id="presetDelete" title="Preset löschen">×</button>
+  </div>
+
+  <div class="vp-row">
+    <span class="combo-host" id="fltUser" style="width:160px"></span>
+    <span class="sel"><select id="fltTask"><option value="">alle Tätigkeiten</option></select></span>
+    <span class="step" data-label="Jahr"><select id="fltJahr" aria-label="Zeitraum Jahr"></select></span>
+    <span class="step" data-label="von"><input class="inp inp-sm" id="fltVon" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum von"></span>
+    <span class="step" data-label="bis"><input class="inp inp-sm" id="fltBis" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum bis"></span>
+    <button class="btn btn-sm btn-ghost" id="btnReset" hidden>Filter zurücksetzen</button>
+    <span class="summary-info" id="resultInfo"></span>
+  </div>
 </div>
 
 <!-- Inhalt, Fußzeile, Overlays -->
@@ -1286,6 +1325,7 @@ function applyTheme() {
 const state = {
   items: [], todos: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
+  zeitraumJahr: '', von: '', bis: '',
   mine: false,
   /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
   group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',
@@ -1318,26 +1358,42 @@ function statusMatch(it, s) {
   return statusOf(it) === s;
 }
 
-function filtered(srcList) {
-  const q = norm(state.query);
+function filtered(srcList, s = state) {
+  const q = norm(s.query);
   return srcList.filter(it => {
     if (!matchesQuery(it, q)) return false;
-    if (state.art && it.objekt_art !== state.art) return false;
-    if (state.objekt && it.objekt_name !== state.objekt) return false;
-    if (state.taetigkeit && it.taetigkeit !== state.taetigkeit) return false;
-    if (state.personen.length && !state.personen.includes(it.zustaendig)) return false;
-    if (state.mine && (!state.user || norm(it.zustaendig) !== norm(state.user))) return false;
-    if (!statusMatch(it, state.status)) return false;
+    if (s.art && it.objekt_art !== s.art) return false;
+    if (s.objekt && it.objekt_name !== s.objekt) return false;
+    if (s.taetigkeit && it.taetigkeit !== s.taetigkeit) return false;
+    if (s.personen && s.personen.length && !s.personen.includes(it.zustaendig)) return false;
+    if (s.mine && (!state.user || norm(it.zustaendig) !== norm(state.user))) return false;
+    if (!statusMatch(it, s.status)) return false;
+    if (!zeitraumMatch(it, s)) return false;
     return true;
   });
 }
 
+/** Positionen eines Bereichs (ohne Filter). */
+function bereichListe(bereich) {
+  if (bereich === 'todo') return state.todos.map(markToDo);
+  if (bereich === 'wartung') return state.items;
+  return state.items.concat(state.todos.map(markToDo));
+}
+
 function aktuelleListe() {
-  let list = [];
-  if (state.bereich === 'todo') list = state.todos.map(markToDo);
-  else if (state.bereich === 'wartung') list = state.items;
-  else list = state.items.concat(state.todos.map(markToDo));
-  return filtered(list);
+  return filtered(bereichListe(state.bereich));
+}
+
+/** Zeitraumfilter: Jahr und/oder von-/bis-Datum (bezogen auf die Frist `bis`). */
+function zeitraumMatch(it, s) {
+  if (!s.zeitraumJahr && !s.von && !s.bis) return true;
+  const d = parseDate(it.bis);
+  if (!d) return false;
+  if (s.zeitraumJahr && String(d.getFullYear()) !== String(s.zeitraumJahr)) return false;
+  const von = parseDate(s.von), bis = parseDate(s.bis);
+  if (von && d < von) return false;
+  if (bis && d > bis) return false;
+  return true;
 }
 
 function countsForScope(scope) {
@@ -1532,9 +1588,12 @@ function toggleSortDir() {
   render();
 }
 
-/** Bereich wechseln: 'alle' | 'wartung' | 'todo'. */
+/** Bereich wechseln: 'alle' | 'wartung' | 'todo'.
+    Aktiviert den zugehörigen Standard-Tab, falls vorhanden. */
 function setBereich(b) {
   if (state.bereich === b) return;
+  const t = TABS.list.find(x => x.builtin && x.settings.bereich === b);
+  if (t) { applyTabState(t); render(); return; }
   state.bereich = b;
   render();
 }
@@ -1642,6 +1701,170 @@ function applyDefaultPreset() {
 
 <script>
 'use strict';
+/* Wartungstool · JS · Tabs (benannte Ansichten, clientseitig)
+   ---------------------------------------------------------------------------
+   Die drei Standard-Tabs (Alle · Wartungen · Eigene To-Dos) plus beliebig
+   viele eigene Tabs. Jeder Tab merkt sich seine Filter- und Ansichts-
+   einstellungen; alles liegt in localStorage und bleibt ueber Sitzungen
+   erhalten. Tabs lassen sich als Favorit anpinnen (vorne) und - sofern nicht
+   Standard - schliessen. */
+
+const TABS_KEY = CONFIG.storageKey + '.tabs';
+
+/* Felder, die ein Tab als Einstellungen speichert. */
+const TAB_SETTING_KEYS = [
+  'bereich', 'status', 'query', 'art', 'objekt', 'taetigkeit', 'personen', 'mine',
+  'zeitraumJahr', 'von', 'bis', 'group', 'view', 'sortKey', 'sortDir'
+];
+
+const STANDARD_TABS = [
+  { id: 'all', name: 'Alle', bereich: 'alle' },
+  { id: 'wartung', name: 'Wartungen', bereich: 'wartung' },
+  { id: 'todo', name: 'Eigene To-Dos', bereich: 'todo' }
+];
+
+const TAB_DEFAULTS = {
+  status: 'alle', query: '', art: '', objekt: '', taetigkeit: '', personen: [], mine: false,
+  zeitraumJahr: '', von: '', bis: '', group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc'
+};
+
+function defaultTabs() {
+  return {
+    active: 'all',
+    list: STANDARD_TABS.map((t) => ({
+      id: t.id, name: t.name, builtin: true, fav: false,
+      settings: Object.assign({}, TAB_DEFAULTS, { bereich: t.bereich, personen: [] })
+    }))
+  };
+}
+
+function loadTabs() {
+  try {
+    const p = JSON.parse(localStorage.getItem(TABS_KEY) || 'null');
+    if (p && Array.isArray(p.list) && p.list.length && p.active) return p;
+  } catch (e) {}
+  return defaultTabs();
+}
+
+let TABS = loadTabs();
+
+function saveTabs() {
+  try { localStorage.setItem(TABS_KEY, JSON.stringify(TABS)); } catch (e) {}
+}
+
+function activeTab() {
+  return TABS.list.find((t) => t.id === TABS.active) || TABS.list[0];
+}
+
+/** Aktuellen Zustand in den aktiven Tab schreiben (bei jedem Rendern). */
+function syncActiveTab() {
+  const t = activeTab();
+  if (!t) return;
+  t.settings = tabSnapshot();
+  saveTabs();
+}
+
+/** Momentane Filter-/Ansichtseinstellungen als flaches Objekt. */
+function tabSnapshot(src = state) {
+  const s = {};
+  for (const k of TAB_SETTING_KEYS) s[k] = Array.isArray(src[k]) ? src[k].slice() : src[k];
+  return s;
+}
+
+/** Zustand aus einem Tab uebernehmen (ohne rendern). */
+function applyTabState(t) {
+  if (!t) return;
+  const s = Object.assign({}, TAB_DEFAULTS, t.settings);
+  for (const k of TAB_SETTING_KEYS) state[k] = Array.isArray(s[k]) ? s[k].slice() : s[k];
+  state.expanded = new Set();
+  state.collapsed = new Set();
+  TABS.active = t.id;
+  saveTabs();
+}
+
+function applyTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t) return;
+  applyTabState(t);
+  render();
+}
+
+/** Neuen Tab anlegen: uebernimmt die aktuellen Einstellungen; ein als
+    Standard markiertes Preset gibt Gruppe/Sortierung/Ansicht vor. */
+function addTab(name) {
+  syncActiveTab();
+  const clean = String(name || '').trim() || 'Neue Ansicht';
+  let id = 't' + Date.now().toString(36);
+  while (TABS.list.some((t) => t.id === id)) id += 'x';
+  const settings = tabSnapshot();
+  const ps = loadPresets();
+  const def = (ps.list || []).find((p) => p.name === ps.def);
+  if (def) {
+    settings.group = def.group || settings.group;
+    settings.view = def.view || settings.view;
+    settings.sortKey = def.sortKey || settings.sortKey;
+    settings.sortDir = def.sortDir || settings.sortDir;
+  }
+  TABS.list.push({ id, name: clean, builtin: false, fav: false, settings });
+  TABS.active = id;
+  saveTabs();
+  render();
+  return id;
+}
+
+function renameTab(id, name) {
+  const t = TABS.list.find((x) => x.id === id);
+  const clean = String(name || '').trim();
+  if (!t || !clean) return;
+  t.name = clean;
+  saveTabs();
+  render();
+}
+
+function closeTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t || t.builtin) return;
+  TABS.list = TABS.list.filter((x) => x.id !== id);
+  if (TABS.active === id) {
+    const next = TABS.list[0];
+    if (next) applyTabState(next);
+  }
+  saveTabs();
+  render();
+}
+
+function toggleFavTab(id) {
+  const t = TABS.list.find((x) => x.id === id);
+  if (!t) return;
+  t.fav = !t.fav;
+  saveTabs();
+  render();
+}
+
+/** Tabs in Anzeige-Reihenfolge: Favoriten zuerst (stabile Sortierung). */
+function orderedTabs() {
+  return TABS.list.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0));
+}
+
+/** Anzahl Positionen in einem Tab (mit dessen Einstellungen). */
+function tabCount(t) {
+  return filtered(bereichListe(t.settings.bereich), t.settings).length;
+}
+
+/** Verfuegbare Jahre fuer den Zeitraumfilter (aus den Fristen). */
+function tabYears() {
+  const years = new Set();
+  for (const it of state.items.concat(state.todos)) {
+    const d = parseDate(it.bis);
+    if (d) years.add(d.getFullYear());
+  }
+  return Array.from(years).sort((a, b) => a - b);
+}
+//# sourceURL=src/js/45-tabs.js
+</script>
+
+<script>
+'use strict';
 /* Wartungstool · JS · Rendering der Ansichten */
 /* ==========================================================================
    UI-Rendering mit Circular Progress Rings
@@ -1680,14 +1903,24 @@ function renderSource() {
 function renderHead() {
   $('#userName').textContent = state.user || 'Name hinterlegen';
   $('#userNudge').hidden = !!state.user;
+  renderTabs();
+}
 
-  $('#nScopeAlle').textContent = state.items.length + state.todos.length;
-  $('#nScopeWartung').textContent = state.items.length;
-  $('#nScopeTodo').textContent = state.todos.length;
-
-  $$('#bereichSwitch button').forEach(b => {
-    b.setAttribute('aria-selected', String(b.dataset.bereich === state.bereich));
-  });
+/** Tab-Leiste: Standard- und eigene Tabs, Favoriten zuerst. */
+function renderTabs() {
+  syncActiveTab();
+  const host = $('#tabBar');
+  if (!host) return;
+  host.innerHTML = orderedTabs().map(t => {
+    const act = t.id === TABS.active;
+    return '<div class="scope-tab' + (t.fav ? ' fav' : '') + (t.builtin ? '' : ' custom') + '" role="tab" tabindex="0"' +
+      ' data-tab="' + esc(t.id) + '" aria-selected="' + act + '" title="' + esc(t.name) + '">' +
+      (t.fav ? '<span class="tab-star" title="Favorit">★</span>' : '') +
+      '<span class="tab-name">' + esc(t.name) + '</span>' +
+      '<span class="n">' + tabCount(t) + '</span>' +
+      '<button type="button" class="tab-menu" data-tabmenu="' + esc(t.id) + '" title="Tab-Optionen" aria-label="Tab-Optionen">⋯</button>' +
+    '</div>';
+  }).join('') + '<button type="button" class="scope-add" id="tabAdd" title="Neue Ansicht hinzufügen">＋</button>';
 }
 
 function renderToolbar() {
@@ -1710,18 +1943,27 @@ function renderToolbar() {
   $('#chipMineN').hidden = !state.user;
   $('#chipMine').classList.toggle('on', state.mine);
 
-  const hasAdvanced = !!(state.taetigkeit || state.personen.length);
-  $('#filterActiveDot').hidden = !hasAdvanced;
-  $('#btnFilterToggle').classList.toggle('has-active', hasAdvanced);
-  $('#btnFilterToggle').setAttribute('aria-expanded', String(state.filterOpen));
-  $('#filterDrawer').hidden = !state.filterOpen;
+  // Zusammenfassen: ein Knopf, darunter die Leiste mit allen Optionen.
+  const anyFilter = !!(state.query || state.taetigkeit || state.personen.length || state.mine ||
+    state.status !== 'alle' || state.zeitraumJahr || state.von || state.bis);
+  $('#viewActiveDot').hidden = !anyFilter;
+  $('#btnViewPanel').classList.toggle('has-active', anyFilter);
+  $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
+  $('#viewPanel').hidden = !state.filterOpen;
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
     el.innerHTML = '<option value="">' + placeholder + '</option>' + values.map(v =>
       '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
   };
-  fill('#fltTask', uniq(aktuelleListe().map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
+  fill('#fltTask', uniq(bereichListe(state.bereich).map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
+
+  const jsel = $('#fltJahr');
+  jsel.innerHTML = '<option value="">alle Jahre</option>' + tabYears().map(y =>
+    '<option value="' + y + '"' + (String(y) === String(state.zeitraumJahr) ? ' selected' : '') + '>' + y + '</option>').join('');
+  const von = $('#fltVon'), bis = $('#fltBis');
+  if (document.activeElement !== von) von.value = state.von || '';
+  if (document.activeElement !== bis) bis.value = state.bis || '';
 
   // Drei Schritte: Gruppieren · Sortieren · Ansicht (+ Presets)
   $('#groupSel').innerHTML = GROUP_DEFS.map(g =>
@@ -1740,16 +1982,16 @@ function renderToolbar() {
 
   const personHost = $('#fltUser');
   if (personHost && personHost.dataset.open !== '1') {
-    const src = istBereichTodo() ? state.todos : (istBereichAlle() ? state.items.concat(state.todos) : state.items);
     comboBox(personHost, {
-      options: uniq(src.map(i => i.zustaendig)),
+      options: uniq(bereichListe(state.bereich).map(i => i.zustaendig)),
       selected: state.personen, multi: true,
       placeholder: state.personen.length ? '' : 'alle Personen',
       onChange: (vals) => { state.personen = vals; render(); }
     });
   }
 
-  const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine || state.personen.length;
+  const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine ||
+    state.personen.length || state.zeitraumJahr || state.von || state.bis;
   $('#btnReset').hidden = !any;
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
 
@@ -2418,7 +2660,7 @@ function todoDialog(key) {
       });
       comboBox(s.querySelector('#tPerson'), {
         options: uniq([state.user].concat(state.items.map(i => i.zustaendig)).filter(Boolean)),
-        selected: d.zustaendig, multi: false, placeholder: 'Name, Vorname'
+        selected: d.zustaendig, multi: false, placeholder: 'Nachname, Vorname'
       });
     },
     onTertiary: () => { if (t) deleteTodo(t.id); return false; }
@@ -2536,8 +2778,8 @@ function userDialog(title, primary, hint, current) {
     title: title,
     bodyHtml:
       '<p class="t-body" style="margin-bottom:12px">' + hint + '</p>' +
-      '<div class="fld"><label for="mUser">Vor- und Nachname</label>' +
-      '<input class="inp" id="mUser" value="' + esc(current) + '" placeholder="Name, Vorname"></div>',
+      '<div class="fld"><label for="mUser">Nachname, Vorname</label>' +
+      '<input class="inp" id="mUser" value="' + esc(current) + '" placeholder="Nachname, Vorname"></div>',
     primary: primary,
     collect: (s) => ({ name: s.querySelector('#mUser').value.trim() }),
     validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
@@ -2670,9 +2912,80 @@ $('#tableHost').addEventListener('click', async e => {
 $('#search').addEventListener('input', debounce(e => { state.query = e.target.value; render(); }, 110));
 $('#searchClear').addEventListener('click', () => { $('#search').value = ''; state.query = ''; render(); $('#search').focus(); });
 
-$('#bereichSwitch').addEventListener('click', e => {
-  const b = e.target.closest('[data-bereich]');
-  if (b) { state.bereich = b.dataset.bereich; state.status = 'alle'; render(); }
+/* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
+let tabMenuEl = null;
+function closeTabMenu() {
+  if (tabMenuEl && tabMenuEl.remove) tabMenuEl.remove();
+  tabMenuEl = null;
+}
+function openTabMenu(id, x, y) {
+  closeTabMenu();
+  const t = TABS.list.find(z => z.id === id);
+  if (!t) return;
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML =
+    '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit anpinnen') + '</button>' +
+    '<button type="button" data-tabact="rename">Umbenennen</button>' +
+    (t.builtin ? '' : '<button type="button" data-tabact="close">Tab schließen</button>');
+  el.style.left = Math.max(4, x || 0) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-tabact]');
+    if (!b) return;
+    const act = b.dataset.tabact;
+    closeTabMenu();
+    if (act === 'fav') toggleFavTab(id);
+    else if (act === 'close') closeTab(id);
+    else if (act === 'rename') {
+      const r = await modal({
+        title: 'Tab umbenennen',
+        bodyHtml: '<div class="fld"><label for="tName">Name</label><input class="inp" id="tName" value="' + esc(t.name) + '"></div>',
+        primary: 'Speichern',
+        collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
+        validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+      });
+      if (r && r.name) renameTab(id, r.name);
+    }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+}
+function newTabDialog() {
+  return modal({
+    title: 'Neue Ansicht',
+    bodyHtml: '<p class="t-helper" style="margin-bottom:10px">Eigener Tab: übernimmt die aktuellen Filter und die Ansicht und bleibt gespeichert.</p>' +
+      '<div class="fld"><label for="tName">Name</label><input class="inp" id="tName" value="Neue Ansicht"></div>',
+    primary: 'Anlegen',
+    collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
+    validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+  }).then((r) => { if (r && r.name) { addTab(r.name); toast('Tab angelegt', { tone: 'success', detail: r.name }); } });
+}
+document.addEventListener('mousedown', (e) => {
+  if (tabMenuEl && e.target.closest && !e.target.closest('.ctx-menu')) closeTabMenu();
+});
+
+$('#tabBar').addEventListener('click', e => {
+  const menuBtn = e.target.closest('[data-tabmenu]');
+  if (menuBtn) {
+    e.stopPropagation();
+    const r = menuBtn.getBoundingClientRect ? menuBtn.getBoundingClientRect() : { left: 4, bottom: 30 };
+    return openTabMenu(menuBtn.dataset.tabmenu, r.left, r.bottom + 4);
+  }
+  if (e.target.closest('#tabAdd')) return newTabDialog();
+  const tab = e.target.closest('[data-tab]');
+  if (tab) applyTab(tab.dataset.tab);
+});
+$('#tabBar').addEventListener('contextmenu', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (!tab) return;
+  e.preventDefault();
+  openTabMenu(tab.dataset.tab, e.clientX || 0, e.clientY || 0);
+});
+$('#tabBar').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { e.preventDefault(); applyTab(tab.dataset.tab); }
 });
 
 $('#statusChips').addEventListener('click', e => {
@@ -2721,17 +3034,23 @@ $('#presetDelete').addEventListener('click', () => {
   toast('Preset gelöscht', { tone: 'warning', detail: name });
 });
 
-$('#btnFilterToggle').addEventListener('click', () => {
+$('#btnViewPanel').addEventListener('click', () => {
   state.filterOpen = !state.filterOpen;
   renderToolbar();
 });
 
-$('.filter-drawer').addEventListener('change', e => {
+$('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
+  if (e.target.id === 'fltJahr') state.zeitraumJahr = e.target.value;
   render();
 });
+$('#viewPanel').addEventListener('input', e => {
+  if (e.target.id === 'fltVon') { e.target.value = maskDate(e.target.value); state.von = e.target.value; render(); }
+  if (e.target.id === 'fltBis') { e.target.value = maskDate(e.target.value); state.bis = e.target.value; render(); }
+});
 $('#btnReset').addEventListener('click', () => {
-  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false; state.personen = [];
+  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
+  state.personen = []; state.zeitraumJahr = ''; state.von = ''; state.bis = '';
   $('#search').value = '';
   render();
 });
@@ -2777,6 +3096,7 @@ menu.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   if (e.key === 'Escape') {
+    if (tabMenuEl) { closeTabMenu(); return; }
     if (typing) { e.target.blur(); return; }
     if ($('#overlay').children.length) return;
     state.query = ''; state.status = 'alle'; $('#search').value = ''; render();
@@ -2802,8 +3122,9 @@ document.addEventListener('keydown', e => {
    verstreuter Namen im Globalen Namensraum. In der Konsole:
 
        WT.state.items.length
-       WT.setView('plan')
-       WT.aktuelleZahlen('alle')
+       WT.view.setView('tiles')
+       WT.select.aktuelleZahlen('alle')
+       WT.tabs.all().list
        WT.store                 // aktueller Store (Local/Api)
        WT.resetCache()          // localStorage-Bestand verwerfen + neu laden
 
@@ -2833,6 +3154,11 @@ window.WT = {
   /* Presets (src/js/44-presets.js) */
   presets: { loadPresets, applyPreset, saveCurrentPreset, deletePreset, setDefaultPreset, applyDefaultPreset },
 
+  /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
+  tabs: {
+    all: () => TABS, activeTab, applyTab, addTab, renameTab, closeTab, toggleFavTab, orderedTabs, tabCount
+  },
+
   /* Stores (src/js/32-store-local.js, 33-store-api.js) – Schnittstelle fuer ein
      bestehendes SQL-Backend: gleiche Methoden wie LocalStore implementieren. */
   stores: { LocalStore, ApiStore },
@@ -2852,8 +3178,9 @@ window.WT = {
     return {
       quelle: store === ApiStore ? 'SQL-Backend' : (hasDataFile() ? 'daten.js' : 'Testbestand'),
       online: state.online,
-      bereich: state.bereich, ansicht: state.view, status: state.status,
+      bereich: state.bereich, tab: (activeTab() || {}).name, ansicht: state.view, status: state.status,
       gruppe: state.group, sortierung: state.sortKey + ' ' + state.sortDir,
+      zeitraum: [state.zeitraumJahr, state.von, state.bis].filter(Boolean).join(' '),
       positionen: state.items.length, todos: state.todos.length,
       zahlen: countsForScope(state.bereich)
     };
@@ -2868,7 +3195,7 @@ window.WT = {
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
-  applyDefaultPreset();
+  applyTabState(activeTab());
   store = CONFIG.dataSource === 'api' ? ApiStore : LocalStore;
   state.loading = true; render();
 

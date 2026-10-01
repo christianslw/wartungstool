@@ -36,14 +36,24 @@ function renderSource() {
 function renderHead() {
   $('#userName').textContent = state.user || 'Name hinterlegen';
   $('#userNudge').hidden = !!state.user;
+  renderTabs();
+}
 
-  $('#nScopeAlle').textContent = state.items.length + state.todos.length;
-  $('#nScopeWartung').textContent = state.items.length;
-  $('#nScopeTodo').textContent = state.todos.length;
-
-  $$('#bereichSwitch button').forEach(b => {
-    b.setAttribute('aria-selected', String(b.dataset.bereich === state.bereich));
-  });
+/** Tab-Leiste: Standard- und eigene Tabs, Favoriten zuerst. */
+function renderTabs() {
+  syncActiveTab();
+  const host = $('#tabBar');
+  if (!host) return;
+  host.innerHTML = orderedTabs().map(t => {
+    const act = t.id === TABS.active;
+    return '<div class="scope-tab' + (t.fav ? ' fav' : '') + (t.builtin ? '' : ' custom') + '" role="tab" tabindex="0"' +
+      ' data-tab="' + esc(t.id) + '" aria-selected="' + act + '" title="' + esc(t.name) + '">' +
+      (t.fav ? '<span class="tab-star" title="Favorit">★</span>' : '') +
+      '<span class="tab-name">' + esc(t.name) + '</span>' +
+      '<span class="n">' + tabCount(t) + '</span>' +
+      '<button type="button" class="tab-menu" data-tabmenu="' + esc(t.id) + '" title="Tab-Optionen" aria-label="Tab-Optionen">⋯</button>' +
+    '</div>';
+  }).join('') + '<button type="button" class="scope-add" id="tabAdd" title="Neue Ansicht hinzufügen">＋</button>';
 }
 
 function renderToolbar() {
@@ -66,18 +76,27 @@ function renderToolbar() {
   $('#chipMineN').hidden = !state.user;
   $('#chipMine').classList.toggle('on', state.mine);
 
-  const hasAdvanced = !!(state.taetigkeit || state.personen.length);
-  $('#filterActiveDot').hidden = !hasAdvanced;
-  $('#btnFilterToggle').classList.toggle('has-active', hasAdvanced);
-  $('#btnFilterToggle').setAttribute('aria-expanded', String(state.filterOpen));
-  $('#filterDrawer').hidden = !state.filterOpen;
+  // Zusammenfassen: ein Knopf, darunter die Leiste mit allen Optionen.
+  const anyFilter = !!(state.query || state.taetigkeit || state.personen.length || state.mine ||
+    state.status !== 'alle' || state.zeitraumJahr || state.von || state.bis);
+  $('#viewActiveDot').hidden = !anyFilter;
+  $('#btnViewPanel').classList.toggle('has-active', anyFilter);
+  $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
+  $('#viewPanel').hidden = !state.filterOpen;
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
     el.innerHTML = '<option value="">' + placeholder + '</option>' + values.map(v =>
       '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
   };
-  fill('#fltTask', uniq(aktuelleListe().map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
+  fill('#fltTask', uniq(bereichListe(state.bereich).map(i => i.taetigkeit)), state.taetigkeit, 'alle Tätigkeiten');
+
+  const jsel = $('#fltJahr');
+  jsel.innerHTML = '<option value="">alle Jahre</option>' + tabYears().map(y =>
+    '<option value="' + y + '"' + (String(y) === String(state.zeitraumJahr) ? ' selected' : '') + '>' + y + '</option>').join('');
+  const von = $('#fltVon'), bis = $('#fltBis');
+  if (document.activeElement !== von) von.value = state.von || '';
+  if (document.activeElement !== bis) bis.value = state.bis || '';
 
   // Drei Schritte: Gruppieren · Sortieren · Ansicht (+ Presets)
   $('#groupSel').innerHTML = GROUP_DEFS.map(g =>
@@ -96,16 +115,16 @@ function renderToolbar() {
 
   const personHost = $('#fltUser');
   if (personHost && personHost.dataset.open !== '1') {
-    const src = istBereichTodo() ? state.todos : (istBereichAlle() ? state.items.concat(state.todos) : state.items);
     comboBox(personHost, {
-      options: uniq(src.map(i => i.zustaendig)),
+      options: uniq(bereichListe(state.bereich).map(i => i.zustaendig)),
       selected: state.personen, multi: true,
       placeholder: state.personen.length ? '' : 'alle Personen',
       onChange: (vals) => { state.personen = vals; render(); }
     });
   }
 
-  const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine || state.personen.length;
+  const any = state.query || state.taetigkeit || state.status !== 'alle' || state.mine ||
+    state.personen.length || state.zeitraumJahr || state.von || state.bis;
   $('#btnReset').hidden = !any;
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
 

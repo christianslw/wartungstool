@@ -58,7 +58,7 @@ function todoDialog(key) {
       });
       comboBox(s.querySelector('#tPerson'), {
         options: uniq([state.user].concat(state.items.map(i => i.zustaendig)).filter(Boolean)),
-        selected: d.zustaendig, multi: false, placeholder: 'Name, Vorname'
+        selected: d.zustaendig, multi: false, placeholder: 'Nachname, Vorname'
       });
     },
     onTertiary: () => { if (t) deleteTodo(t.id); return false; }
@@ -176,8 +176,8 @@ function userDialog(title, primary, hint, current) {
     title: title,
     bodyHtml:
       '<p class="t-body" style="margin-bottom:12px">' + hint + '</p>' +
-      '<div class="fld"><label for="mUser">Vor- und Nachname</label>' +
-      '<input class="inp" id="mUser" value="' + esc(current) + '" placeholder="Name, Vorname"></div>',
+      '<div class="fld"><label for="mUser">Nachname, Vorname</label>' +
+      '<input class="inp" id="mUser" value="' + esc(current) + '" placeholder="Nachname, Vorname"></div>',
     primary: primary,
     collect: (s) => ({ name: s.querySelector('#mUser').value.trim() }),
     validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
