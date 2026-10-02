@@ -83,13 +83,21 @@ function renderToolbar() {
   $('#chipMineN').hidden = !state.user;
   $('#chipMine').classList.toggle('on', state.mine);
 
-  // Zusammenfassen: ein Knopf, darunter die Leiste mit allen Optionen.
-  const anyFilter = !!(state.query || state.taetigkeit || state.personen.length || state.mine ||
-    state.status !== 'alle' || state.zeitraumJahrManual || state.von || state.bis);
-  $('#viewActiveDot').hidden = !anyFilter;
-  $('#btnViewPanel').classList.toggle('has-active', anyFilter);
+  // Filter als Slide-over: Knopf zeigt die Zahl der aktiven Filter.
+  const activeFilters = (state.status !== 'alle' ? 1 : 0) + (state.mine ? 1 : 0) +
+    (state.personen.length ? 1 : 0) + (state.taetigkeit ? 1 : 0) +
+    ((state.zeitraumJahrManual || state.von || state.bis) ? 1 : 0);
+  const countEl = $('#filterCount');
+  countEl.hidden = activeFilters === 0;
+  countEl.textContent = activeFilters;
+  $('#btnViewPanel').classList.toggle('has-active', activeFilters > 0);
   $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
   $('#viewPanel').hidden = !state.filterOpen;
+  $('#filterScrim').hidden = !state.filterOpen;
+
+  // Auf der Startseite (Home) haben Gruppierung/Sortierung keine Wirkung.
+  const atab = activeTab();
+  $('#tbTools').hidden = !!(atab && atab.home);
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
@@ -121,9 +129,9 @@ function renderToolbar() {
   $$('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
 
   const ps = loadPresets();
-  $('#presetSel').innerHTML = '<option value="">Preset …</option>' + ps.list.map(p =>
-    '<option value="' + esc(p.name) + '">' + (p.name === ps.def ? '★ ' : '') + esc(p.name) + '</option>').join('');
-  $('#presetDefault').classList.toggle('on', !!ps.def);
+  const presetBtn = $('#presetBtn');
+  presetBtn.classList.toggle('has-default', !!ps.def);
+  presetBtn.title = ps.def ? 'Vorlagen · Standard: ' + ps.def : 'Vorlagen';
 
   const personHost = $('#fltUser');
   if (personHost && personHost.dataset.open !== '1') {
@@ -144,8 +152,12 @@ function renderToolbar() {
   if (state.view === 'list' && (state.group === 'object' || state.group === 'task')) {
     const groups = groupItems(aktuelleListe(), state.group);
     const allOpen = groups.length > 0 && groups.every(g => state.expanded.has(g.key));
-    act.innerHTML = '<button class="btn btn-sm btn-ghost" data-expand="' + (allOpen ? 'none' : 'all') + '">' +
-      (allOpen ? 'Alle einklappen' : 'Alle ausklappen') + '</button>';
+    const lbl = allOpen ? 'Alle einklappen' : 'Alle ausklappen';
+    const ico = allOpen
+      ? '<path d="M16 11.4 6.4 21l1.4 1.4L16 14.2l8.2 8.2 1.4-1.4z"/>'
+      : '<path d="M16 20.6 6.4 11l1.4-1.4L16 17.8l8.2-8.2 1.4 1.4z"/>';
+    act.innerHTML = '<button class="ctl ctl-dir" data-expand="' + (allOpen ? 'none' : 'all') + '" title="' + lbl + '" aria-label="' + lbl + '">' +
+      svg(ico, 14) + '</button>';
   } else {
     act.innerHTML = '';
   }

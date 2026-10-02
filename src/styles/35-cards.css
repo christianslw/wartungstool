@@ -12,13 +12,7 @@
 .progress-strip.done .ps-track > i{background:var(--success)}
 .ps-value{font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* ---- Toolbar: Schritte (Gruppe/Sortierung/Preset) ----------------------- */
-.step{display:inline-flex;align-items:center;gap:4px;height:28px}
-.step::before{content:attr(data-label);font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
-.step select{
-  height:28px;background:var(--layer-02);border:1px solid var(--border-subtle);
-  padding:0 20px 0 6px;font-size:11px;color:var(--text-primary);
-}
+/* ---- Toolbar: Icons und Schaltflächen ----------------------------------- */
 .btn-ic{
   display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
   background:var(--layer-01);border:1px solid var(--border-subtle);color:var(--text-secondary);

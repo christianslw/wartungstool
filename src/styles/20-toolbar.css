@@ -62,14 +62,14 @@
 
 .tb-right{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}
 
-.view-switcher{display:inline-flex;height:28px;border:1px solid var(--border-subtle);background:var(--layer-01)}
+.view-switcher{display:inline-flex;height:28px;border:1px solid var(--border-subtle);background:var(--layer-01);border-radius:2px;overflow:hidden}
 .view-btn{
-  display:inline-flex;align-items:center;gap:5px;padding:0 10px;font-size:11px;
-  color:var(--text-secondary);border-right:1px solid var(--border-subtle);white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;width:30px;
+  color:var(--text-secondary);border-right:1px solid var(--border-subtle);
 }
 .view-btn:last-child{border-right:0}
 .view-btn:hover{color:var(--text-primary);background:var(--hover-2)}
-.view-btn[aria-pressed="true"]{background:var(--layer-03);color:var(--text-primary);font-weight:600}
+.view-btn[aria-pressed="true"]{background:var(--layer-03);color:var(--interactive)}
 
 .btn-filter-toggle{
   display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;
@@ -78,7 +78,11 @@
 }
 .btn-filter-toggle:hover{color:var(--text-primary);border-color:var(--border-strong)}
 .btn-filter-toggle.has-active{border-color:var(--interactive);color:var(--interactive)}
-.btn-filter-toggle .dot{width:6px;height:6px;border-radius:50%;background:var(--interactive)}
+.filter-count{
+  min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+  background:var(--interactive);color:var(--text-on-color);
+  font-size:10px;line-height:16px;text-align:center;font-variant-numeric:tabular-nums;
+}
 
 .btn-cta{
   display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;
@@ -114,21 +118,88 @@
 }
 .scope-add:hover{color:var(--text-primary);background:var(--hover-1)}
 
-/* Ausklappbare Leiste: Status, Filter, Gruppieren/Sortieren/Ansicht, Presets */
-.view-panel{
-  background:var(--layer-01);border-bottom:1px solid var(--border-subtle);
-  padding:8px 16px;display:flex;flex-direction:column;gap:8px;font-size:12px;flex:0 0 auto;
+/* Darstellung als zweite Toolbar-Zeile: kompakte Icon-Controls ------------- */
+.toolbar-sub{
+  height:40px;flex:0 0 auto;background:var(--bg);
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;align-items:center;gap:16px;padding:0 16px;
+  position:relative;z-index:9;
 }
-.vp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.view-panel .sel select{
-  height:28px;background:var(--layer-02);border:1px solid var(--border-subtle);
+.tb-tools{
+  display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;
+  overflow-x:auto;scrollbar-width:none;
+}
+.tb-tools::-webkit-scrollbar{display:none}
+.toolbar-sub .summary-info{flex:0 0 auto}
+.ctl{
+  position:relative;display:inline-flex;align-items:center;gap:6px;height:28px;
+  padding:0 8px;background:var(--layer-01);border:1px solid var(--border-subtle);
+  border-radius:2px;color:var(--text-secondary);font-size:11px;white-space:nowrap;
+}
+.ctl:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.ctl:focus-within{border-color:var(--interactive);color:var(--text-primary)}
+.ctl-ic{display:inline-flex;color:var(--text-helper)}
+.ctl:hover .ctl-ic,.ctl:focus-within .ctl-ic{color:currentColor}
+.ctl select{
+  border:0;background:transparent;height:26px;font-size:11px;color:var(--text-primary);
+  padding:0 18px 0 0;
+}
+.ctl select:focus{outline:none}
+.ctl-dir{width:28px;justify-content:center;padding:0;font-size:13px;line-height:1}
+.ctl-preset{padding:0 8px}
+.ctl-preset.has-default{border-color:var(--interactive-light)}
+.ctl-preset.has-default .ctl-ic{color:var(--warning)}
+.ctl-caret{color:var(--text-helper);font-size:9px}
+
+/* Im Filter-Drawer genutzte Bausteine */
+.vp-range{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.vp-range-sep{color:var(--text-helper)}
+.summary-info{font-size:11px;color:var(--text-helper);white-space:nowrap}
+#viewPanel select{
+  height:28px;background:var(--layer-01);border:1px solid var(--border-subtle);
   padding:0 24px 0 8px;font-size:11px;color:var(--text-primary);
 }
-.view-panel .summary-info{margin-left:auto;font-size:11px;color:var(--text-helper)}
-.inp-sm{
-  height:28px;width:112px;background:var(--layer-02);border:1px solid var(--border-subtle);
-  padding:0 8px;font-size:11px;color:var(--text-primary);
+
+/* Filter-Drawer (Slide-over von rechts) ----------------------------------- */
+#viewPanel{
+  position:fixed;top:0;right:0;bottom:0;width:min(380px,100%);
+  background:var(--layer-01);border-left:1px solid var(--border-subtle);
+  z-index:calc(var(--z-overlay) + 1);display:flex;flex-direction:column;
+  align-items:stretch;padding:0;font-size:12px;
+  animation:filterIn .16s ease;
 }
+@keyframes filterIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+#viewPanel .fd-head{
+  height:var(--hdr-h);flex:0 0 auto;display:flex;align-items:center;gap:12px;
+  padding:0 16px;border-bottom:1px solid var(--border-subtle);
+}
+#viewPanel .fd-head h2{font-size:15px;font-weight:600;flex:1 1 auto}
+#viewPanel .fd-body{
+  flex:1 1 auto;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:20px;
+}
+#viewPanel .fd-sect{display:flex;flex-direction:column;gap:8px}
+#viewPanel .fd-title{margin:0;font-size:11px;font-weight:500;color:var(--text-helper)}
+#viewPanel .fd-foot{
+  flex:0 0 auto;border-top:1px solid var(--border-subtle);padding:12px 16px;
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;
+}
+#viewPanel select{width:100%;height:32px}
+#viewPanel .status-seg{height:auto;flex-wrap:wrap;width:100%;padding:3px}
+#viewPanel .status-seg .seg-btn{height:26px}
+#viewPanel .btn-mine{align-self:flex-start;height:30px;background:var(--layer-01)}
+#viewPanel .combo-host{display:block}
+#viewPanel .combo-field{
+  min-height:32px;background:var(--layer-01);border:1px solid var(--border-subtle);
+  padding:2px 24px 2px 8px;
+}
+#viewPanel .vp-range{width:100%}
+#viewPanel #fltJahr{flex:0 0 120px;width:auto}
+#viewPanel .vp-range-row{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0}
+#viewPanel .inp-sm{
+  flex:1 1 100px;width:auto;min-width:0;height:32px;
+  background:var(--layer-01);border:1px solid var(--border-subtle);color:var(--text-primary);
+}
+.filter-scrim{position:fixed;inset:0;background:var(--scrim);z-index:var(--z-overlay)}
 
 /* Kontextmenü an Tabs (Favorit, Umbenennen, Schließen) */
 .ctx-menu{
@@ -143,6 +214,14 @@
 .ctx-menu button:hover{background:var(--hover-2)}
 .ctx-menu .ctx-title{padding:6px 10px 2px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-helper)}
 .ctx-menu .ctx-sep{height:1px;background:var(--border-subtle);margin:4px 0}
+.ctx-menu .ctx-empty{padding:8px 10px;font-size:11px;color:var(--text-helper)}
+.ctx-menu .preset-row{display:flex;align-items:center;gap:2px}
+.ctx-menu .preset-row .preset-apply{width:auto;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctx-menu .preset-row .preset-star{width:26px;flex:0 0 auto;text-align:center;color:var(--text-helper);font-size:12px}
+.ctx-menu .preset-row .preset-star:hover{color:var(--warning)}
+.ctx-menu .preset-row .preset-star.on{color:var(--warning)}
+.ctx-menu .preset-row .preset-del{width:26px;flex:0 0 auto;text-align:center;color:var(--text-helper);font-size:14px}
+.ctx-menu .preset-row .preset-del:hover{color:var(--error)}
 .ctx-menu .ctx-swatches{display:flex;flex-wrap:wrap;gap:6px;padding:2px 10px 6px}
 .ctx-menu .swatch{width:18px;height:18px;border-radius:50%;border:1px solid var(--border-subtle);background:var(--layer-03);padding:0}
 .ctx-menu .swatch.on{outline:2px solid var(--interactive);outline-offset:1px}

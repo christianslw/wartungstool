@@ -154,6 +154,8 @@ let tabMenuEl = null;
 function closeTabMenu() {
   if (tabMenuEl && tabMenuEl.remove) tabMenuEl.remove();
   tabMenuEl = null;
+  const pb = $('#presetBtn');
+  if (pb) pb.setAttribute('aria-expanded', 'false');
 }
 function openTabMenu(id, x, y) {
   closeTabMenu();
@@ -270,8 +272,62 @@ function newTabDialog() {
     validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
   }).then((r) => { if (r && r.name) { addTab(r.name); toast('Tab angelegt', { tone: 'success', detail: r.name }); } });
 }
+/** Vorlagen (Presets) als Menü am Toolbar-Knopf. */
+function openPresetMenu(x, y) {
+  closeTabMenu();
+  const ps = loadPresets();
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML =
+    '<div class="ctx-title">Vorlagen</div>' +
+    (ps.list.length
+      ? ps.list.map(p =>
+          '<div class="preset-row">' +
+            '<button type="button" class="preset-star' + (p.name === ps.def ? ' on' : '') + '" data-presetdef="' + esc(p.name) + '" title="Als Standard festlegen">' + (p.name === ps.def ? '★' : '☆') + '</button>' +
+            '<button type="button" class="preset-apply" data-preset="' + esc(p.name) + '">' + esc(p.name) + '</button>' +
+            '<button type="button" class="preset-del" data-presetdel="' + esc(p.name) + '" title="Löschen">×</button>' +
+          '</div>').join('')
+      : '<div class="ctx-empty">Noch keine Vorlagen</div>') +
+    '<div class="ctx-sep"></div>' +
+    '<button type="button" data-presetsave="1">＋ Aktuelle Kombination speichern …</button>';
+  el.style.left = Math.max(4, Math.min(x || 0, window.innerWidth - 220)) + 'px';
+  el.style.top = Math.max(4, y || 0) + 'px';
+  el.addEventListener('click', (ev) => {
+    const del = ev.target.closest('[data-presetdel]');
+    if (del) { deletePreset(del.dataset.presetdel); closeTabMenu(); render(); toast('Vorlage gelöscht', { tone: 'warning', detail: del.dataset.presetdel }); return; }
+    const st = ev.target.closest('[data-presetdef]');
+    if (st) {
+      const def = setDefaultPreset(st.dataset.presetdef);
+      closeTabMenu(); render();
+      toast(def ? 'Als Standard gesetzt' : 'Standard entfernt', { tone: 'success', detail: st.dataset.presetdef });
+      return;
+    }
+    const ap = ev.target.closest('[data-preset]');
+    if (ap) { const p = loadPresets().list.find(z => z.name === ap.dataset.preset); closeTabMenu(); if (p) applyPreset(p); return; }
+    if (ev.target.closest('[data-presetsave]')) { closeTabMenu(); savePresetDialog(); }
+  });
+  document.body.appendChild(el);
+  tabMenuEl = el;
+  const pb = $('#presetBtn');
+  if (pb) pb.setAttribute('aria-expanded', 'true');
+}
+
+/** Dialog zum Speichern der aktuellen Kombination als Vorlage. */
+function savePresetDialog() {
+  const g = GROUP_DEFS.find(x => x.key === state.group);
+  const vorschlag = (g ? g.label : state.group) + ' · ' + state.view;
+  return modal({
+    title: 'Vorlage speichern',
+    bodyHtml: '<p class="t-helper" style="margin-bottom:10px">Gruppieren, Sortieren und Ansicht dieser Kombination benennen.</p>' +
+      '<div class="fld"><label for="pName">Name</label><input class="inp" id="pName" value="' + esc(vorschlag) + '"></div>',
+    primary: 'Speichern',
+    collect: (s) => ({ name: s.querySelector('#pName').value.trim() }),
+    validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
+  }).then((r) => { if (r && r.name) { saveCurrentPreset(r.name); render(); toast('Vorlage gespeichert', { tone: 'success', detail: r.name }); } });
+}
+
 document.addEventListener('mousedown', (e) => {
-  if (tabMenuEl && e.target.closest && !e.target.closest('.ctx-menu')) closeTabMenu();
+  if (tabMenuEl && e.target.closest && !e.target.closest('.ctx-menu') && !e.target.closest('#presetBtn')) closeTabMenu();
 });
 
 $('#tabBar').addEventListener('click', e => {
@@ -363,41 +419,20 @@ $('#viewSwitch').addEventListener('click', e => {
 $('#groupSel').addEventListener('change', e => setGroup(e.target.value));
 $('#sortSel').addEventListener('change', e => setSort(e.target.value));
 $('#sortDir').addEventListener('click', () => toggleSortDir());
-$('#presetSel').addEventListener('change', e => {
-  const p = loadPresets().list.find(x => x.name === e.target.value);
-  if (p) applyPreset(p);
-});
-$('#presetSave').addEventListener('click', async () => {
-  const vorschlag = GROUP_DEFS.find(g => g.key === state.group).label + ' · ' + state.view;
-  const r = await modal({
-    title: 'Preset speichern',
-    bodyHtml: '<p class="t-helper" style="margin-bottom:10px">Gruppieren, Sortieren und Ansicht dieser Kombination benennen.</p>' +
-      '<div class="fld"><label for="pName">Name</label><input class="inp" id="pName" value="' + esc(vorschlag) + '"></div>',
-    primary: 'Speichern',
-    collect: (s) => ({ name: s.querySelector('#pName').value.trim() }),
-    validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
-  });
-  if (r && r.name) { saveCurrentPreset(r.name); render(); toast('Preset gespeichert', { tone: 'success', detail: r.name }); }
-});
-$('#presetDefault').addEventListener('click', () => {
-  const name = $('#presetSel').value;
-  if (!name) return toast('Bitte zuerst ein Preset wählen', { tone: 'warning' });
-  const def = setDefaultPreset(name);
-  render();
-  toast(def ? 'Als Standard gesetzt' : 'Standard entfernt', { tone: 'success', detail: name });
-});
-$('#presetDelete').addEventListener('click', () => {
-  const name = $('#presetSel').value;
-  if (!name) return;
-  deletePreset(name);
-  render();
-  toast('Preset gelöscht', { tone: 'warning', detail: name });
+$('#presetBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (tabMenuEl) { closeTabMenu(); return; }
+  const r = e.currentTarget.getBoundingClientRect();
+  openPresetMenu(r.left, r.bottom + 4);
 });
 
 $('#btnViewPanel').addEventListener('click', () => {
   state.filterOpen = !state.filterOpen;
   renderToolbar();
 });
+const closeFilter = () => { state.filterOpen = false; renderToolbar(); };
+$('#filterClose').addEventListener('click', closeFilter);
+$('#filterScrim').addEventListener('click', closeFilter);
 
 $('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
@@ -459,6 +494,7 @@ document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   if (e.key === 'Escape') {
     if (tabMenuEl) { closeTabMenu(); return; }
+    if (state.filterOpen) { state.filterOpen = false; renderToolbar(); return; }
     if (typing) { e.target.blur(); return; }
     if ($('#overlay').children.length) return;
     state.query = ''; state.status = 'alle'; $('#search').value = ''; render();

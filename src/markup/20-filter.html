@@ -1,35 +1,47 @@
-<!-- Ausklappbare Leiste: Status, Filter, Gruppieren/Sortieren/Ansicht, Presets -->
-<div class="view-panel" id="viewPanel" hidden>
-  <div class="vp-row">
-    <div class="status-seg" id="statusChips" role="group" aria-label="Statusfilter"></div>
-    <button class="btn-mine" id="chipMine" title="Nur mir zugewiesene Positionen">
-      <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
-      Meine <span class="n" id="chipMineN" hidden>0</span>
+<!-- Filter als Slide-over von rechts -->
+<aside class="view-panel" id="viewPanel" hidden role="dialog" aria-modal="true" aria-labelledby="filterTitle">
+  <header class="fd-head">
+    <h2 id="filterTitle">Filter</h2>
+    <button class="td-act" id="filterClose" aria-label="Filter schließen">
+      <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><path d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4 14.6 16 8 22.6 9.4 24 16 17.4 22.6 24 24 22.6 17.4 16z"/></svg>
     </button>
-  </div>
+  </header>
 
-  <div class="vp-row">
-    <span class="step" data-label="Gruppe"><select id="groupSel" aria-label="Gruppieren nach"></select></span>
-    <span class="step" data-label="Sortierung"><select id="sortSel" aria-label="Sortieren nach"></select></span>
-    <button class="btn-ic" id="sortDir" title="auf-/absteigend">↑</button>
-    <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
-      <button class="view-btn" data-view="list" aria-pressed="true" title="Listenansicht">Liste</button>
-      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe">Kacheln</button>
-      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt">Blobs</button>
+  <div class="fd-body">
+    <div class="fd-sect">
+      <h3 class="fd-title">Status</h3>
+      <div class="status-seg" id="statusChips" role="group" aria-label="Statusfilter"></div>
+      <button class="btn-mine" id="chipMine" title="Nur mir zugewiesene Positionen">
+        <svg width="12" height="12" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
+        Meine <span class="n" id="chipMineN" hidden>0</span>
+      </button>
     </div>
-    <span class="step" data-label="Preset"><select id="presetSel" aria-label="Preset"></select></span>
-    <button class="btn-ic" id="presetSave" title="Aktuelle Kombination speichern">＋</button>
-    <button class="btn-ic" id="presetDefault" title="Als Standard festlegen">★</button>
-    <button class="btn-ic" id="presetDelete" title="Preset löschen">×</button>
+
+    <div class="fd-sect">
+      <h3 class="fd-title">Person</h3>
+      <span class="combo-host" id="fltUser"></span>
+    </div>
+
+    <div class="fd-sect">
+      <h3 class="fd-title">Tätigkeit</h3>
+      <select id="fltTask" aria-label="Tätigkeit"><option value="">alle Tätigkeiten</option></select>
+    </div>
+
+    <div class="fd-sect">
+      <h3 class="fd-title">Zeitraum</h3>
+      <span class="vp-range">
+        <select id="fltJahr" aria-label="Zeitraum Jahr"></select>
+        <span class="vp-range-row">
+          <input class="inp inp-sm" id="fltVon" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum von">
+          <span class="vp-range-sep" aria-hidden="true">–</span>
+          <input class="inp inp-sm" id="fltBis" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum bis">
+        </span>
+      </span>
+    </div>
   </div>
 
-  <div class="vp-row">
-    <span class="combo-host" id="fltUser" style="width:160px"></span>
-    <span class="sel"><select id="fltTask"><option value="">alle Tätigkeiten</option></select></span>
-    <span class="step" data-label="Jahr"><select id="fltJahr" aria-label="Zeitraum Jahr"></select></span>
-    <span class="step" data-label="von"><input class="inp inp-sm" id="fltVon" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum von"></span>
-    <span class="step" data-label="bis"><input class="inp inp-sm" id="fltBis" inputmode="numeric" placeholder="TT.MM.JJJJ" aria-label="Zeitraum bis"></span>
+  <footer class="fd-foot">
     <button class="btn btn-sm btn-ghost" id="btnReset" hidden>Filter zurücksetzen</button>
-    <span class="summary-info" id="resultInfo"></span>
-  </div>
-</div>
+  </footer>
+</aside>
+<div class="filter-scrim" id="filterScrim" hidden></div>
