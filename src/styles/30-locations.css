@@ -21,7 +21,7 @@ body.dragging-attr [data-drag]{
   align-items:center;gap:8px;
   width:100%;min-height:var(--row-h);padding:0 12px 0 4px;
   background:var(--bg);text-align:left;border-left:3px solid transparent;cursor:pointer;
-  transition:background .08s;
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease);
 }
 .locs > .loc:nth-child(even) > .loc-head{background:var(--row-alt)}
 .loc-head:hover{background:var(--hover-2)}
@@ -58,7 +58,7 @@ body.dragging-attr [data-drag]{
 /* Linearer Mini-Fortschrittsbalken je Standort (aus index2-Layout) */
 .loc-progress-col{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-helper);font-variant-numeric:tabular-nums}
 .loc-mini-track{flex:1 1 50px;height:4px;background:var(--layer-03);border-radius:2px;overflow:hidden}
-.loc-mini-track > i{display:block;height:100%;background:var(--interactive-light)}
+.loc-mini-track > i{display:block;height:100%;background:var(--interactive-light);transition:width var(--dur-slow) var(--ease)}
 .loc.is-finished .loc-mini-track > i{background:var(--success)}
 
 .loc-acts-col{display:flex;align-items:center;justify-content:flex-end;gap:2px}
@@ -73,6 +73,7 @@ body.dragging-attr [data-drag]{
   align-items:center;gap:8px;
   min-height:36px;padding:0 12px 0 4px;
   border-bottom:1px solid var(--border-subtle);
+  transition:background-color var(--dur) var(--ease);
 }
 .loc-rows > .loc-row:nth-child(even){background:var(--row-alt)}
 .loc-row:last-child{border-bottom:0}
@@ -90,8 +91,9 @@ body.dragging-attr [data-drag]{
 .tick{
   width:26px;height:26px;margin:auto;display:grid;place-items:center;
   border:1px solid var(--border-strong);background:transparent;color:transparent;
-  border-radius:2px;transition:background .1s, border-color .1s, color .1s;
+  border-radius:2px;transition:background-color var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease),transform var(--dur-fast) var(--ease);
 }
+.tick:active{transform:scale(.9)}
 .tick:hover{border-color:var(--text-primary);color:var(--text-secondary);background:var(--hover-2)}
 .tick.on{background:var(--interactive);border-color:var(--interactive);color:#ffffff}
 .tick.on:hover{background:var(--interactive-hover)}

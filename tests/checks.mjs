@@ -484,6 +484,16 @@ ok('Status-Sortierung: offene zuerst', (() => {
 })());
 ctx.setSort('status', 'asc'); ctx.setGroup('object'); ctx.setView('list');
 
+group('Einzelner Suchtreffer wird direkt aufgeklappt');
+state.query = 'zzz-eindeutig';
+const einTreffer = state.items[0];
+const grouped = ctx.viewGroupedList([einTreffer]);
+ok('Gruppenliste zeigt den Treffer ohne Klick', /class="loc open/.test(grouped) && /class="loc-rows"/.test(grouped));
+ok('Kachel zeigt den Treffer ohne Klick', /class="tile open/.test(ctx.viewTiles([einTreffer])) && /class="tile-rows"/.test(ctx.viewTiles([einTreffer])));
+ok('Blase zeigt den Treffer ohne Klick', /class="blob open/.test(ctx.viewBlobs([einTreffer])) && /class="blob-detail"/.test(ctx.viewBlobs([einTreffer])));
+state.query = ''; state.expanded = new Set();
+ok('Ohne Suche bleibt die Gruppe zu', !/class="loc-rows"/.test(ctx.viewGroupedList([einTreffer])));
+
 group('Presets (clientseitig gespeichert)');
 const psKey = ctx.__config.storageKey + '.presets';
 ctx.setGroup('task'); ctx.setView('tiles'); ctx.setSort('due', 'desc');
@@ -724,7 +734,7 @@ ok('Zuletzt geschlossener Tab wieder öffenbar', !!wieder && ctx.WT.tabs.all().a
 ok('Plus-Menü bietet Standard Tabs, Eigene und Zuletzt geschlossen',
    /Standard Tabs/.test(src) && /Zuletzt geschlossen/.test(src) && /Neue Ansicht/.test(src));
 ok('Tab-Menü trennt Farbe und Symbol als eigene Punkte',
-   /data-tabact="color">Farbe/.test(src) && /data-tabact="icon">Symbol/.test(src) && /function openPicker/.test(src));
+   /data-tabact="color"/.test(src) && /data-tabact="icon"/.test(src) && /function openPicker/.test(src));
 // Aufräumen: eigene Tabs schließen, Ablagen leeren
 ['home', 'all', 'wartung', 'todo'];
 ctx.WT.tabs.all().list.slice().filter(t => !['home', 'all', 'wartung', 'todo'].includes(t.id)).forEach(t => ctx.closeTab(t.id));

@@ -11,10 +11,11 @@ table.cds thead th{
 }
 table.cds thead th.sortable{cursor:pointer}
 table.cds thead th.sortable:hover{background:var(--hover-2)}
-table.cds thead th .sortic{margin-left:6px;vertical-align:-2px;color:var(--text-helper);opacity:0;transition:opacity .1s}
+table.cds thead th{transition:background-color var(--dur) var(--ease)}
+table.cds thead th .sortic{margin-left:6px;vertical-align:-2px;color:var(--text-helper);opacity:0;transition:opacity var(--dur-fast) var(--ease)}
 table.cds thead th.sortable:hover .sortic{opacity:1}
 table.cds thead th[aria-sort] .sortic{opacity:1;color:var(--text-primary)}
-table.cds tbody tr{background:var(--bg);border-bottom:1px solid var(--border-subtle)}
+table.cds tbody tr{background:var(--bg);border-bottom:1px solid var(--border-subtle);transition:background-color var(--dur) var(--ease)}
 table.cds tbody tr:nth-child(even){background:var(--row-alt)}
 table.cds tbody tr:hover{background:var(--hover-1)}
 table.cds td{height:36px;padding:0 12px;vertical-align:middle;font-size:12px}
@@ -24,9 +25,10 @@ table.cds td{height:36px;padding:0 12px;vertical-align:middle;font-size:12px}
 .plan-head{
   display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 16px;
   background:var(--layer-01);border-left:3px solid transparent;cursor:pointer;
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease);
 }
 .plan-head:hover{background:var(--hover-2)}
 .plan-sec.open .plan-head{border-left-color:var(--interactive-light);background:var(--layer-02)}
-.plan-caret{display:grid;place-items:center;color:var(--text-secondary);transition:transform .15s}
+.plan-caret{display:grid;place-items:center;color:var(--text-secondary);transition:transform var(--dur) var(--ease)}
 .plan-sec.open .plan-caret{transform:rotate(90deg)}
 .plan-sub{font-size:11px;color:var(--text-helper);margin-left:auto}

@@ -66,6 +66,9 @@
   --hdr-h:48px;
   --tb-h:44px;
   --z-header:60; --z-sticky:20; --z-overlay:90; --z-toast:100;
+
+  --dur-fast:.12s; --dur:.18s; --dur-slow:.28s;
+  --ease:cubic-bezier(.2,.6,.2,1); --ease-out:cubic-bezier(.16,1,.3,1);
 }
 
 html[data-theme="light"]{
@@ -138,6 +141,21 @@ dl,dd,dt,h1,h2,h3,p{margin:0}
 :focus{outline:none}
 :focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 ::selection{background:var(--interactive);color:#fff}
+
+/* Bewegung ------------------------------------------------------------------
+   Ruhige, kurze Übergänge an interaktiven Elementen und Einblend-Animationen
+   für Overlays/Menüs. Die Reduziert-Einstellung weiter unten schaltet alles ab. */
+button,a,input,select,textarea{
+  transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+body{animation:wt-fade var(--dur-slow) var(--ease)}
+
+@keyframes wt-fade{from{opacity:0}to{opacity:1}}
+@keyframes wt-pop{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes wt-scale{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes wt-slide-r{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes wt-slide-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after{animation:none !important;transition:none !important}

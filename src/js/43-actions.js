@@ -32,6 +32,15 @@ function toggleSortDir() {
   render();
 }
 
+/** Alle Filter auf den Ausgangszustand setzen (Suche, Status, Person, Zeitraum). */
+function resetFilters() {
+  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
+  state.personen = []; state.zeitraumJahr = aktuellesJahr(); state.zeitraumJahrManual = false;
+  state.von = ''; state.bis = '';
+  const s = $('#search'); if (s) s.value = '';
+  render();
+}
+
 /** Bereich wechseln: 'alle' | 'wartung' | 'todo'.
     Aktiviert den zugehörigen Standard-Tab, falls vorhanden. */
 function setBereich(b) {

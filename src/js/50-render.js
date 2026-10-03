@@ -93,11 +93,10 @@ function renderToolbar() {
   $('#btnViewPanel').classList.toggle('has-active', activeFilters > 0);
   $('#btnViewPanel').setAttribute('aria-expanded', String(state.filterOpen));
   $('#viewPanel').hidden = !state.filterOpen;
-  $('#filterScrim').hidden = !state.filterOpen;
 
-  // Auf der Startseite (Home) haben Gruppierung/Sortierung keine Wirkung.
+  // Auf der Startseite (Home) haben Gruppierung/Sortierung/Ansicht keine Wirkung.
   const atab = activeTab();
-  $('#tbTools').hidden = !!(atab && atab.home);
+  $('#tbViewCtl').hidden = !!(atab && atab.home);
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
@@ -118,14 +117,13 @@ function renderToolbar() {
   if (document.activeElement !== von) von.value = state.von || '';
   if (document.activeElement !== bis) bis.value = state.bis || '';
 
-  // Drei Schritte: Gruppieren · Sortieren · Ansicht (+ Presets)
-  $('#groupSel').innerHTML = GROUP_DEFS.map(g =>
-    '<option value="' + g.key + '"' + (g.key === state.group ? ' selected' : '') + '>' + g.label + '</option>').join('');
-  $('#sortSel').innerHTML = SORT_DEFS.map(s =>
-    '<option value="' + s.key + '"' + (s.key === state.sortKey ? ' selected' : '') + '>' + s.label + '</option>').join('');
-  const dirBtn = $('#sortDir');
-  dirBtn.textContent = state.sortDir === 'asc' ? '↑' : '↓';
-  dirBtn.title = state.sortDir === 'asc' ? 'aufsteigend (klicken: absteigend)' : 'absteigend (klicken: aufsteigend)';
+  // Gruppieren · Sortieren · Ansicht (+ Presets): Pille zeigt den Ist-Zustand.
+  const gDef = GROUP_DEFS.find(g => g.key === state.group);
+  $('#groupPillText').textContent = gDef ? gDef.label : state.group;
+  const sDef = SORT_DEFS.find(s => s.key === state.sortKey);
+  $('#sortPillText').textContent = (sDef ? sDef.label : state.sortKey) + (state.sortDir === 'asc' ? ' ↑' : ' ↓');
+  $('#btnGroup').title = 'Gruppieren: ' + $('#groupPillText').textContent;
+  $('#btnSort').title = 'Sortieren: ' + $('#sortPillText').textContent;
   $$('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
 
   const ps = loadPresets();
@@ -147,6 +145,7 @@ function renderToolbar() {
     state.personen.length || state.zeitraumJahrManual || state.von || state.bis;
   $('#btnReset').hidden = !any;
   $('#resultInfo').textContent = aktuelleListe().length + ' Positionen sichtbar';
+  renderFilterChips();
 
   const act = $('#viewAction');
   if (state.view === 'list' && (state.group === 'object' || state.group === 'task')) {
@@ -162,6 +161,34 @@ function renderToolbar() {
     act.innerHTML = '';
   }
   renderSuggest();
+}
+
+/** Aktive Filter als entfernbare Chips unter der Toolbar zeigen. */
+function renderFilterChips() {
+  const bar = $('#chipBar');
+  if (!bar) return;
+  const chips = [];
+  const add = (key, label) => chips.push(
+    '<button type="button" class="fchip" data-clear="' + key + '">' + esc(label) +
+    '<span class="fchip-x" aria-hidden="true">×</span></button>');
+  if (state.query) add('query', 'Suche: ' + state.query);
+  if (state.status !== 'alle') {
+    const s = STATUS[state.status];
+    add('status', 'Status: ' + (s ? s.label : state.status));
+  }
+  if (state.mine) add('mine', 'Meine Wartungen');
+  if (state.personen.length) add('personen', 'Person: ' + state.personen.join(', '));
+  if (state.taetigkeit) add('taetigkeit', 'Tätigkeit: ' + state.taetigkeit);
+  if (state.zeitraumJahrManual || state.von || state.bis) {
+    const t = (state.von || state.bis)
+      ? (state.von || '…') + '–' + (state.bis || '…')
+      : state.zeitraumJahr;
+    add('zeitraum', 'Zeitraum: ' + t);
+  }
+  bar.innerHTML = chips.length
+    ? chips.join('') + '<button type="button" class="fchip fchip-reset" data-clear="all">Alle Filter löschen</button>'
+    : '';
+  bar.hidden = !chips.length;
 }
 
 /** Inline-Vorschlag der Volltextsuche als Geistertext hinter dem Suchfeld
@@ -236,11 +263,15 @@ function linearProgress(pct) {
   return '<div class="loc-mini-track"><i style="width:' + w + '%"></i></div>';
 }
 
+/** Ein einzelner Suchtreffer wird direkt aufgeklappt gezeigt – unabhängig von
+    der Gruppierung, damit man nicht erst die Standortgruppe öffnen muss. */
+const singleHit = (list) => !!state.query && list.length === 1;
+
 function viewGroupedList(list) {
   const groups = sortGroups(groupItems(list, state.group));
   return '<div class="locs">' + groups.map(g => {
     const st = groupStats(g);
-    const isOpen = state.expanded.has(g.key);
+    const isOpen = singleHit(list) || state.expanded.has(g.key);
     let cls = 'loc';
     if (isOpen) cls += ' open';
     if (st.over) cls += ' is-overdue';
@@ -276,7 +307,7 @@ function viewTiles(list) {
   const groups = state.group === 'status' ? groupItems(list, 'status') : sortGroups(groupItems(list, state.group));
   return '<div class="tiles">' + groups.map(g => {
     const st = groupStats(g);
-    const isOpen = state.expanded.has(g.key);
+    const isOpen = singleHit(list) || state.expanded.has(g.key);
     const rows = isOpen ? sortItems(g.items).map(it => workRow(it, true)).join('') : '';
     return '<section class="tile' + (isOpen ? ' open' : '') + (st.open === 0 ? ' done' : '') + (st.over ? ' over' : '') + '">' +
       '<button class="tile-head" data-loc="' + esc(g.key) + '">' +
@@ -297,7 +328,7 @@ function viewBlobs(list) {
   const blobs = groups.map(g => {
     const st = groupStats(g);
     const size = 76 + Math.round(Math.sqrt(g.items.length / max) * 60);
-    const isOpen = state.expanded.has(g.key);
+    const isOpen = singleHit(list) || state.expanded.has(g.key);
     return '<button class="blob' + (isOpen ? ' open' : '') + (st.open === 0 ? ' done' : '') + (st.over ? ' over' : '') + '"' +
       ' data-loc="' + esc(g.key) + '" style="--size:' + size + 'px;--pct:' + st.pct + '" title="' + esc(g.label) + '">' +
       '<span class="blob-pct">' + st.pct + '%</span>' +
@@ -305,7 +336,7 @@ function viewBlobs(list) {
       '<span class="blob-sub">' + st.open + '/' + st.total + '</span>' +
     '</button>';
   }).join('');
-  const detail = groups.filter(g => state.expanded.has(g.key)).map(g => {
+  const detail = groups.filter(g => singleHit(list) || state.expanded.has(g.key)).map(g => {
     const st = groupStats(g);
     return '<section class="blob-detail"><h3>' + esc(g.label) + ' <span class="t-helper">' + st.open + ' offen</span></h3>' +
       sortItems(g.items).map(it => workRow(it, true)).join('') + '</section>';
@@ -384,7 +415,7 @@ function viewTable(list) {
 function viewTimeline(list) {
   const groups = groupItems(list, 'status');
   return '<div class="plan">' + groups.map(g => {
-    const isOpen = !state.collapsed.has('plan:' + g.key);
+    const isOpen = singleHit(list) || !state.collapsed.has('plan:' + g.key);
     const st = groupStats(g);
     const items = sortItems(g.items);
     return '<section class="plan-sec' + (isOpen ? ' open' : '') + '">' +

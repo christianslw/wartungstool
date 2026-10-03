@@ -1,14 +1,43 @@
-<!-- Chrome Zeile 2: Toolbar (Tabs + Aktionen) -->
+<!-- Chrome Zeile 2: Toolbar (Tabs + Filter/Sortieren/Gruppieren/Ansicht) -->
 <div class="toolbar-row">
   <div class="scope-tabs" id="tabBar" role="tablist" aria-label="Ansichten"></div>
 
-  <div class="tb-right">
+  <div class="tb-actions">
+    <span class="summary-info" id="resultInfo"></span>
     <span id="viewAction"></span>
-    <button class="btn-filter-toggle" id="btnViewPanel" aria-expanded="false" aria-haspopup="dialog" title="Filter öffnen">
-      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg>
+
+    <button class="tb-pill" id="btnViewPanel" aria-expanded="false" aria-haspopup="dialog" title="Filter">
+      <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3l-9 9v8l-6 3v-11L4 9z"/></svg></span>
       <span>Filter</span>
-      <span class="filter-count" id="filterCount" hidden>0</span>
+      <span class="pill-count" id="filterCount" hidden>0</span>
     </button>
+
+    <div class="tb-viewctl" id="tbViewCtl">
+      <button class="tb-pill" id="btnSort" aria-expanded="false" aria-haspopup="true" title="Sortieren">
+        <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 7h20v3H4zm0 8h14v3H4zm0 8h8v3H4z"/></svg></span>
+        <span id="sortPillText">Sortieren</span>
+        <span class="pill-caret" aria-hidden="true">▾</span>
+      </button>
+
+      <button class="tb-pill" id="btnGroup" aria-expanded="false" aria-haspopup="true" title="Gruppieren">
+        <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3 2 10l14 7 14-7zM6.9 15.2 16 19.8l9.1-4.6L28 16.4 16 22.4 4 16.4z"/></svg></span>
+        <span id="groupPillText">Gruppieren</span>
+        <span class="pill-caret" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
+        <button class="view-btn" data-view="list" aria-pressed="true" title="Liste" aria-label="Listenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3H4zm0 8h24v3H4zm0 8h24v3H4z"/></svg></button>
+        <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe" aria-label="Kachelansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 4h11v11H4zm13 0h11v11H17zM4 17h11v11H4zm13 0h11v11H17z"/></svg></button>
+        <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt" aria-label="Blasenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><circle cx="16" cy="16" r="10"/></svg></button>
+      </div>
+
+      <button class="tb-pill" id="presetBtn" aria-haspopup="menu" aria-expanded="false" title="Vorlagen">
+        <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4l3.6 7.3 8.1 1.2-5.9 5.7 1.4 8L16 23l-7.2 3.8 1.4-8L4.3 12.5l8.1-1.2z"/></svg></span>
+        <span>Vorlagen</span>
+        <span class="pill-caret" aria-hidden="true">▾</span>
+      </button>
+    </div>
+
     <button class="btn-cta" id="btnNewTodo">
       <svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M15 6h2v9h9v2h-9v9h-2v-9H6v-2h9z"/></svg>
       <span>Neues To-Do</span>
@@ -16,31 +45,5 @@
   </div>
 </div>
 
-<!-- Chrome Zeile 3: Darstellung als zweite Toolbar-Zeile (gleiche Optik) -->
-<div class="toolbar-sub" id="tbTools">
-  <div class="tb-tools">
-    <label class="ctl" title="Gruppieren nach">
-      <span class="ctl-ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3 2 10l14 7 14-7zM6.9 15.2 16 19.8l9.1-4.6L28 16.4 16 22.4 4 16.4z"/></svg></span>
-      <select id="groupSel" aria-label="Gruppieren nach"></select>
-    </label>
-    <label class="ctl" title="Sortieren nach">
-      <span class="ctl-ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M4 7h20v3H4zm0 8h14v3H4zm0 8h8v3H4z"/></svg></span>
-      <select id="sortSel" aria-label="Sortieren nach"></select>
-    </label>
-    <button class="ctl ctl-dir" id="sortDir" title="auf-/absteigend" aria-label="Sortierrichtung umschalten">↑</button>
-
-    <div class="view-switcher" id="viewSwitch" role="group" aria-label="Ansicht">
-      <button class="view-btn" data-view="list" aria-pressed="true" title="Liste" aria-label="Listenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3H4zm0 8h24v3H4zm0 8h24v3H4z"/></svg></button>
-      <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe" aria-label="Kachelansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 4h11v11H4zm13 0h11v11H17zM4 17h11v11H4zm13 0h11v11H17z"/></svg></button>
-      <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt" aria-label="Blasenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><circle cx="16" cy="16" r="10"/></svg></button>
-    </div>
-
-    <button class="ctl ctl-preset" id="presetBtn" aria-haspopup="menu" aria-expanded="false" title="Vorlagen">
-      <span class="ctl-ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4l3.6 7.3 8.1 1.2-5.9 5.7 1.4 8L16 23l-7.2 3.8 1.4-8L4.3 12.5l8.1-1.2z"/></svg></span>
-      <span class="ctl-txt">Vorlagen</span>
-      <span class="ctl-caret" aria-hidden="true">▾</span>
-    </button>
-  </div>
-
-  <span class="summary-info" id="resultInfo"></span>
-</div>
+<!-- Aktive Filter als entfernbare Chips; nur sichtbar, wenn Filter gesetzt sind -->
+<div class="chipbar" id="chipBar" hidden></div>

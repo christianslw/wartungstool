@@ -151,28 +151,66 @@ $('#searchBox').addEventListener('drop', e => {
 
 /* --- Tabs: wählen, anpinnen, umbenennen, schließen, neu anlegen --------- */
 let tabMenuEl = null;
+
+/* Kleine Symbole, die nur in Menüs gebraucht werden (viewBox 0 0 32 32). */
+const ICON_DOT = '<circle cx="16" cy="16" r="9"/>';
+const ICON_SHAPES = '<path d="M16 4l4.6 8h-9.2z"/><circle cx="10" cy="22" r="4"/><rect x="18" y="17" width="9" height="9" rx="2"/>';
+
+/** Ein Eintrag im Kontextmenü: Icon + Beschriftung (+ optionale rechte Notiz). */
+const ctxItem = (attrs, label, icon, { danger = false, meta = '', on = false } = {}) => {
+  const cls = [danger ? 'danger' : '', on ? 'on' : ''].filter(Boolean).join(' ');
+  return '<button type="button" ' + attrs + (cls ? ' class="' + cls + '"' : '') + '>' +
+    '<span class="ctx-ic">' + (icon ? svg(icon, 16) : '') + '</span>' +
+    '<span class="ctx-label">' + esc(label) + '</span>' +
+    (meta ? '<span class="ctx-meta">' + esc(meta) + '</span>' : '') +
+  '</button>';
+};
+
+/** Block-Kachel im Menü-Raster: Icon über der Beschriftung. */
+const ctxBlock = (attrs, label, icon, { accent = '', wide = false } = {}) =>
+  '<button type="button" ' + attrs + ' class="ctx-block' + (wide ? ' wide' : '') + '"' +
+    (accent ? ' style="--tab-accent:' + esc(accent) + '"' : '') + '>' +
+    '<span class="ctx-ic">' + (icon ? svg(icon, 16) : '') + '</span>' +
+    '<span class="ctx-block-label">' + esc(label) + '</span>' +
+  '</button>';
+
 function closeTabMenu() {
   if (tabMenuEl && tabMenuEl.remove) tabMenuEl.remove();
   tabMenuEl = null;
   const pb = $('#presetBtn');
   if (pb) pb.setAttribute('aria-expanded', 'false');
+  const sb = $('#btnSort');
+  if (sb) sb.setAttribute('aria-expanded', 'false');
+  const gb = $('#btnGroup');
+  if (gb) gb.setAttribute('aria-expanded', 'false');
 }
 function openTabMenu(id, x, y) {
   closeTabMenu();
   const t = TABS.list.find(z => z.id === id);
   if (!t) return;
   const el = document.createElement('div');
-  el.className = 'ctx-menu';
+  el.className = 'ctx-menu edit';
+  const accent = t.color || '';
   el.innerHTML =
-    '<button type="button" data-tabact="color">Farbe …</button>' +
-    '<button type="button" data-tabact="icon">Symbol …</button>' +
+    '<div class="ctx-head">' +
+      '<span class="ctx-head-ic"' + (accent ? ' style="--tab-accent:' + esc(accent) + '"' : '') + '>' + svg(TAB_ICONS[t.icon] || TAB_ICONS.list, 15) + '</span>' +
+      '<span class="ctx-head-name">' + esc(t.name) + '</span>' +
+      (TABS.def === t.id ? '<span class="ctx-head-sub">Standard</span>' : (t.fav ? '<span class="ctx-head-sub">★ Favorit</span>' : '')) +
+    '</div>' +
+    '<div class="ctx-title">Darstellung</div>' +
+    '<div class="ctx-grid">' +
+      ctxBlock('data-tabact="color"', 'Farbe', ICON_DOT) +
+      ctxBlock('data-tabact="icon"', 'Symbol', ICON_SHAPES) +
+    '</div>' +
+    '<div class="ctx-title">Verhalten</div>' +
+    ctxItem('data-tabact="default"', TABS.def === t.id ? 'Standard aufheben' : 'Als Standard festlegen', TAB_ICONS.pin, { on: TABS.def === t.id, meta: TABS.def === t.id ? '✓' : '' }) +
+    ctxItem('data-tabact="fav"', t.fav ? 'Favorit entfernen' : 'Als Favorit markieren', TAB_ICONS.star, { on: t.fav, meta: t.fav ? '★' : '' }) +
     '<div class="ctx-sep"></div>' +
-    '<button type="button" data-tabact="default">' + (TABS.def === t.id ? 'Standard aufheben' : 'Als Standard festlegen') + '</button>' +
-    '<button type="button" data-tabact="fav">' + (t.fav ? 'Favorit entfernen' : 'Als Favorit markieren') + '</button>' +
-    '<button type="button" data-tabact="save">Tab speichern</button>' +
-    '<button type="button" data-tabact="rename">Umbenennen</button>' +
-    '<button type="button" data-tabact="close">Tab schließen</button>';
-  el.style.left = Math.max(4, x || 0) + 'px';
+    ctxItem('data-tabact="save"', 'Tab speichern', ICON.download) +
+    ctxItem('data-tabact="rename"', 'Umbenennen', ICON.edit) +
+    '<div class="ctx-sep"></div>' +
+    ctxItem('data-tabact="close"', 'Tab schließen', ICON.close, { danger: true });
+  el.style.left = Math.max(4, Math.min(x || 0, (window.innerWidth || 0) - 260)) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', async (ev) => {
     const b = ev.target.closest('[data-tabact]');
@@ -237,18 +275,21 @@ function openAddMenu(x, y) {
   const stdNames = new Set([HOME_TAB.name].concat(STANDARD_TABS.map(s => s.name)));
   const recent = (TABS.recent || []).filter(r => !stdNames.has(r.name));
   const el = document.createElement('div');
-  el.className = 'ctx-menu';
+  el.className = 'ctx-menu grid2';
+  const stdBlock = (def) => ctxBlock('data-tabstd="' + esc(def.id) + '"', def.name, TAB_ICONS[def.icon] || TAB_ICONS.list);
+  const recBlock = (attr, rec) => ctxBlock('data-' + attr + '="' + esc(rec.name) + '"', rec.name,
+    (rec.icon && TAB_ICONS[rec.icon]) ? TAB_ICONS[rec.icon] : (attr === 'tabopen' ? TAB_ICONS.folder : TAB_ICONS.clock),
+    { accent: rec.color || '' });
   el.innerHTML =
     '<div class="ctx-title">Standard Tabs</div>' +
-    '<button type="button" data-tabstd="home">' + esc(HOME_TAB.name) + '</button>' +
-    STANDARD_TABS.map(s => '<button type="button" data-tabstd="' + esc(s.id) + '">' + esc(s.name) + '</button>').join('') +
-    (saved.length ? '<div class="ctx-sep"></div><div class="ctx-title">Eigene Tabs</div>' +
-      saved.map(s => '<button type="button" data-tabopen="' + esc(s.name) + '">' + (s.fav ? '★ ' : '') + esc(s.name) + '</button>').join('') : '') +
-    (recent.length ? '<div class="ctx-sep"></div><div class="ctx-title">Zuletzt geschlossen</div>' +
-      recent.map(s => '<button type="button" data-tabrecent="' + esc(s.name) + '">' + esc(s.name) + '</button>').join('') : '') +
+    '<div class="ctx-grid">' + stdBlock(HOME_TAB) + STANDARD_TABS.map(stdBlock).join('') + '</div>' +
+    (saved.length ? '<div class="ctx-title">Eigene Tabs</div><div class="ctx-grid">' +
+      saved.map(s => recBlock('tabopen', s)).join('') + '</div>' : '') +
+    (recent.length ? '<div class="ctx-title">Zuletzt geschlossen</div><div class="ctx-grid">' +
+      recent.map(r => recBlock('tabrecent', r)).join('') + '</div>' : '') +
     '<div class="ctx-sep"></div>' +
-    '<button type="button" data-tabnew="1">＋ Neue Ansicht …</button>';
-  el.style.left = Math.max(4, x || 0) + 'px';
+    ctxBlock('data-tabnew="1"', 'Neue Ansicht …', ICON.plus, { wide: true });
+  el.style.left = Math.max(4, Math.min(x || 0, (window.innerWidth || 0) - 260)) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', (ev) => {
     const std = ev.target.closest('[data-tabstd]');
@@ -289,8 +330,8 @@ function openPresetMenu(x, y) {
           '</div>').join('')
       : '<div class="ctx-empty">Noch keine Vorlagen</div>') +
     '<div class="ctx-sep"></div>' +
-    '<button type="button" data-presetsave="1">＋ Aktuelle Kombination speichern …</button>';
-  el.style.left = Math.max(4, Math.min(x || 0, window.innerWidth - 220)) + 'px';
+    ctxItem('data-presetsave="1"', 'Aktuelle Kombination speichern …', ICON.plus);
+  el.style.left = Math.max(4, Math.min(x || 0, (window.innerWidth || 0) - 260)) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', (ev) => {
     const del = ev.target.closest('[data-presetdel]');
@@ -327,7 +368,12 @@ function savePresetDialog() {
 }
 
 document.addEventListener('mousedown', (e) => {
-  if (tabMenuEl && e.target.closest && !e.target.closest('.ctx-menu') && !e.target.closest('#presetBtn')) closeTabMenu();
+  if (!e.target || !e.target.closest) return;
+  if (tabMenuEl && !e.target.closest('.ctx-menu') &&
+      !e.target.closest('#btnSort') && !e.target.closest('#btnGroup') && !e.target.closest('#presetBtn')) closeTabMenu();
+  if (state.filterOpen && !e.target.closest('#viewPanel') && !e.target.closest('#btnViewPanel')) {
+    state.filterOpen = false; renderToolbar();
+  }
 });
 
 $('#tabBar').addEventListener('click', e => {
@@ -415,10 +461,47 @@ $('#viewSwitch').addEventListener('click', e => {
   if (b) setView(b.dataset.view);
 });
 
-/* Drei Schritte: Gruppieren · Sortieren · Ansicht + Presets */
-$('#groupSel').addEventListener('change', e => setGroup(e.target.value));
-$('#sortSel').addEventListener('change', e => setSort(e.target.value));
-$('#sortDir').addEventListener('click', () => toggleSortDir());
+/* Sortieren/Gruppieren als Popover an der Pille - dieselbe Menü-Mechanik wie
+   die Tab-/Vorlagenmenüs, damit Außenklick und Escape überall greifen. */
+function popMenu(anchor, html) {
+  closeTabMenu();
+  const el = document.createElement('div');
+  el.className = 'ctx-menu';
+  el.innerHTML = html;
+  const r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { left: 8, bottom: 40, right: 200 };
+  el.style.left = Math.max(8, Math.round(r.left)) + 'px';
+  el.style.top = Math.round((r.bottom || 40) + 6) + 'px';
+  document.body.appendChild(el);
+  tabMenuEl = el;
+  return el;
+}
+function openSortMenu(anchor) {
+  const el = popMenu(anchor,
+    '<div class="ctx-title">Sortieren</div>' +
+    SORT_DEFS.map(s => '<button type="button" class="' + (s.key === state.sortKey ? 'on' : '') + '" data-sortkey="' + s.key + '">' +
+      (s.key === state.sortKey ? '✓ ' : '') + esc(s.label) + '</button>').join('') +
+    '<div class="ctx-sep"></div>' +
+    '<button type="button" data-sortdir="1">Richtung: ' + (state.sortDir === 'asc' ? 'aufsteigend ↑' : 'absteigend ↓') + '</button>');
+  $('#btnSort').setAttribute('aria-expanded', 'true');
+  el.addEventListener('click', ev => {
+    const k = ev.target.closest('[data-sortkey]');
+    if (k) { closeTabMenu(); setSort(k.dataset.sortkey); return; }
+    if (ev.target.closest('[data-sortdir]')) { closeTabMenu(); toggleSortDir(); }
+  });
+}
+function openGroupMenu(anchor) {
+  const el = popMenu(anchor,
+    '<div class="ctx-title">Gruppieren</div>' +
+    GROUP_DEFS.map(g => '<button type="button" class="' + (g.key === state.group ? 'on' : '') + '" data-groupkey="' + g.key + '">' +
+      (g.key === state.group ? '✓ ' : '') + esc(g.label) + '</button>').join(''));
+  $('#btnGroup').setAttribute('aria-expanded', 'true');
+  el.addEventListener('click', ev => {
+    const k = ev.target.closest('[data-groupkey]');
+    if (k) { closeTabMenu(); setGroup(k.dataset.groupkey); }
+  });
+}
+$('#btnSort').addEventListener('click', e => { e.stopPropagation(); openSortMenu(e.currentTarget); });
+$('#btnGroup').addEventListener('click', e => { e.stopPropagation(); openGroupMenu(e.currentTarget); });
 $('#presetBtn').addEventListener('click', (e) => {
   e.stopPropagation();
   if (tabMenuEl) { closeTabMenu(); return; }
@@ -426,13 +509,21 @@ $('#presetBtn').addEventListener('click', (e) => {
   openPresetMenu(r.left, r.bottom + 4);
 });
 
+/* Filter-Popover an der Filter-Pille verankern. */
+function positionFilterPanel() {
+  const el = $('#btnViewPanel');
+  const b = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+  if (!b) return;
+  const p = $('#viewPanel');
+  p.style.top = Math.round(b.bottom + 6) + 'px';
+  p.style.right = Math.max(8, Math.round((window.innerWidth || 0) - b.right)) + 'px';
+}
 $('#btnViewPanel').addEventListener('click', () => {
   state.filterOpen = !state.filterOpen;
+  if (state.filterOpen) positionFilterPanel();
   renderToolbar();
 });
-const closeFilter = () => { state.filterOpen = false; renderToolbar(); };
-$('#filterClose').addEventListener('click', closeFilter);
-$('#filterScrim').addEventListener('click', closeFilter);
+$('#filterClose').addEventListener('click', () => { state.filterOpen = false; renderToolbar(); });
 
 $('#viewPanel').addEventListener('change', e => {
   if (e.target.id === 'fltTask') state.taetigkeit = e.target.value;
@@ -443,11 +534,20 @@ $('#viewPanel').addEventListener('input', e => {
   if (e.target.id === 'fltVon') { e.target.value = maskDate(e.target.value); state.von = e.target.value; render(); }
   if (e.target.id === 'fltBis') { e.target.value = maskDate(e.target.value); state.bis = e.target.value; render(); }
 });
-$('#btnReset').addEventListener('click', () => {
-  state.query = ''; state.status = 'alle'; state.taetigkeit = ''; state.mine = false;
-  state.personen = []; state.zeitraumJahr = aktuellesJahr(); state.zeitraumJahrManual = false;
-  state.von = ''; state.bis = '';
-  $('#search').value = '';
+$('#btnReset').addEventListener('click', resetFilters);
+
+/* Entfernbare Filter-Chips unter der Toolbar. */
+$('#chipBar').addEventListener('click', e => {
+  const b = e.target.closest('[data-clear]');
+  if (!b) return;
+  const k = b.dataset.clear;
+  if (k === 'all') return resetFilters();
+  if (k === 'query') { state.query = ''; $('#search').value = ''; }
+  else if (k === 'status') state.status = 'alle';
+  else if (k === 'mine') state.mine = false;
+  else if (k === 'personen') state.personen = [];
+  else if (k === 'taetigkeit') state.taetigkeit = '';
+  else if (k === 'zeitraum') { state.zeitraumJahr = aktuellesJahr(); state.zeitraumJahrManual = false; state.von = ''; state.bis = ''; }
   render();
 });
 
