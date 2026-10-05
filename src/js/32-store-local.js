@@ -46,6 +46,19 @@ const LocalStore = {
     } catch (e) {}
     return [];
   },
+  /** Abschaltungen: im Dev-/Offline-Betrieb aus dem lokalen Bestand. Beim
+      ersten Aufruf wird der Beispielbestand hineingeschrieben (dann im
+      localStorage editierbar); spaeter kommen sie aus dem Backend. */
+  async loadAbschaltungen() {
+    const key = CONFIG.storageKey + '.abschaltungen';
+    let a = null;
+    try { const raw = localStorage.getItem(key); if (raw) a = JSON.parse(raw); } catch (e) {}
+    if (!Array.isArray(a)) {
+      a = devSeedAbschaltungen();
+      try { localStorage.setItem(key, JSON.stringify(a)); } catch (e) {}
+    }
+    return a.map(normalizeAbschaltung);
+  },
   async saveTodo(t) {
     const list = await this.loadTodos();
     const i = list.findIndex(x => String(x.id) === String(t.id));

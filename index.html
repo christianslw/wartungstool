@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- ==========================================================================
      GENERIERTE DATEI - NICHT DIREKT BEARBEITEN.
-     Quelle: src/   Bauen: node build.mjs   (Build 6bd9b779)
+     Quelle: src/   Bauen: node build.mjs   (Build 4b35cb8e)
      ========================================================================== -->
 <html lang="de" data-theme="light">
 <head>
@@ -71,6 +71,8 @@
   --tag-yellow-bg:#684e00; --tag-yellow-fg:#fdd13a;
   --tag-blue-bg:#0043ce;   --tag-blue-fg:#d0e2ff;
   --tag-gray-bg:#333333;   --tag-gray-fg:#f4f4f4;
+  --tag-purple-bg:#31135e; --tag-purple-fg:#e8daff;
+  --kal-feiertag-bg:#3a1215;
 
   --font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
@@ -126,6 +128,8 @@ html[data-theme="light"]{
   --tag-yellow-bg:#fdf5d6; --tag-yellow-fg:#4d3b00;
   --tag-blue-bg:#edf5ff;   --tag-blue-fg:#0043ce;
   --tag-gray-bg:#e8e8e8;   --tag-gray-fg:#161616;
+  --tag-purple-bg:#f6f2ff; --tag-purple-fg:#6929c4;
+  --kal-feiertag-bg:#ffeef0;
 
   color-scheme:light;
   --hdr-bg:#ffffff; --hdr-hover:#f4f4f4; --hdr-active:#e8e8e8;
@@ -140,6 +144,8 @@ body{
   font-size:13px;line-height:18px;letter-spacing:.16px;-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;overflow:hidden;
 }
+/* Mobil: fest auf die sichtbare Bildschirmhöhe (dvh), keine Adressleisten-Sprünge. */
+@supports (height:100dvh){ html,body{height:100dvh} }
 
 /* Scrollbereich der Ansichten: Kopf, Toolbar und Fußzeile bleiben stehen. */
 .content-body{flex:1 1 auto;overflow:auto;scrollbar-gutter:stable;min-height:0}
@@ -247,12 +253,21 @@ body{animation:wt-fade var(--dur-slow) var(--ease)}
 .hdr-spacer{flex:1 1 auto}
 
 .hdr-user{
-  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px;
+  display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 8px;
   font-size:12px;color:var(--text-secondary);border:1px solid transparent;
   max-width:180px;white-space:nowrap;transition:background .1s, border-color .1s;flex:0 0 auto;
 }
 .hdr-user:hover{background:var(--hdr-hover);color:var(--text-primary);border-color:var(--border-subtle)}
 .hdr-user span.uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Profil-Kreis: Icon oder Initialen, damit der Name mobil nicht die Zeile sprengt. */
+.hdr-avatar{
+  position:relative;width:28px;height:28px;border-radius:50%;flex:0 0 auto;
+  display:grid;place-items:center;background:var(--layer-03);color:var(--text-secondary);
+}
+.hdr-user:hover .hdr-avatar{color:var(--text-primary)}
+.hdr-avatar .hdr-initials{display:none;font-size:11px;font-weight:700;letter-spacing:.02em}
+.hdr-avatar.has-name svg{display:none}
+.hdr-avatar.has-name .hdr-initials{display:block;color:var(--text-primary)}
 .user-nudge{
   display:inline-flex;align-items:center;justify-content:center;
   background:var(--warning);color:#161616;font-size:10px;font-weight:700;
@@ -351,6 +366,9 @@ body{animation:wt-fade var(--dur-slow) var(--ease)}
 .tb-pill:hover{border-color:var(--border-strong);color:var(--text-primary);background:var(--hover-2)}
 .tb-pill[aria-expanded="true"]{border-color:var(--interactive);color:var(--text-primary);background:var(--layer-02)}
 .tb-pill.has-active{border-color:var(--interactive);color:var(--interactive)}
+/* Reine Icon-Pillen (Sortieren, Gruppieren): Text spart Platz. */
+.tb-pill.tb-icon{gap:2px;padding:0 6px}
+.tb-pill.tb-icon .pill-caret{font-size:8px;opacity:.7}
 .pill-ic{display:inline-flex;color:inherit;opacity:.85}
 .pill-caret{color:var(--text-helper);font-size:9px;line-height:1}
 .pill-count{
@@ -500,6 +518,14 @@ body{animation:wt-fade var(--dur-slow) var(--ease)}
 .ctx-menu .ctx-head-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctx-menu .ctx-head-sub{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-helper);white-space:nowrap}
 .ctx-menu .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 8px 8px}
+.ctx-menu .ctx-blockrow{position:relative;display:block;min-width:0}
+.ctx-menu .ctx-blockrow .ctx-block{width:100%;height:100%}
+.ctx-menu .ctx-del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;display:grid;place-items:center;
+  border-radius:3px;color:var(--text-helper);opacity:0;transition:opacity .1s,background .1s;
+}
+.ctx-menu .ctx-blockrow:hover .ctx-del,.ctx-menu .ctx-del:focus-visible{opacity:1}
+.ctx-menu .ctx-del:hover{background:var(--tag-red-bg);color:var(--tag-red-fg)}
 .ctx-menu .ctx-block{
   flex-direction:column;align-items:flex-start;gap:8px;height:auto;padding:10px;
   background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:6px;
@@ -599,6 +625,7 @@ body.dragging-attr [data-drag]{
 .loc-acts-col{display:flex;align-items:center;justify-content:flex-end;gap:2px}
 .td-act{width:32px;height:32px;display:grid;place-items:center;color:var(--text-secondary);border-radius:2px}
 .td-act:hover{background:var(--hover-2);color:var(--text-primary)}
+.td-act.fav.on{color:var(--warning)}
 
 /* Kind-Zeile */
 .loc-rows{background:var(--bg)}
@@ -738,6 +765,39 @@ body.dragging-attr [data-drag]{
 .home-sec.soon h2{color:var(--warning)}
 .home-more{margin-top:4px}
 
+/* Angepinnte Standorte (Favoriten) ---------------------------------------- */
+.home-favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.home-fav{
+  display:grid;grid-template-columns:auto 1fr;grid-template-areas:'nr name' 'sub sub';gap:2px 8px;
+  text-align:left;padding:10px 12px;background:var(--layer-01);border:1px solid var(--border-subtle);
+  border-left:3px solid var(--interactive);border-radius:4px;
+}
+.home-fav:hover{border-color:var(--interactive-light);background:var(--hover-2)}
+.home-fav.over{border-left-color:var(--error)}
+.home-fav.done{border-left-color:var(--success)}
+.home-fav .hf-nr{grid-area:nr;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-secondary)}
+.home-fav .hf-name{grid-area:name;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-fav .hf-sub{grid-area:sub;font-size:11px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.home-fav .loc-mini-track{grid-column:1 / -1;margin-top:6px}
+
+/* To-Dos als Haftnotizen --------------------------------------------------- */
+.home-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.home-note{
+  position:relative;display:flex;flex-direction:column;gap:4px;text-align:left;min-height:96px;
+  padding:12px 12px 14px;background:var(--tag-yellow-bg);color:var(--tag-yellow-fg);
+  border-radius:3px;box-shadow:var(--shadow-2);
+}
+.home-note::after{
+  content:'';position:absolute;top:0;right:0;border-width:0 14px 14px 0;border-style:solid;
+  border-color:transparent var(--bg) transparent transparent;
+}
+.home-note:hover{transform:translateY(-1px)}
+.home-note .hn-task{font-weight:600;font-size:13px}
+.home-note .hn-loc{font-size:11px;opacity:.85}
+.home-note .hn-due{font-size:11px;font-variant-numeric:tabular-nums;margin-top:auto}
+.home-note .hn-due.late{font-weight:600;text-decoration:underline}
+.home-note .hn-note{font-size:11px;opacity:.9;border-top:1px solid rgba(0,0,0,.15);padding-top:4px}
+
 /* Wartungstool · Styles · Tabelle & Zeitplan */
 /* ==========================================================================
    Tabellen- & Zeitplanansichten
@@ -773,38 +833,134 @@ table.cds td{height:36px;padding:0 12px;vertical-align:middle;font-size:12px}
 .plan-sec.open .plan-caret{transform:rotate(90deg)}
 .plan-sub{font-size:11px;color:var(--text-helper);margin-left:auto}
 
+/* Kalender: Monats-/Jahresansicht, Kategorien, Wochenenden & Feiertage ---- */
+.kal{padding:12px 16px 96px;display:flex;flex-direction:column;gap:12px}
+.kal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.kal-nav{display:inline-flex;align-items:center;gap:2px}
+.kal-title{font-size:14px;font-weight:600;min-width:150px;text-align:center;color:var(--text-primary)}
+.kal-title:hover{color:var(--link)}
+.kal-prev{transform:rotate(180deg)}
+.kal-today{height:28px;padding:0 10px;font-size:11px;background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-secondary);margin-left:4px}
+.kal-today:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.kal-view{display:inline-flex;border:1px solid var(--border-subtle);border-radius:2px;overflow:hidden}
+.kal-vbtn{height:28px;padding:0 12px;font-size:11px;color:var(--text-secondary);background:var(--layer-01)}
+.kal-vbtn:hover{color:var(--text-primary);background:var(--hover-2)}
+.kal-vbtn.on{background:var(--layer-03);color:var(--interactive);font-weight:600}
+.kal-cats{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.kal-cat{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;font-size:11px;
+  background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-secondary);
+}
+.kal-cat:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.kal-cat[aria-pressed="false"]{opacity:.5}
+.kal-cat[aria-pressed="false"] .t{text-decoration:line-through}
+.kal-cat .dot{width:8px;height:8px;border-radius:50%;background:var(--info)}
+.kal-cat[data-kalcat="over"] .dot{background:var(--error)}
+.kal-cat[data-kalcat="soon"] .dot{background:var(--warning)}
+.kal-cat[data-kalcat="open"] .dot{background:var(--info)}
+.kal-cat[data-kalcat="done"] .dot{background:var(--success)}
+.kal-cat[data-kalcat="abs"] .dot{background:#a56eff}
+.kal-cat .n{color:var(--text-helper);font-variant-numeric:tabular-nums}
+
+/* Monat/Jahr-Auswahl: Pop-up an der Titelzeile */
+.kal-pick-host{position:relative;display:inline-flex}
+.kal-pick{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:var(--z-overlay);
+  width:min(300px,calc(100vw - 32px));border:1px solid var(--border-strong);
+  border-radius:6px;background:var(--layer-02);padding:10px 12px;box-shadow:var(--shadow-2);
+  animation:wt-pop var(--dur) var(--ease-out);
+}
+.kal-pick-head{display:flex;align-items:center;gap:5px;justify-content:center;margin-bottom:8px}
+.kal-pick-y{font-size:14px;font-weight:600;min-width:70px;text-align:center;font-variant-numeric:tabular-nums}
+.kal-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.kal-pick-m{height:30px;font-size:11px;border:1px solid var(--border-subtle);border-radius:2px;background:var(--bg);color:var(--text-secondary)}
+.kal-pick-m:hover{border-color:var(--interactive-light);color:var(--text-primary)}
+.kal-pick-m.on{background:var(--interactive);border-color:var(--interactive);color:var(--text-on-color);font-weight:600}
+
+.kal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:2px;overflow:hidden}
+/* Monatsansicht füllt die Höhe; die Zellen geben den Punkten damit anteilig
+   Platz nach Bildschirmhöhe (Kapazität setzt fitKalHeight()). */
+.kal-month{min-height:100%;padding-bottom:12px}
+.kal-month .kal-grid{flex:1 1 auto;grid-template-rows:auto repeat(6,minmax(0,1fr))}
+.kal-month .kal-cell{min-height:0}
+.kal-dow{height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--layer-02)}
+.kal-dow.wknd{color:var(--text-helper);background:var(--layer-01)}
+.kal-cell{position:relative;min-height:104px;padding:4px;display:flex;flex-direction:column;gap:3px;overflow:hidden;background:var(--bg)}
+/* Abschaltungen als eigene Ebene: der Termin selbst spannt sich über seinen
+   von–bis-Zeitraum (ganztägig = ganzer Tag, sonst anteilig der Zellhöhe). */
+.kal-abs{position:absolute;inset:0;pointer-events:none;z-index:0}
+.kal-cell .kal-evs,.kal-cell .kal-daynum,.kal-cell .kal-holiday{position:relative;z-index:1}
+.kal-ev.kal-timed{position:absolute;left:3px;right:3px;min-height:14px;pointer-events:auto;overflow:hidden}
+.kal-cell.out{background:var(--layer-01)}
+.kal-cell.out .kal-daynum{color:var(--text-disabled)}
+/* Wochenende: dezente Schraffur. Feiertag: rot getönt (Sonntagsdruck). */
+.kal-cell.wknd{
+  background-color:var(--layer-01);
+  background-image:repeating-linear-gradient(135deg,transparent 0 6px,var(--border-subtle) 6px 7px);
+}
+.kal-cell.feiertag{background:var(--kal-feiertag-bg)}
+.kal-cell.feiertag .kal-daynum{color:var(--tag-red-fg)}
+.kal-holiday{font-size:10px;line-height:13px;color:var(--tag-red-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-daynum{width:20px;height:20px;display:grid;place-items:center;border-radius:50%;font-size:11px;color:var(--text-secondary);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.kal-cell.today .kal-daynum{background:var(--interactive);color:var(--text-on-color)}
+.kal-cell.feiertag.today .kal-daynum{background:var(--error);color:var(--text-on-color)}
+.kal-evs{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-height:0;overflow:hidden}
+.kal-ev{
+  display:flex;align-items:center;gap:4px;text-align:left;padding:1px 4px;font-size:10px;line-height:14px;
+  border-left:3px solid var(--interactive);border-radius:2px;background:var(--sel-bg);color:var(--sel-fg);overflow:hidden;
+}
+.kal-ev:hover{background:var(--hover-2)}
+.kal-ev .t{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-ev .sub{flex:0 0 auto;color:inherit;font-weight:600;font-variant-numeric:tabular-nums;opacity:.9}
+.kal-ev.ev-over{border-left-color:var(--error);background:var(--tag-red-bg);color:var(--tag-red-fg)}
+.kal-ev.ev-soon{border-left-color:var(--warning);background:var(--tag-yellow-bg);color:var(--tag-yellow-fg)}
+.kal-ev.ev-done{border-left-color:var(--success);background:var(--tag-green-bg);color:var(--tag-green-fg)}
+.kal-ev.ev-abs{border-left-color:#a56eff;background:var(--tag-purple-bg);color:var(--tag-purple-fg);font-weight:600}
+.kal-more{padding-left:4px;font-size:10px;color:var(--text-helper)}
+
+/* Jahresansicht: eine Kachel je Monat; so viele offene Punkte wie hineinpassen. */
+.kal-year{min-height:100%;padding-bottom:12px}
+.kal-ygrid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(2,1fr);gap:8px}
+.kal-year .kal-ygrid{flex:1 1 auto;grid-auto-rows:1fr}
+.kal-ycell{
+  display:flex;flex-direction:column;gap:2px;padding:10px 12px;text-align:left;overflow:hidden;
+  background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:4px;color:var(--text-primary);
+}
+.kal-ycell:hover{border-color:var(--interactive-light);background:var(--hover-2)}
+.kal-ycell.now{border-color:var(--interactive)}
+.kal-yhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--border-subtle)}
+.kal-ym{font-size:12px;font-weight:600}
+.kal-yn{font-size:10px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.kal-ypoints{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+.kal-yrow{display:flex;align-items:center;gap:6px;min-width:0;padding:3px 0;font-size:11px;line-height:16px}
+.kal-yrow+.kal-yrow{border-top:1px solid var(--border-subtle)}
+.kal-yrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--info);flex:0 0 auto}
+.kal-yrow.r-over::before{background:var(--error)}
+.kal-yrow.r-soon::before{background:var(--warning)}
+.kal-yrow .t{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-yrow .n{flex:0 0 auto;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.kal-yrow.more{color:var(--text-helper)}
+.kal-yrow.more::before{display:none}
+.kal-yempty{font-size:11px;color:var(--text-helper)}
+
+.abs-det{display:flex;flex-direction:column;gap:8px}
+.abs-row{display:grid;grid-template-columns:88px 1fr;gap:10px;font-size:12px}
+.abs-l{color:var(--text-helper)}
+.abs-v{color:var(--text-primary);word-break:break-word}
+
+/* Schmale Geräte regelt 50-responsive.css (lädt später). */
+
 /* Wartungstool · Styles · Responsive & Druck */
 /* ==========================================================================
-   Responsive Regeln
+   Responsive Regeln – ab hier wird die App zum mobilen Arbeitsmittel:
+   Kopf/Toolbar rücken zusammen, die Liste wird zur Karte je Standort,
+   Popover werden zu Drawern, Filter und Kalender füllen den Bildschirm.
+   Die Media Queries stehen bewusst am Dateiende, damit sie die weiter
+   unten definierten Basisregeln (Modal, Panel, Toast) überschreiben.
    ========================================================================== */
-@media (max-width:1240px){
-  .loc-head, .loc-row{
-    grid-template-columns: 44px 50px minmax(160px, 1.8fr) minmax(130px, 1fr) 130px 110px 76px;
-  }
-}
-@media (max-width:980px){
-  .loc-head, .loc-row{
-    grid-template-columns: 44px 50px 1fr 120px 100px 76px;
-  }
-  .loc-preview-col, .loc-note{display:none}
-}
-@media (max-width:768px){
-  .shell-header{padding:0 8px;gap:6px}
-  .toolbar-row{padding:0 8px;gap:6px}
-  .summary-info{display:none}
-  .loc-head, .loc-row{
-    grid-template-columns: 36px 44px 1fr 90px 40px;
-  }
-  .loc-summary-col, .loc-user, .loc-acts-col > .td-act:first-child{display:none}
-  
-  .btn-cta{
-    position:fixed;bottom:20px;right:20px;z-index:var(--z-overlay);
-    height:44px;padding:0 16px;border-radius:22px;box-shadow:var(--shadow-2);
-  }
-}
-@media (max-width:480px){
-  .hdr-name{display:none}
-}
+
+
+
 
 /* Carbon Overlays, Dialoge & Drawer */
 .scrim{position:fixed;inset:0;background:var(--scrim);z-index:var(--z-overlay);animation:wt-fade var(--dur) var(--ease)}
@@ -906,6 +1062,151 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 .att{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--link);min-width:0;flex:1 1 auto}
 .att span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-meta{font-size:11px;color:var(--text-helper);white-space:nowrap}
+
+/* Fortschrittsleiste klebt auf schmalen Geräten unter der Toolbar. */
+@media (max-width:768px){
+  /* App-Feeling: die Oberfläche ist auf die Bildschirmgröße fixiert und
+     scrollt nur innen (.content-body), nicht als ganze Seite. */
+  html,body{height:100dvh;max-height:100dvh;overflow:hidden;overscroll-behavior:none}
+  body{position:fixed;inset:0;width:100%}
+  .shell-header{padding:0 8px;gap:6px}
+  .hdr-name,.hdr-sub{display:none}
+  .hdr-search{flex:1 1 auto;max-width:none;margin:0 4px;height:36px}
+  .hdr-search input{font-size:16px} /* verhindert Auto-Zoom auf iOS */
+  .searchkey{display:none}
+  .hdr-user{max-width:none;padding:0 4px}
+  .hdr-user .uname{display:none}
+  .toolbar-row{flex-wrap:wrap;height:auto;min-height:var(--tb-h);padding:6px 8px;gap:6px;row-gap:6px}
+  .scope-tabs{order:1;flex:1 1 100%;height:34px;align-items:stretch;gap:2px}
+  .scope-tab{height:34px;padding:0 8px;font-size:12px;gap:5px}
+  .scope-tab .tab-ic{display:none}
+  .tb-actions{order:2;flex:1 1 100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .tb-actions::-webkit-scrollbar{display:none}
+  .tb-viewctl{flex-wrap:nowrap}
+  .tb-pill{height:32px;padding:0 10px}
+  .summary-info{display:none}
+
+  /* Drei-Punkte-Menü: natives Bottom-Sheet statt schwebender Liste. */
+  #menuPop{
+    position:fixed;left:6px;right:6px;top:auto;bottom:6px;min-width:0;
+    border-radius:12px;padding:6px;z-index:calc(var(--z-overlay) + 6);
+    box-shadow:0 12px 40px rgba(0,0,0,.5);animation:wt-slide-up var(--dur-slow) var(--ease-out);
+  }
+  #menuPop button{height:52px;padding:0 16px;font-size:15px;gap:14px;border-radius:8px}
+  #menuPop button:active{background:var(--hover-2)}
+  #menuPop .sep{margin:6px 4px}
+  /* Abdunkelung hinter dem Blatt. */
+  #menuPop:not([hidden])::before{
+    content:'';position:fixed;inset:0;background:var(--scrim);z-index:-1;
+    animation:wt-fade var(--dur) var(--ease);
+  }
+
+  .progress-strip{position:sticky;top:0;z-index:9;padding:6px 8px;gap:8px}
+  .ps-label{max-width:90px;overflow:hidden;text-overflow:ellipsis}
+
+  /* Popover → feste, bildschirmbreite Flächen. */
+  #viewPanel{
+    position:fixed;left:8px;right:8px;top:auto;bottom:8px;width:auto;
+    max-height:min(78vh,620px);border-radius:8px;
+    animation:wt-slide-up var(--dur-slow) var(--ease-out);
+  }
+  .ctx-menu{position:fixed;left:8px !important;right:8px;top:auto !important;bottom:8px;
+    width:auto;max-width:none;min-width:0;max-height:min(78vh,620px);overflow:auto;border-radius:8px;
+    animation:wt-slide-up var(--dur-slow) var(--ease-out)}
+  .ctx-menu.grid2{min-width:0}
+  .ctx-menu.edit{min-width:0}
+  .ctx-menu .ctx-grid{grid-template-columns:1fr 1fr}
+  .modal{align-self:flex-end;width:100%;border-radius:8px 8px 0 0}
+  .modal-scrim{padding:0;align-items:flex-end}
+  .toasts{left:8px;right:8px;bottom:8px;align-items:stretch}
+  .toast{width:auto}
+
+  /* Liste: eine kompakte App-Karte je Standort. */
+  .locs{padding-bottom:88px}
+  .loc-head{
+    display:grid;grid-template-columns:18px 40px 1fr auto;
+    grid-template-areas:
+      'caret nr title acts'
+      'prog  prog prog  prog';
+    align-items:center;gap:0 8px;
+    padding:8px 8px 7px 5px;min-height:0;
+  }
+  .loc-caret{grid-area:caret}
+  .loc-nr{grid-area:nr;font-size:11px;padding:2px 0}
+  .loc-title-col{grid-area:title;flex-wrap:wrap;gap:3px 6px}
+  .loc-name{font-size:14px;line-height:18px}
+  .loc-acts-col{grid-area:acts;gap:0;margin-left:0}
+  .loc-preview-col,.loc-note,.loc-summary-col{display:none}
+  .loc-progress-col{grid-area:prog;padding:0;margin-top:3px;gap:6px;font-size:10px}
+  .loc-progress-col .loc-mini-track{flex:1 1 auto;height:4px;min-width:0}
+  .loc-progress-col > span{flex:0 0 auto;white-space:nowrap}
+
+  .loc-row{
+    display:grid;grid-template-columns:32px 1fr auto;grid-template-areas:
+      'tick task acts'
+      'tick due  acts';
+    align-items:center;gap:0 8px;padding:7px 8px 7px 4px;min-height:0;
+  }
+  .loc-row .tick{grid-area:tick;width:22px;height:22px}
+  .loc-row .loc-nr{display:none}
+  .loc-row .loc-task{grid-area:task;min-width:0}
+  .loc-row .loc-task .c-main{font-size:13px;line-height:17px}
+  .loc-row .loc-task .c-sub{display:none}
+  .loc-row .loc-note{display:none}
+  /* Datum links, Person rechts – in einer Zeile statt drei. */
+  .loc-row .loc-due{grid-area:due;justify-self:start;font-size:11px;line-height:15px}
+  .loc-row .loc-due .c-sub{display:inline;margin-left:6px}
+  .loc-row .ecell,.loc-row .loc-user{grid-area:due;justify-self:end;font-size:11px;line-height:15px}
+  .loc-row .ecell-sub{font-size:11px}
+  .loc-row .ecell-note{display:none}
+  .loc-row .btn-note{display:none}
+  .loc-row .loc-acts-col{grid-area:acts;gap:0}
+  .loc-row .td-act{width:32px;height:32px}
+  .loc-head .td-act{width:32px;height:32px}
+  .loc-rows{background:var(--layer-01)}
+
+  /* Kacheln/Blasen großzügiger, Kalender kompakter. */
+  .tiles{padding:12px 8px 96px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .blobs{padding:20px 8px}
+  .kal{min-height:0;padding:8px 6px 96px}
+  .kal-bar{gap:6px;row-gap:6px}
+  .kal-cats{width:100%;margin-left:0;order:9}
+  .kal-cats .kal-cat{flex:1 1 auto;justify-content:center}
+  .kal-month,.kal-year{min-height:0}
+  .kal-month .kal-grid{grid-template-rows:none}
+  .kal-cell{min-height:64px}
+  .kal-holiday{display:none}
+  .kal-ygrid{grid-template-columns:repeat(2,1fr) !important;grid-template-rows:repeat(6,auto) !important}
+  .kal-ycell{min-height:104px}
+
+  /* Zuhause: Zwei Spalten bleiben, Kacheln kompakt. */
+  .home{padding:16px 10px 120px}
+  .home-hero h1{font-size:22px}
+  .home-kpis{grid-template-columns:repeat(2,1fr)}
+
+  /* „Neues To-Do" schwebt, damit die Toolbar nicht umbricht. */
+  /* Weniger Text: „Neues To-Do" wird mobil zum runden Plus. */
+  .btn-cta{
+    position:fixed;bottom:20px;right:16px;z-index:var(--z-overlay);
+    height:50px;width:50px;padding:0;border-radius:50%;box-shadow:var(--shadow-2);
+  }
+  .btn-cta span{display:none}
+  .btn-cta svg{width:22px;height:22px}
+  .progress-strip{padding:6px 8px;gap:8px}
+  .ps-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}
+  .panel{width:100%}
+  .row{grid-template-columns:1fr;gap:2px}
+  .fgrid{grid-template-columns:1fr}
+}
+
+@media (max-width:480px){
+  .hdr-name{display:none}
+  .home-kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .home-favs{grid-template-columns:1fr}
+  .home-notes{grid-template-columns:1fr}
+  .loc-title-col{flex-basis:55%}
+  .kal-ygrid{grid-template-columns:1fr 1fr !important}
+}
 </style>
 
 </head>
@@ -930,19 +1231,21 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 
   <div class="hdr-spacer"></div>
 
-  <button class="hdr-user" id="btnUser" title="Namen für die Protokollierung ändern">
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
+  <button class="hdr-user" id="btnUser" title="Namen für die Protokollierung ändern" aria-label="Profil">
+    <span class="hdr-avatar" id="userAvatar" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><path d="M16 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12m0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 12c6.6 0 10 3.3 10 5v3H6v-3c0-1.7 3.4-5 10-5m0 2c-2.2 0-4.1.4-5.5 1.1S8.2 22.4 8 23v1h16v-1c-.2-.6-1.1-1.2-2.5-1.9S18.2 20 16 20"/></svg>
+      <span class="hdr-initials" id="userInitials"></span>
+    </span>
     <span class="uname" id="userName">Name hinterlegen</span>
     <span class="user-nudge" id="userNudge" hidden title="Bitte Namen für Protokollierung hinterlegen">!</span>
   </button>
 
-  <button class="hdr-btn" id="btnPrint" title="Drucken (P)" aria-label="Drucken">
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M28 10v9h-4v6H8v-6H4v-9h6V4h12v6zM10 6v4h12V6zm12 17v-8H10v8zm4-6v-5H6v5h2v-4h16v4z"/><path d="M25 12h2v2h-2z"/></svg>
-  </button>
   <button class="hdr-btn" id="btnMenu" aria-haspopup="menu" aria-expanded="false" title="Weitere Aktionen" aria-label="Weitere Aktionen">
     <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><circle cx="16" cy="8" r="2.2"/><circle cx="16" cy="16" r="2.2"/><circle cx="16" cy="24" r="2.2"/></svg>
   </button>
   <div class="menu" id="menuPop" role="menu" hidden>
+    <button role="menuitem" data-act="print"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M28 10v9h-4v6H8v-6H4v-9h6V4h12v6zM10 6v4h12V6zm12 17v-8H10v8zm4-6v-5H6v5h2v-4h16v4z"/><path d="M25 12h2v2h-2z"/></svg>Drucken</button>
+    <div class="sep"></div>
     <button role="menuitem" data-act="csv"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M19 21h-6v2h6zm0-4h-6v2h6zm-6-4v2h6v-2z"/><path d="M6 28V4h14l6 6v18zM8 6v20h16V11h-5V6z"/></svg>CSV exportieren (Excel)</button>
     <button role="menuitem" data-act="json"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V10h2v12zm12-12h2v12h-2zm-6 3 2-3h2l-3 4.5 3 4.5h-2l-2-3-2 3h-2l3-4.5L11 10h2z"/></svg>JSON-Sicherung (gesamt)</button>
     <button role="menuitem" data-act="jsonview"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M9 22V10h2v12zm12-12h2v12h-2zm-6 3 2-3h2l-3 4.5 3 4.5h-2l-2-3-2 3h-2l3-4.5L11 10h2z"/></svg>JSON der aktuellen Ansicht</button>
@@ -967,15 +1270,13 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
     </button>
 
     <div class="tb-viewctl" id="tbViewCtl">
-      <button class="tb-pill" id="btnSort" aria-expanded="false" aria-haspopup="true" title="Sortieren">
-        <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M4 7h20v3H4zm0 8h14v3H4zm0 8h8v3H4z"/></svg></span>
-        <span id="sortPillText">Sortieren</span>
+      <button class="tb-pill tb-icon" id="btnSort" aria-expanded="false" aria-haspopup="true" title="Sortieren">
+        <span class="pill-ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M4 7h20v3H4zm0 8h14v3H4zm0 8h8v3H4z"/></svg></span>
         <span class="pill-caret" aria-hidden="true">▾</span>
       </button>
 
-      <button class="tb-pill" id="btnGroup" aria-expanded="false" aria-haspopup="true" title="Gruppieren">
-        <span class="pill-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3 2 10l14 7 14-7zM6.9 15.2 16 19.8l9.1-4.6L28 16.4 16 22.4 4 16.4z"/></svg></span>
-        <span id="groupPillText">Gruppieren</span>
+      <button class="tb-pill tb-icon" id="btnGroup" aria-expanded="false" aria-haspopup="true" title="Gruppieren">
+        <span class="pill-ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3 2 10l14 7 14-7zM6.9 15.2 16 19.8l9.1-4.6L28 16.4 16 22.4 4 16.4z"/></svg></span>
         <span class="pill-caret" aria-hidden="true">▾</span>
       </button>
 
@@ -983,6 +1284,7 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
         <button class="view-btn" data-view="list" aria-pressed="true" title="Liste" aria-label="Listenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 6h24v3H4zm0 8h24v3H4zm0 8h24v3H4z"/></svg></button>
         <button class="view-btn" data-view="tiles" aria-pressed="false" title="Kacheln: eine Karte je Gruppe" aria-label="Kachelansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M4 4h11v11H4zm13 0h11v11H17zM4 17h11v11H4zm13 0h11v11H17z"/></svg></button>
         <button class="view-btn" data-view="blobs" aria-pressed="false" title="Blasen: Größe = Anzahl, Füllung = Fortschritt" aria-label="Blasenansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><circle cx="16" cy="16" r="10"/></svg></button>
+        <button class="view-btn" data-view="calendar" aria-pressed="false" title="Kalender: Monatsansicht mit Kategorien" aria-label="Kalenderansicht"><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor"><path d="M26 6h-4V4h-2v2h-8V4h-2v2H6v22h20zm-18 8h16v12H8zm0-6h2v2h2V8h8v2h2V8h2v4H8z"/></svg></button>
       </div>
 
       <button class="tb-pill" id="presetBtn" aria-haspopup="menu" aria-expanded="false" title="Vorlagen">
@@ -1496,6 +1798,19 @@ const LocalStore = {
     } catch (e) {}
     return [];
   },
+  /** Abschaltungen: im Dev-/Offline-Betrieb aus dem lokalen Bestand. Beim
+      ersten Aufruf wird der Beispielbestand hineingeschrieben (dann im
+      localStorage editierbar); spaeter kommen sie aus dem Backend. */
+  async loadAbschaltungen() {
+    const key = CONFIG.storageKey + '.abschaltungen';
+    let a = null;
+    try { const raw = localStorage.getItem(key); if (raw) a = JSON.parse(raw); } catch (e) {}
+    if (!Array.isArray(a)) {
+      a = devSeedAbschaltungen();
+      try { localStorage.setItem(key, JSON.stringify(a)); } catch (e) {}
+    }
+    return a.map(normalizeAbschaltung);
+  },
   async saveTodo(t) {
     const list = await this.loadTodos();
     const i = list.findIndex(x => String(x.id) === String(t.id));
@@ -1566,6 +1881,14 @@ const ApiStore = {
     const a = await this.req('/todos');
     return (Array.isArray(a) ? a : []).map(normalizeTodo);
   },
+  /** Abschaltungen kommen spaeter aus dem Backend; fehlt der Endpunkt noch,
+      bleibt die Liste leer statt den Start scheitern zu lassen. */
+  async loadAbschaltungen() {
+    try {
+      const a = await this.req('/abschaltungen');
+      return (Array.isArray(a) ? a : []).map(normalizeAbschaltung);
+    } catch (e) { return []; }
+  },
   async saveTodo(t) {
     const body = JSON.stringify(t);
     const r = t.id == null
@@ -1611,13 +1934,18 @@ function applyTheme() {
 'use strict';
 /* Wartungstool · JS · Anwendungszustand & To-Do-Kennzeichen */
 const state = {
-  items: [], todos: [], user: '', lastNote: '',
+  items: [], todos: [], abschaltungen: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
   zeitraumJahr: aktuellesJahr(), zeitraumJahrManual: false, von: '', bis: '',
   mine: false,
   /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
   group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',
-  expanded: new Set(), collapsed: new Set(), panelId: null, loading: true, online: true, filterOpen: false
+  /* Kalender (siehe 55-kalender.js): Monat, Kategorien, Monats-/Jahresansicht */
+  kalJahr: new Date().getFullYear(), kalMonat: new Date().getMonth(),
+  kalOver: true, kalSoon: true, kalOpen: true, kalDone: true, kalAbs: true,
+  kalView: 'month', kalPicker: false, kalYearMax: 8, kalDayMax: 4,
+  expanded: new Set(), collapsed: new Set(), panelId: null, loading: true, online: true, filterOpen: false,
+  favorites: []
 };
 
 const TODO_MARK = '__toDo';
@@ -1957,9 +2285,15 @@ function aktuelleZahlen(scope = state.bereich) {
   return countsForScope(scope);
 }
 
-/** Gesamtfortschritt der Wartungen: eigene, sonst alle. */
+/** Gesamtfortschritt der Wartungen: eigene, sonst alle – nur das laufende
+    Kalenderjahr (Fristjahr `bis`). Das Jahr kommt aus der Uhr, damit es mit
+    2027 ff. von selbst weiterläuft. */
 function fortschritt() {
-  const basis = state.items;
+  const jahr = aktuellesJahr();
+  const basis = state.items.filter(i => {
+    const d = parseDate(i.bis);
+    return !!d && String(d.getFullYear()) === jahr;
+  });
   const list = state.user ? basis.filter(i => norm(i.zustaendig) === norm(state.user)) : basis;
   const total = list.length;
   const done = list.filter(i => i.erledigt).length;
@@ -2327,6 +2661,20 @@ function reopenRecent(name) {
   return openRecord(rec);
 }
 
+/** Gespeicherten eigenen Tab endgültig aus der Ablage entfernen. */
+function deleteSavedTab(name) {
+  TABS.saved = (TABS.saved || []).filter((s) => s.name !== name);
+  saveTabs();
+  render();
+}
+
+/** Eintrag aus "Zuletzt geschlossen" entfernen. */
+function deleteRecentTab(name) {
+  TABS.recent = (TABS.recent || []).filter((s) => s.name !== name);
+  saveTabs();
+  render();
+}
+
 function renameTab(id, name) {
   const t = TABS.list.find((x) => x.id === id);
   const clean = String(name || '').trim();
@@ -2419,6 +2767,56 @@ function tabYears() {
 
 <script>
 'use strict';
+/* Wartungstool · JS · Favoriten (angeheftete Standorte)
+   ---------------------------------------------------------------------------
+   Reine Anzeigepräferenz: Standorte lassen sich in der Liste anpinnen; sie
+   erscheinen dann oben auf Zuhause. Gespeichert wird nur der Ortsschlüssel
+   (groupKey) in localStorage – keine Stammdaten. */
+
+const FAV_KEY = CONFIG.storageKey + '.favorites';
+
+function loadFavorites() {
+  try {
+    const a = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+    return Array.isArray(a) ? a.filter(x => typeof x === 'string') : [];
+  } catch (e) { return []; }
+}
+
+function saveFavorites() {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(state.favorites)); } catch (e) {}
+}
+
+function istFavorit(key) { return state.favorites.indexOf(key) >= 0; }
+
+function toggleFavorit(key) {
+  if (!key) return;
+  const i = state.favorites.indexOf(key);
+  if (i >= 0) state.favorites.splice(i, 1); else state.favorites.push(key);
+  saveFavorites();
+  render();
+}
+
+/** Favorisierte Standorte als Gruppen (offene zuerst). */
+function favoritGruppen(srcList = state.items) {
+  return sortGroups(groupItems(srcList, 'object')).filter(g => istFavorit(g.key));
+}
+
+/** Standort aus Zuhause heraus in der Liste öffnen (nur dieser Standort). */
+function openFavorit(key) {
+  if ((activeTab() || {}).home) openStandard('all');
+  state.bereich = 'wartung';
+  state.group = 'object';
+  state.view = 'list';
+  state.expanded = new Set([key]);
+  state.query = '';
+  state.objekt = (state.items.find(i => groupKey(i) === key) || {}).objekt_name || '';
+  render();
+}
+//# sourceURL=src/js/46-favorites.js
+</script>
+
+<script>
+'use strict';
 /* Wartungstool · JS · Rendering der Ansichten */
 /* ==========================================================================
    UI-Rendering mit Circular Progress Rings
@@ -2457,6 +2855,15 @@ function renderSource() {
 function renderHead() {
   $('#userName').textContent = state.user || 'Name hinterlegen';
   $('#userNudge').hidden = !!state.user;
+  const ini = (() => {
+    const v = vorname(state.user || '');
+    const n = (state.user || '').split(',')[0].trim();
+    const s = (v ? v[0] : '') + (n ? n[0] : '');
+    return s ? s.toUpperCase() : '';
+  })();
+  const av = $('#userAvatar'), iniEl = $('#userInitials');
+  if (av) av.classList.toggle('has-name', !!state.user);
+  if (iniEl) iniEl.textContent = ini;
   renderTabs();
 }
 
@@ -2518,6 +2925,14 @@ function renderToolbar() {
   // Auf der Startseite (Home) haben Gruppierung/Sortierung/Ansicht keine Wirkung.
   const atab = activeTab();
   $('#tbViewCtl').hidden = !!(atab && atab.home);
+  // Im Kalender sind Gruppe/Sortierung/Vorlagen ohne Wirkung. Sie werden nur
+  // unsichtbar geschaltet (nicht `hidden`), damit Ansicht- und Filter-Knopf
+  // ihre Position behalten und nichts springt.
+  const keinCtl = state.view === 'calendar';
+  for (const el of [$('#btnGroup'), $('#btnSort'), $('#presetBtn')]) {
+    el.hidden = false;
+    el.style.visibility = keinCtl ? 'hidden' : '';
+  }
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
@@ -2538,13 +2953,16 @@ function renderToolbar() {
   if (document.activeElement !== von) von.value = state.von || '';
   if (document.activeElement !== bis) bis.value = state.bis || '';
 
-  // Gruppieren · Sortieren · Ansicht (+ Presets): Pille zeigt den Ist-Zustand.
+  // Gruppieren · Sortieren · Ansicht (+ Presets): nur noch Symbole; der
+  // Ist-Zustand steckt im Tooltip und in der hervorgehobenen Pille.
   const gDef = GROUP_DEFS.find(g => g.key === state.group);
-  $('#groupPillText').textContent = gDef ? gDef.label : state.group;
   const sDef = SORT_DEFS.find(s => s.key === state.sortKey);
-  $('#sortPillText').textContent = (sDef ? sDef.label : state.sortKey) + (state.sortDir === 'asc' ? ' ↑' : ' ↓');
-  $('#btnGroup').title = 'Gruppieren: ' + $('#groupPillText').textContent;
-  $('#btnSort').title = 'Sortieren: ' + $('#sortPillText').textContent;
+  const gTxt = gDef ? gDef.label : state.group;
+  const sTxt = (sDef ? sDef.label : state.sortKey) + (state.sortDir === 'asc' ? ' ↑' : ' ↓');
+  $('#btnGroup').title = 'Gruppieren: ' + gTxt;
+  $('#btnSort').title = 'Sortieren: ' + sTxt;
+  $('#btnGroup').setAttribute('aria-label', 'Gruppieren: ' + gTxt);
+  $('#btnSort').setAttribute('aria-label', 'Sortieren: ' + sTxt);
   $$('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
 
   const ps = loadPresets();
@@ -2638,9 +3056,14 @@ function renderBody() {
     host.innerHTML = Array.from({ length: 10 }, () => '<div style="height:38px;border-bottom:1px solid var(--border-subtle);background:var(--layer-01);opacity:.4"></div>').join('');
     return;
   }
-  const list = aktuelleListe();
   const at = activeTab();
   if (at && at.home) { host.innerHTML = renderHome(); return; }
+  if (state.view === 'calendar') {
+    host.innerHTML = viewCalendar();
+    fitKalHeight();
+    return;
+  }
+  const list = aktuelleListe();
   if (!list.length) {
     host.innerHTML = '<div style="padding:48px 16px;text-align:center;color:var(--text-helper)"><h3>Keine Positionen gefunden</h3><p style="font-size:12px;margin-top:6px">Überprüfen Sie die Filter oder das Suchfeld.</p></div>';
     return;
@@ -2716,7 +3139,7 @@ function viewGroupedList(list) {
         '<span class="loc-preview-col">' + esc(groupPreview(g)) + '</span>' +
         '<div class="loc-summary-col"><b>' + st.open + '/' + st.total + ' offen</b></div>' +
         '<div class="loc-progress-col">' + linearProgress(st.pct) + '<span>' + st.done + '/' + st.total + '</span></div>' +
-        '<div class="loc-acts-col">' + (state.group === 'object' ? '<button class="td-act" data-termloc="' + esc(g.key) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button>' : '') + '</div>' +
+        '<div class="loc-acts-col">' + (state.group === 'object' ? '<button class="td-act fav' + (istFavorit(g.key) ? ' on' : '') + '" data-fav="' + esc(g.key) + '" title="' + (istFavorit(g.key) ? 'Favorit entfernen' : 'Standort anpinnen (Zuhause)') + '" aria-label="Favorit">' + svg(TAB_ICONS.star, 15) + '</button>' + '<button class="td-act" data-termloc="' + esc(g.key) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button>' : '') + '</div>' +
       '</div>' +
       (isOpen ? '<div class="loc-rows">' + rows + '</div>' : '') +
     '</section>';
@@ -2785,6 +3208,27 @@ function renderHome() {
       : '<p class="t-helper">' + esc(leer) + '</p>') +
     '</section>';
 
+  // Angepinnte Standorte: griffbereit mit Fortschritt, Klick öffnet nur diesen Ort.
+  const favs = favoritGruppen(state.items);
+  const favSec = favs.length ? '<section class="home-sec fav">' +
+    '<h2>Favoriten <span class="n">' + favs.length + '</span></h2>' +
+    '<div class="home-favs">' + favs.map(g => {
+      const st = groupStats(g);
+      return '<button class="home-fav' + (st.over ? ' over' : (st.open === 0 ? ' done' : '')) + '" data-locfav="' + esc(g.key) + '">' +
+        '<span class="hf-nr">' + esc(g.nr || '–') + '</span>' +
+        '<span class="hf-name" title="' + esc(g.name || g.label) + '">' + esc(g.name || g.label) + '</span>' +
+        '<span class="hf-sub">' + st.open + ' offen · ' + st.done + '/' + st.total + '</span>' +
+        linearProgress(st.pct) + '</button>';
+    }).join('') + '</div></section>' : '';
+
+  // To-Dos als Haftnotizen.
+  const todoSec = '<section class="home-sec todo"><h2>Eigene To-Dos <span class="n">' + todos.length + '</span></h2>' +
+    (todos.length
+      ? '<div class="home-notes">' + todos.slice(0, HOME_LIMIT).map(homeNote).join('') + '</div>' +
+        (todos.length > HOME_LIMIT ? '<p class="home-more t-helper">+' + (todos.length - HOME_LIMIT) + ' weitere</p>' : '')
+      : '<p class="t-helper">Keine offenen To-Dos.</p>') +
+    '</section>';
+
   return '<div class="home">' +
     '<header class="home-hero">' +
       '<h1>' + esc(gruss()) + '</h1>' +
@@ -2796,10 +3240,22 @@ function renderHome() {
     '<div class="home-kpis">' +
       kpi(offen, 'offen') + kpi(c.over, 'überfällig', 'over') + kpi(c.soon, 'bald fällig', 'soon') + kpi(c.done, 'erledigt', 'done') +
     '</div>' +
+    favSec +
     sec('Überfällig', ueber, 'over', 'Nichts überfällig – gut.') +
     sec('Bald fällig', bald, 'soon', 'Nichts in Kürze fällig.') +
-    sec('Eigene To-Dos', todos, 'todo', 'Keine offenen To-Dos.') +
+    todoSec +
   '</div>';
+}
+
+/** Ein To-Do als Haftnotiz für Zuhause. */
+function homeNote(it) {
+  const due = it.bis ? dueInfo(it.bis) : null;
+  return '<button class="home-note ist-todo" data-todoedit="' + esc(keyOf(it)) + '" title="To-Do öffnen">' +
+    '<span class="hn-task">' + esc(it.taetigkeit || 'To-Do') + '</span>' +
+    (it.objekt_name ? '<span class="hn-loc">' + esc((it.objekt_nr ? it.objekt_nr + ' ' : '') + it.objekt_name) + '</span>' : '') +
+    (due ? '<span class="hn-due ' + esc(due.cls) + '">' + esc(it.bis) + ' · ' + esc(due.text) + '</span>' : '') +
+    (it.kommentar ? '<span class="hn-note">' + esc(it.kommentar) + '</span>' : '') +
+  '</button>';
 }
 
 function workRow(it, showObject) {
@@ -2848,6 +3304,461 @@ function viewTimeline(list) {
   }).join('') + '</div>';
 }
 //# sourceURL=src/js/50-render.js
+</script>
+
+<script>
+'use strict';
+/* Wartungstool · JS · Kalender (Monats- und Jahresansicht)
+   ---------------------------------------------------------------------------
+   Vierte Ansicht neben Liste/Kacheln/Blasen. Zeigt je Tag:
+     · überfällige, bald fällige und offene Punkte (auf ihrer Frist `bis`)
+     · erledigte Punkte (auf dem Erledigungsdatum `erledigt_am`)
+     · Abschaltungen (Sendestandort, Zeitraum, betroffene Dienste)
+   Wochenenden und Feiertage (RLP + BW) sind schraffiert/rot hinterlegt.
+   Monat/Jahr sind über den Kopf wählbar; zusätzlich gibt es eine Jahresansicht.
+
+   Abschaltungen kommen spaeter aus dem Backend; im Dev-/Offline-Betrieb
+   liefert sie der LocalStore (siehe 32-store-local.js, devSeedAbschaltungen). */
+
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const WOCHENTAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const KAL_MAX = 4;                 // Chips je Tag, Rest als "+N"
+const KAL_NOTIF_TAGE = 14;         // Vorlauf fuer Abschaltungs-Hinweise
+
+/* Kategorien: Status-Kategorien + Abschaltungen. Reihenfolge = Dringlichkeit. */
+const KAL_CATS = [
+  { key: 'over', stateKey: 'kalOver', label: 'Überfällig' },
+  { key: 'soon', stateKey: 'kalSoon', label: 'Bald fällig' },
+  { key: 'open', stateKey: 'kalOpen', label: 'Offen' },
+  { key: 'done', stateKey: 'kalDone', label: 'Erledigt' },
+  { key: 'abs',  stateKey: 'kalAbs',  label: 'Abschaltungen' }
+];
+/* statusOf() → Kategorie: geplant zählt als offen. */
+const KAL_STATUS = { over: 'kalOver', soon: 'kalSoon', open: 'kalOpen', plan: 'kalOpen', done: 'kalDone' };
+
+/* ---------------------------------------------------------------- Modell */
+const ABSA_FIELDS = { objekt_nr: '', objekt_name: '', sender: '', von: '', bis: '', dienste: [], arbeiten: '' };
+
+/** Abschaltung eines Sendestandorts auf ein einheitliches Modell bringen. */
+function normalizeAbschaltung(r, idx = 0) {
+  const dienste = Array.isArray(r && r.dienste)
+    ? r.dienste.map(String)
+    : String((r && r.dienste) || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+  return Object.assign({}, ABSA_FIELDS, r, { id: (r && r.id) ?? (idx + 1), dienste });
+}
+
+/** Datum mit optionaler Uhrzeit ("TT.MM.JJJJ" oder "TT.MM.JJJJ HH:MM") → Date. */
+function parseDateTime(s) {
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\d{1,2}):(\d{2}))?$/.exec(String(s ?? '').trim());
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+  return (d.getFullYear() === +m[3] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[1]) ? d : null;
+}
+
+/** Dev-Beispiel-Abschaltungen: relativ zu heute, damit im Dev-Betrieb sofort
+    etwas zu sehen ist. ponytail: statischer Beispielbestand – durch echte
+    Backend-Daten (/api/abschaltungen) ersetzen, sobald vorhanden. */
+function devSeedAbschaltungen() {
+  const d = new Date();
+  const tag = (n) => {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    return p2(x.getDate()) + '.' + p2(x.getMonth() + 1) + '.' + x.getFullYear();
+  };
+  return [
+    { id: 1, objekt_nr: '9200', objekt_name: 'Bad Mergentheim', sender: 'Sender Bad Mergentheim',
+      von: tag(2) + ' 06:00', bis: tag(2) + ' 14:00', dienste: ['DAB+', 'DVB-T2', 'UKW'],
+      arbeiten: 'Beispiel – Erneuerung der Sendeantenne' },
+    { id: 2, objekt_nr: '8600', objekt_name: 'Weinsberg', sender: 'Sender Weinsberg',
+      von: tag(9) + ' 22:00', bis: tag(10) + ' 05:00', dienste: ['UKW'],
+      arbeiten: 'Beispiel – Wartung der Senderanlage' }
+  ];
+}
+
+/* ------------------------------------------------------------- Feiertage
+   Gesetzliche Feiertage der Länder Rheinland-Pfalz und Baden-Württemberg
+   (Vereinigungsmenge; beide teilen Fronleichnam und Allerheiligen, BW hat
+   zusätzlich Heilige Drei Könige). Bewegliche Feste über die Osterformel –
+   gilt für jedes Jahr, ist also immer aktuell. ponytail: fest auf RLP+BW –
+   weitere Länder bräuchten eigene Regeln. */
+const FEIERTAG_FIX = [
+  [1, 1, 'Neujahr'], [5, 1, 'Tag der Arbeit'], [10, 3, 'Tag der Deutschen Einheit'],
+  [12, 25, '1. Weihnachtstag'], [12, 26, '2. Weihnachtstag'],
+  [1, 6, 'Heilige Drei Könige'], [11, 1, 'Allerheiligen']
+];
+const FEIERTAG_OSTERN = [
+  [-2, 'Karfreitag'], [1, 'Ostermontag'], [39, 'Christi Himmelfahrt'],
+  [50, 'Pfingstmontag'], [60, 'Fronleichnam']
+];
+const FEIERTAGE_CACHE = new Map();
+
+/** Ostersonntag (Gauß/Meeus). */
+function easterSunday(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  return new Date(year, month - 1, ((h + l - 7 * m + 114) % 31) + 1);
+}
+
+/** Feiertage eines Jahres als Map "JJJJ-MM-TT" → Name. */
+function feiertage(year) {
+  if (FEIERTAGE_CACHE.has(year)) return FEIERTAGE_CACHE.get(year);
+  const map = new Map();
+  for (const [m, d, name] of FEIERTAG_FIX) map.set(year + '-' + p2(m) + '-' + p2(d), name);
+  const e = easterSunday(year);
+  for (const [off, name] of FEIERTAG_OSTERN)
+    map.set(isoDay(new Date(e.getFullYear(), e.getMonth(), e.getDate() + off)), name);
+  FEIERTAGE_CACHE.set(year, map);
+  return map;
+}
+function feiertagName(d) { return feiertage(d.getFullYear()).get(isoDay(d)) || ''; }
+
+/* ---------------------------------------------------------------- Ereignisse */
+const isoDay = (d) => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+const uhrzeit = (s) => { const m = /(\d{1,2}):(\d{2})/.exec(String(s || '')); return m ? p2(+m[1]) + ':' + m[2] : ''; };
+
+/** Alle Kalendereintraege des aktuellen Bereichs, gefiltert nach Suche und
+    Kategorien. Jeder Eintrag: { tag: Date, art, item? , abs? }. */
+function kalenderEvents() {
+  const q = norm(state.query);
+  const evs = [];
+  for (const it of bereichListe(state.bereich)) {
+    if (!matchesQuery(it, q)) continue;
+    if (it.erledigt) {
+      if (!state.kalDone) continue;
+      const d = parseDate(it.erledigt_am) || parseDate(it.bis);
+      if (d) evs.push({ tag: d, art: 'done', item: it });
+    } else {
+      const s = statusOf(it);
+      if (!state[KAL_STATUS[s] || 'kalOpen']) continue;
+      const d = parseDate(it.bis);
+      if (d) evs.push({ tag: d, art: s === 'plan' ? 'open' : s, item: it });
+    }
+  }
+  if (state.kalAbs) {
+    for (const a of state.abschaltungen || []) {
+      const von = parseDateTime(a.von), bis = parseDateTime(a.bis) || von;
+      if (!von) continue;
+      if (q && !matchesQuery({ objekt_nr: a.objekt_nr, objekt_name: a.objekt_name,
+        taetigkeit: a.arbeiten, kommentar: (a.sender || '') + ' ' + a.dienste.join(' '), erledigt: false }, q)) continue;
+      const ende = new Date(bis.getFullYear(), bis.getMonth(), bis.getDate());
+      for (const d = new Date(von.getFullYear(), von.getMonth(), von.getDate()); d <= ende; d.setDate(d.getDate() + 1)) {
+        evs.push({ tag: new Date(d), art: 'abs', abs: a });
+      }
+    }
+  }
+  return evs;
+}
+
+const evRank = (e) => e.art === 'abs' ? 0 : e.art === 'done' ? 4 : (STATUS_RANK[e.art] ?? 2);
+
+/* ---------------------------------------------------------------- Chips */
+/** Abschaltungs-Chip; mit `frac` bekommt er Position/Höhe im Tagesrechteck. */
+function kalChip(e, frac) {
+  if (e.art === 'abs') {
+    const a = e.abs;
+    const title = [(a.objekt_nr ? a.objekt_nr + ' ' : '') + (a.objekt_name || ''), a.sender,
+      a.von + (a.bis ? ' – ' + a.bis : ''), (a.dienste || []).join(', '), a.arbeiten]
+      .filter(Boolean).join(' · ');
+    const style = frac ? ' style="top:' + (frac.top * 100).toFixed(1) + '%;height:' + (frac.h * 100).toFixed(1) + '%"' : '';
+    return '<button class="kal-ev ev-abs' + (frac ? ' kal-timed' : '') + '" data-kalabs="' + esc(a.id) + '" title="' + esc(title) + '"' + style + '>' +
+      '<span class="t">' + esc((a.dienste || []).join(' · ') || a.objekt_name || 'Abschaltung') + '</span>' +
+      '<span class="sub">' + esc(a.objekt_nr || uhrzeit(a.von)) + '</span></button>';
+  }
+  const it = e.item;
+  const title = [(it.objekt_nr ? it.objekt_nr + ' ' : '') + it.objekt_name, it.taetigkeit,
+    it.erledigt ? 'erledigt ' + (it.erledigt_am || '') : 'fällig ' + (it.bis || ''),
+    istToDo(it) ? 'To-Do' : ''].filter(Boolean).join(' · ');
+  return '<button class="kal-ev ev-' + e.art + '" data-kalitem="' + esc(keyOf(it)) + '" title="' + esc(title) + '">' +
+    '<span class="t">' + esc(it.taetigkeit || it.objekt_name || '–') + '</span>' +
+    '<span class="sub">' + esc(it.objekt_nr || '') + '</span></button>';
+}
+
+/* ---------------------------------------------------------------- Kopfleiste */
+function kalBarHtml(evs) {
+  const y = state.kalJahr, m = state.kalMonat;
+  const imZeitraum = (e) => state.kalView === 'year'
+    ? e.tag.getFullYear() === y
+    : (e.tag.getFullYear() === y && e.tag.getMonth() === m);
+  const cnt = (art) => evs.filter(e => e.art === art && imZeitraum(e)).length;
+  const navBtn = (dir, label, cls) =>
+    '<button class="td-act ' + cls + '" data-kalnav="' + dir + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' + svg(ICON.chevR, 14) + '</button>';
+  const vt = (v, l) => '<button class="kal-vbtn' + (state.kalView === v ? ' on' : '') + '" data-kalview="' + v + '" aria-pressed="' + (state.kalView === v) + '">' + l + '</button>';
+  const titel = state.kalView === 'year' ? String(y) : MONATE[m] + ' ' + y;
+
+  return '<div class="kal-bar">' +
+    '<div class="kal-nav">' +
+      navBtn('prev', state.kalView === 'year' ? 'Voriges Jahr' : 'Voriger Monat', 'kal-prev') +
+      '<span class="kal-pick-host">' +
+        '<button class="kal-title" data-kaltitle="1" aria-haspopup="dialog" aria-expanded="' + state.kalPicker + '" title="Monat und Jahr wählen">' + titel + '</button>' +
+        (state.kalPicker ? kalPickerHtml() : '') +
+      '</span>' +
+      navBtn('next', state.kalView === 'year' ? 'Nächstes Jahr' : 'Nächster Monat', '') +
+      '<button class="kal-today" data-kalnav="today" title="Zum heutigen Tag">Heute</button>' +
+    '</div>' +
+    '<div class="kal-view">' + vt('month', 'Monat') + vt('year', 'Jahr') + '</div>' +
+    '<div class="kal-cats">' + KAL_CATS.map(c =>
+      '<button class="kal-cat" data-kalcat="' + c.key + '" aria-pressed="' + !!state[c.stateKey] + '" title="Kategorie ein-/ausblenden">' +
+      '<span class="dot"></span><span class="t">' + esc(c.label) + '</span> <span class="n">' + cnt(c.key) + '</span></button>').join('') +
+    '</div>' +
+  '</div>';
+}
+
+/** Monat/Jahr-Auswahl als Pop-up an der Titelzeile. */
+function kalPickerHtml() {
+  const y = state.kalJahr;
+  return '<div class="kal-pick">' +
+    '<div class="kal-pick-head">' +
+      '<button class="td-act kal-prev" data-kalyear="-1" title="Voriges Jahr" aria-label="Voriges Jahr">' + svg(ICON.chevR, 14) + '</button>' +
+      '<span class="kal-pick-y">' + y + '</span>' +
+      '<button class="td-act" data-kalyear="1" title="Nächstes Jahr" aria-label="Nächstes Jahr">' + svg(ICON.chevR, 14) + '</button>' +
+    '</div>' +
+    '<div class="kal-pick-grid">' + MONATE.map((n, i) =>
+      '<button class="kal-pick-m' + (i === state.kalMonat ? ' on' : '') + '" data-kalmonth="' + i + '">' + n + '</button>').join('') +
+    '</div>' +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- Monatsansicht */
+
+/** Anteil des Tages (0..1), den eine Abschaltung an diesem Tag belegt: aus
+    von/bis anteilig zur Tageshöhe; ohne Uhrzeit (ganztägig) der ganze Tag. */
+function absTagesanteil(a, day) {
+  const start0 = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  if (!/:/.test(String(a.von || '')) && !/:/.test(String(a.bis || ''))) return { top: 0, h: 1 };
+  const end0 = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+  const von = parseDateTime(a.von) || start0;
+  const bis = parseDateTime(a.bis) || von;
+  const s = Math.max(start0, Math.min(von, end0));
+  const e = Math.max(s, Math.min(bis > von ? bis : end0, end0));
+  if (e <= s) return null;
+  const top = (s - start0) / 86400000;
+  return { top, h: Math.max(0.05, (e - s) / 86400000) };
+}
+
+function kalMonthHtml(evs, y, m) {
+  const byDay = new Map();
+  for (const e of evs) {
+    const k = isoDay(e.tag);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k).push(e);
+  }
+  const first = new Date(y, m, 1);
+  const start = new Date(y, m, 1 - ((first.getDay() + 6) % 7));   // Montag als Wochenstart
+  const heuteKey = isoDay(new Date());
+
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const key = isoDay(d);
+    const dayEvs = (byDay.get(key) || []).slice().sort((a, b) => evRank(a) - evRank(b));
+    const ft = feiertagName(d);
+    const wknd = d.getDay() === 0 || d.getDay() === 6;
+    const cls = 'kal-cell' + (d.getMonth() === m ? '' : ' out') + (key === heuteKey ? ' today' : '') +
+      (ft ? ' feiertag' : (wknd ? ' wknd' : ''));
+    const max = state.kalDayMax || KAL_MAX;
+    const absEvs = dayEvs.filter(e => e.art === 'abs');
+    const chipEvs = dayEvs.filter(e => e.art !== 'abs');
+    const mehr = chipEvs.length > max ? '<span class="kal-more">+' + (chipEvs.length - max) + '</span>' : '';
+    const absChips = absEvs.map(e => kalChip(e, absTagesanteil(e.abs, d))).join('');
+    cells += '<div class="' + cls + '"' + (ft ? ' title="' + esc(ft) + '"' : '') + '>' +
+      '<span class="kal-daynum">' + d.getDate() + '</span>' +
+      (ft ? '<span class="kal-holiday">' + esc(ft) + '</span>' : '') +
+      '<div class="kal-evs">' + chipEvs.slice(0, max).map(e => kalChip(e)).join('') + mehr + '</div>' +
+      '<div class="kal-abs">' + absChips + '</div></div>';
+  }
+  return '<div class="kal-grid">' +
+    WOCHENTAGE.map((w, i) => '<div class="kal-dow' + (i >= 5 ? ' wknd' : '') + '">' + w + '</div>').join('') +
+    cells + '</div>' +
+    (state.kalAbs && !(state.abschaltungen || []).length
+      ? '<p class="t-helper">Keine Abschaltungen vorhanden.</p>' : '');
+}
+
+/* ---------------------------------------------------------------- Jahresansicht
+   Je Monatskachel die offenen Punkte auflisten – so viele, wie laut
+   fitKalHeight() auf den Bildschirm passen; der Rest wird "+N weitere".
+   Dezente Trennlinien zwischen den Punkten, eine unter dem Monatskopf. */
+function kalYearHtml(evs, y) {
+  const byMonth = Array.from({ length: 12 }, () => []);
+  for (const e of evs) {
+    if (e.tag.getFullYear() !== y) continue;
+    if (e.art !== 'over' && e.art !== 'soon' && e.art !== 'open') continue;
+    byMonth[e.tag.getMonth()].push(e);
+  }
+  const heute = new Date();
+  const cap = Math.max(1, state.kalYearMax || 8);
+  return '<div class="kal-ygrid">' + MONATE.map((name, i) => {
+    const now = heute.getFullYear() === y && heute.getMonth() === i;
+    const month = byMonth[i].slice().sort((a, b) => (evRank(a) - evRank(b)) || (a.tag - b.tag));
+    const overflow = month.length > cap;
+    const shown = overflow ? month.slice(0, cap - 1) : month;
+    const rows = shown.map(e => {
+      const it = e.item;
+      return '<span class="kal-yrow r-' + e.art + '">' +
+        '<span class="t" title="' + esc([it.taetigkeit, it.objekt_nr, it.objekt_name].filter(Boolean).join(' · ')) + '">' +
+          esc(it.taetigkeit || it.objekt_name || '–') + '</span>' +
+        '<span class="n">' + esc(it.objekt_nr || '') + '</span></span>';
+    }).join('') + (overflow
+      ? '<span class="kal-yrow more">+' + (month.length - shown.length) + ' weitere</span>' : '');
+    return '<button class="kal-ycell' + (now ? ' now' : '') + '" data-kalmonthtile="' + i + '">' +
+      '<span class="kal-yhead"><span class="kal-ym">' + name + '</span>' +
+      '<span class="kal-yn">' + month.length + ' offen</span></span>' +
+      (rows ? '<span class="kal-ypoints">' + rows + '</span>' : '<span class="kal-yempty">–</span>') +
+      '</button>';
+  }).join('') + '</div>' +
+    (state.kalAbs && !(state.abschaltungen || []).length
+      ? '<p class="t-helper">Keine Abschaltungen vorhanden.</p>' : '');
+}
+
+/** So viele Punktzeilen passen wirklich in eine Zelle des aktuellen
+    Bildschirms (Monatsraster: `.kal-evs`, Jahresraster: `.kal-ypoints`); der
+    Rest wird als "+N" gezeigt. Die Kapazität wird je Rendern an der gemessenen
+    Zellenhöhe ausgerichtet, damit die Punkte ihren Platz anteilig füllen. */
+function fitKalHeight() {
+  const host = $('#tableHost');
+  if (!host || typeof host.querySelectorAll !== 'function') return;
+  if (state.kalView === 'year') {
+    const box = $$('.kal-ypoints', host).find(b => b.querySelector && b.querySelector('.kal-yrow'));
+    const h = box && box.getBoundingClientRect ? box.getBoundingClientRect().height : 0;
+    const rh = box && box.querySelector('.kal-yrow').getBoundingClientRect
+      ? box.querySelector('.kal-yrow').getBoundingClientRect().height : 0;
+    if (!h || !rh) return;
+    const max = Math.max(1, Math.floor(h / (rh + 2)));
+    if (max !== state.kalYearMax) { state.kalYearMax = max; renderBody(); }
+    return;
+  }
+  const box = $$('.kal-evs', host).find(b => b.querySelector && b.querySelector('.kal-ev'));
+  const h = box && box.getBoundingClientRect ? box.getBoundingClientRect().height : 0;
+  const rh = box && box.querySelector('.kal-ev').getBoundingClientRect
+    ? box.querySelector('.kal-ev').getBoundingClientRect().height : 0;
+  if (!h || !rh) return;
+  const max = Math.max(1, Math.floor(h / (rh + 2)));
+  if (max !== state.kalDayMax) { state.kalDayMax = max; renderBody(); }
+}
+
+/* ---------------------------------------------------------------- Einstieg */
+function viewCalendar() {
+  const evs = kalenderEvents();
+  const body = state.kalView === 'year'
+    ? kalYearHtml(evs, state.kalJahr)
+    : kalMonthHtml(evs, state.kalJahr, state.kalMonat);
+  return '<div class="kal kal-' + state.kalView + '">' + kalBarHtml(evs) + body + '</div>';
+}
+
+/* ---------------------------------------------------------------- Aktionen */
+function toggleKalCategory(k) {
+  const cat = KAL_CATS.find(c => c.key === k);
+  if (!cat) return;
+  state[cat.stateKey] = !state[cat.stateKey];
+  render();
+}
+
+function kalViewSet(v) {
+  if (v !== 'month' && v !== 'year') return;
+  state.kalView = v;
+  state.kalPicker = false;
+  render();
+}
+
+function toggleKalPicker() {
+  state.kalPicker = !state.kalPicker;
+  render();
+}
+
+function kalJahrVerschieben(step) {
+  state.kalJahr += step;
+  render();
+}
+
+function kalMonatWaehlen(i) {
+  state.kalMonat = Number(i);
+  state.kalView = 'month';
+  state.kalPicker = false;
+  render();
+}
+
+function kalNav(dir) {
+  state.kalPicker = false;
+  if (dir === 'today') {
+    const n = new Date();
+    state.kalJahr = n.getFullYear();
+    state.kalMonat = n.getMonth();
+  } else if (state.kalView === 'year') {
+    state.kalJahr += dir === 'next' ? 1 : -1;
+  } else {
+    const d = new Date(state.kalJahr, state.kalMonat + (dir === 'next' ? 1 : -1), 1);
+    state.kalJahr = d.getFullYear();
+    state.kalMonat = d.getMonth();
+  }
+  render();
+}
+
+function openAbschaltung(id) {
+  const a = (state.abschaltungen || []).find(x => String(x.id) === String(id));
+  if (!a) return;
+  const row = (l, v) => '<div class="abs-row"><span class="abs-l">' + esc(l) + '</span><span class="abs-v">' + esc(v || '–') + '</span></div>';
+  return modal({
+    title: 'Abschaltung',
+    bodyHtml: '<div class="abs-det">' +
+      row('Standort', (a.objekt_nr ? a.objekt_nr + ' ' : '') + (a.objekt_name || '')) +
+      (a.sender ? row('Sender', a.sender) : '') +
+      row('Zeitraum', a.von + (a.bis ? ' – ' + a.bis : '')) +
+      row('Dienste', (a.dienste || []).join(', ')) +
+      row('Arbeiten', a.arbeiten) +
+    '</div>',
+    primary: 'Schließen', secondary: ''
+  });
+}
+
+/** Hinweise für anstehende Abschaltungen (max. 3, Vorlauf KAL_NOTIF_TAGE). */
+function abschaltungNotifs() {
+  const jetzt = new Date();
+  const grenze = new Date(jetzt.getTime() + KAL_NOTIF_TAGE * 86400000);
+  const kommend = (state.abschaltungen || [])
+    .map(a => ({ a, ab: parseDateTime(a.von), bis: parseDateTime(a.bis) || parseDateTime(a.von) }))
+    .filter(x => x.ab && x.bis >= jetzt && x.ab <= grenze)
+    .sort((x, y) => x.ab - y.ab)
+    .slice(0, 3);
+  for (const { a } of kommend) {
+    const detail = [(a.dienste || []).join(' · '), a.von + (a.bis ? '–' + a.bis : ''), a.arbeiten]
+      .filter(Boolean).join('  ·  ');
+    toast('Abschaltung ' + (a.objekt_name || a.objekt_nr || a.sender || ''), {
+      tone: 'warning', detail, ms: 12000,
+      action: () => { if ((activeTab() || {}).home) openStandard('all'); setView('calendar'); },
+      actionLabel: 'Kalender'
+    });
+  }
+}
+
+$('#tableHost').addEventListener('click', e => {
+  const cat = e.target.closest('[data-kalcat]');
+  if (cat) return toggleKalCategory(cat.dataset.kalcat);
+  const cv = e.target.closest('[data-kalview]');
+  if (cv) return kalViewSet(cv.dataset.kalview);
+  const title = e.target.closest('[data-kaltitle]');
+  if (title) return toggleKalPicker();
+  const nav = e.target.closest('[data-kalnav]');
+  if (nav) return kalNav(nav.dataset.kalnav);
+  const jahr = e.target.closest('[data-kalyear]');
+  if (jahr) return kalJahrVerschieben(Number(jahr.dataset.kalyear) || 0);
+  const mon = e.target.closest('[data-kalmonth]');
+  if (mon) return kalMonatWaehlen(mon.dataset.kalmonth);
+  const tile = e.target.closest('[data-kalmonthtile]');
+  if (tile) return kalMonatWaehlen(tile.dataset.kalmonthtile);
+  const abs = e.target.closest('[data-kalabs]');
+  if (abs) return openAbschaltung(abs.dataset.kalabs);
+  const item = e.target.closest('[data-kalitem]');
+  if (item) {
+    const rec = findByKey(item.dataset.kalitem);
+    if (!rec) return;
+    return istToDo(rec) ? todoDialog(keyOf(rec)) : openPanel(rec.id);
+  }
+});
+//# sourceURL=src/js/55-kalender.js
 </script>
 
 <script>
@@ -3547,6 +4458,10 @@ function shortcutsDialog() {
    Event-Verdrahtung
    ========================================================================== */
 $('#tableHost').addEventListener('click', async e => {
+  const fav = e.target.closest('[data-fav]');
+  if (fav) { e.stopPropagation(); return toggleFavorit(fav.dataset.fav); }
+  const locfav = e.target.closest('[data-locfav]');
+  if (locfav) { e.stopPropagation(); return openFavorit(locfav.dataset.locfav); }
   const termLoc = e.target.closest('[data-termloc]');
   if (termLoc) {
     e.stopPropagation();
@@ -3821,9 +4736,12 @@ function openAddMenu(x, y) {
   const el = document.createElement('div');
   el.className = 'ctx-menu grid2';
   const stdBlock = (def) => ctxBlock('data-tabstd="' + esc(def.id) + '"', def.name, TAB_ICONS[def.icon] || TAB_ICONS.list);
-  const recBlock = (attr, rec) => ctxBlock('data-' + attr + '="' + esc(rec.name) + '"', rec.name,
-    (rec.icon && TAB_ICONS[rec.icon]) ? TAB_ICONS[rec.icon] : (attr === 'tabopen' ? TAB_ICONS.folder : TAB_ICONS.clock),
-    { accent: rec.color || '' });
+  const recBlock = (attr, rec) => '<span class="ctx-blockrow">' +
+    ctxBlock('data-' + attr + '="' + esc(rec.name) + '"', rec.name,
+      (rec.icon && TAB_ICONS[rec.icon]) ? TAB_ICONS[rec.icon] : (attr === 'tabopen' ? TAB_ICONS.folder : TAB_ICONS.clock),
+      { accent: rec.color || '' }) +
+    '<button type="button" class="ctx-del" data-tabdel="' + attr + '" data-tabname="' + esc(rec.name) + '"' +
+      ' title="Entfernen" aria-label="Entfernen">' + svg(ICON.close, 12) + '</button></span>';
   el.innerHTML =
     '<div class="ctx-title">Standard Tabs</div>' +
     '<div class="ctx-grid">' + stdBlock(HOME_TAB) + STANDARD_TABS.map(stdBlock).join('') + '</div>' +
@@ -3836,6 +4754,8 @@ function openAddMenu(x, y) {
   el.style.left = Math.max(4, Math.min(x || 0, (window.innerWidth || 0) - 260)) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', (ev) => {
+    const del = ev.target.closest('[data-tabdel]');
+    if (del) { ev.stopPropagation(); return confirmDeleteTab(del.dataset.tabdel, del.dataset.tabname); }
     const std = ev.target.closest('[data-tabstd]');
     if (std) { closeTabMenu(); return openStandard(std.dataset.tabstd); }
     const op = ev.target.closest('[data-tabopen]');
@@ -3856,6 +4776,20 @@ function newTabDialog() {
     collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
     validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
   }).then((r) => { if (r && r.name) { addTab(r.name); toast('Tab angelegt', { tone: 'success', detail: r.name }); } });
+}
+
+/** Einen Eintrag im "+"-Menü nach Rückfrage endgültig entfernen. */
+function confirmDeleteTab(art, name) {
+  const istSaved = art === 'tabopen';
+  return modal({
+    title: 'Tab entfernen',
+    bodyHtml: '<p>„' + esc(name) + '" ' + (istSaved ? 'aus den eigenen Tabs' : 'aus „Zuletzt geschlossen"') + ' entfernen?</p>',
+    primary: 'Entfernen', secondary: 'Abbrechen', danger: true
+  }).then((r) => {
+    if (r === null) return;
+    if (istSaved) deleteSavedTab(name); else deleteRecentTab(name);
+    toast('Tab entfernt', { tone: 'success', detail: name });
+  });
 }
 /** Vorlagen (Presets) als Menü am Toolbar-Knopf. */
 function openPresetMenu(x, y) {
@@ -3917,6 +4851,9 @@ document.addEventListener('mousedown', (e) => {
       !e.target.closest('#btnSort') && !e.target.closest('#btnGroup') && !e.target.closest('#presetBtn')) closeTabMenu();
   if (state.filterOpen && !e.target.closest('#viewPanel') && !e.target.closest('#btnViewPanel')) {
     state.filterOpen = false; renderToolbar();
+  }
+  if (state.kalPicker && !e.target.closest('.kal-pick') && !e.target.closest('[data-kaltitle]')) {
+    state.kalPicker = false; render();
   }
 });
 
@@ -4110,8 +5047,6 @@ $('#btnNewTodo').addEventListener('click', async () => {
 });
 
 $('#btnUser').addEventListener('click', () => userDialog('Name für die Protokollierung', 'Speichern', 'Dieser Name wird bei Erledigungen eingetragen.', state.user).then(r => { if (r) applyUser(r.name); }));
-$('#btnPrint').addEventListener('click', () => window.print());
-
 const menu = $('#menuPop');
 $('#btnMenu').addEventListener('click', e => {
   e.stopPropagation();
@@ -4124,9 +5059,14 @@ document.addEventListener('click', e => {
   }
 });
 menu.addEventListener('click', e => {
-  const b = e.target.closest('[data-act]'); if (!b) return;
+  const b = e.target.closest('[data-act]');
+  if (!b) { // Tipp auf die Abdunkelung (Pseudo-Element) schließt das Blatt.
+    if (e.target === menu) { menu.hidden = true; $('#btnMenu').setAttribute('aria-expanded', 'false'); }
+    return;
+  }
   menu.hidden = true; $('#btnMenu').setAttribute('aria-expanded', 'false');
   const a = b.dataset.act;
+  if (a === 'print') window.print();
   if (a === 'csv') exportCsv();
   if (a === 'json') exportJson();
   if (a === 'jsonview') exportJsonView();
@@ -4148,7 +5088,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '/') { e.preventDefault(); $('#search').focus(); }
   if (e.key === 'p') { window.print(); }
   if (e.key === 'm') {
-    const order = ['list', 'tiles', 'blobs'];
+    const order = ['list', 'tiles', 'blobs', 'calendar'];
     state.view = order[(order.indexOf(state.view) + 1) % order.length];
     render();
   }
@@ -4191,15 +5131,25 @@ window.WT = {
   select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt, suchVorschlag },
 
   /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
-  view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline },
+  view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline, viewCalendar },
+
+  /* Kalender & Abschaltungen (src/js/55-kalender.js) */
+  kalender: {
+    events: kalenderEvents, view: viewCalendar, notifs: abschaltungNotifs, abschaltung: openAbschaltung,
+    nav: kalNav, viewSet: kalViewSet, picker: toggleKalPicker, year: kalJahrVerschieben, month: kalMonatWaehlen,
+    toggle: toggleKalCategory, feiertage, feiertagName
+  },
 
   /* Presets (src/js/44-presets.js) */
   presets: { loadPresets, applyPreset, saveCurrentPreset, deletePreset, setDefaultPreset, applyDefaultPreset },
 
+  /* Favoriten (src/js/46-favorites.js) – angeheftete Standorte auf Zuhause */
+  favorites: { load: loadFavorites, toggle: toggleFavorit, ist: istFavorit, gruppen: favoritGruppen, open: openFavorit },
+
   /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
   tabs: {
     all: () => TABS, activeTab, applyTab, openStandard, addTab, renameTab, closeTab, saveTab,
-    reopenSaved, reopenRecent, moveTab, addHomeTab, homeOpen, toggleFavTab, setTabColor, setTabIcon,
+    reopenSaved, reopenRecent, deleteSavedTab, deleteRecentTab, moveTab, addHomeTab, homeOpen, toggleFavTab, setTabColor, setTabIcon,
     setDefaultTab, orderedTabs, tabCount
   },
 
@@ -4239,6 +5189,7 @@ window.WT = {
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
+  state.favorites = loadFavorites();
   // Beim Aufruf der Seite ist der als Standard festgelegte Tab aktiv
   // (Vorgabe: Zuhause); ein geschlossener Standard-Tab wird dabei geoeffnet.
   if (TABS.def && !TABS.list.some(t => t.id === TABS.def)) {
@@ -4256,15 +5207,18 @@ async function init() {
     state.items = items;
     state.online = true;
     try { state.todos = await store.loadTodos(); } catch (e2) { state.todos = []; }
+    try { state.abschaltungen = await store.loadAbschaltungen(); } catch (e3) { state.abschaltungen = []; }
   } catch (e) {
     store = LocalStore;
     const { items } = await LocalStore.load();
     state.items = items;
     state.todos = await LocalStore.loadTodos();
+    try { state.abschaltungen = await LocalStore.loadAbschaltungen(); } catch (e3) { state.abschaltungen = []; }
     state.online = false;
   }
   state.loading = false;
   render();
+  abschaltungNotifs();
 }
 
 init();

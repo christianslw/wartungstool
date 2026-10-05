@@ -516,8 +516,10 @@ ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc');
 group('Gesamtfortschritt oben');
 state.user = 'Salwa, Christian';
 const f = ctx.fortschritt();
-const meine = state.items.filter(i => i.zustaendig === state.user);
-ok('Fortschritt zählt meine Wartungen', f.personal && f.total === meine.length && f.done === meine.filter(i => i.erledigt).length,
+const fortschrittJahr = String(new Date().getFullYear());
+const imFortschrittsJahr = (i) => { const d = ctx.parseDate(i.bis); return !!d && String(d.getFullYear()) === fortschrittJahr; };
+const meine = state.items.filter(i => i.zustaendig === state.user && imFortschrittsJahr(i));
+ok('Fortschritt zählt nur das laufende Jahr', f.personal && f.total === meine.length && f.done === meine.filter(i => i.erledigt).length,
    f.done + '/' + f.total);
 ctx.render();
 ok('Fortschrittsbalken oben vorhanden', /class="progress-strip"/.test(APP) && /\d+ \/ \d+ · \d+%/.test(reg['#psValue'].textContent));
@@ -531,6 +533,25 @@ ok('Home zeigt Begrüßung und Subheader',
 ok('Home trennt Überfällig, Bald fällig und To-Dos',
    /class="home-sec over/.test(home) && /class="home-sec soon/.test(home) && /class="home-sec todo/.test(home));
 ok('Home zeigt Kennzahlen', (home.match(/class="kpi/g) || []).length >= 4);
+ok('To-Dos erscheinen als Haftnotizen', await (async () => {
+  const tnote = await ctx.saveTodo({ taetigkeit: 'Haftnotiz-Test', bis: '20.10.2026', zustaendig: 'Salwa, Christian' });
+  ctx.render();
+  const okNote = /class="home-notes"/.test(host()) && /class="home-note ist-todo"/.test(host());
+  await ctx.deleteTodo(tnote.id);
+  ctx.render();
+  return okNote;
+})());
+// Favoriten: Standort anpinnen, erscheint als Kachel auf Zuhause, bleibt gespeichert.
+const favKey0 = state.items[0];
+const favKeyGroup = ctx.groupItems([favKey0], 'object')[0].key;
+ctx.toggleFavorit(favKeyGroup);
+ctx.render();
+ok('Standort anpinnbar (Favorit gespeichert)', ctx.istFavorit(favKeyGroup) && ctx.loadFavorites().includes(favKeyGroup));
+ok('Favorit erscheint auf Zuhause', /class="home-sec fav"/.test(host()) && /class="home-fav[^"]*" data-locfav=/.test(host()));
+ok('Favoriten-Kachel nennt Standortnummer und Fortschritt',
+   (() => { const h = host(); return /class="hf-nr">\d+/.test(h) && /class="hf-sub">\d+ offen/.test(h); })());
+ctx.toggleFavorit(favKeyGroup);
+ok('Favorit wieder entfernbar', !ctx.istFavorit(favKeyGroup));
 ok('Begrüßung mit Vornamen', ctx.gruss('Salwa, Christian').includes('Christian') && /Guten (Morgen|Tag|Abend)/.test(ctx.gruss('Salwa, Christian')));
 ok('Arbeitstage zählen nur Werktage',
    ctx.arbeitstageImJahr(new Date(2026, 11, 31)) === 1 && ctx.arbeitstageImJahr(new Date(2026, 11, 26)) === 4,
@@ -601,6 +622,16 @@ ok('Gespeicherter Tab wieder geöffnet und aktiv',
 for (let i = 0; i < 7; i++) { const x = ctx.addTab('S' + i); ctx.saveTab(x); }
 ok('Ablage wächst nicht endlos (max. 5)', (ctx.WT.tabs.all().saved || []).length === 5,
    String((ctx.WT.tabs.all().saved || []).length));
+// Einträge lassen sich im "+"-Menü per × entfernen (nach Bestätigung).
+const savedName = ctx.WT.tabs.all().saved[0].name;
+ctx.WT.tabs.all().recent = [{ name: 'Alter Tab', settings: {} }];
+ctx.deleteSavedTab(savedName);
+ok('Eigener Tab per × aus der Ablage entfernbar',
+   !(ctx.WT.tabs.all().saved || []).some(s => s.name === savedName));
+ctx.deleteRecentTab('Alter Tab');
+ok('Zuletzt geschlossen per × entfernbar',
+   !(ctx.WT.tabs.all().recent || []).some(r => r.name === 'Alter Tab'));
+ok('Entfernen fragt vorher nach', /confirmDeleteTab/.test(src) && /danger: true/.test(src) && /data-tabdel=/.test(src));
 ctx.closeTab('home');
 ok('Home-Tab schließbar', !ctx.WT.tabs.all().list.some(t => t.home));
 ctx.addHomeTab(); ctx.render();
@@ -741,9 +772,154 @@ ctx.WT.tabs.all().list.slice().filter(t => !['home', 'all', 'wartung', 'todo'].i
 ctx.WT.tabs.all().recent = [];
 ctx.openStandard('all'); ctx.setGroup('object'); ctx.setView('list'); ctx.setSort('status', 'asc');
 
+group('Kalender mit Kategorien und Abschaltungen');
+ctx.applyTab('all'); ctx.setBereich('wartung');
+state.query = ''; state.kalView = 'month'; state.kalPicker = false;
+state.kalOver = true; state.kalSoon = true; state.kalOpen = true; state.kalDone = true; state.kalAbs = true;
+state.view = 'calendar'; ctx.render();
+const kal = host();
+ok('Monatsraster gerendert', /class="kal-grid"/.test(kal) && /class="kal-dow">Mo</.test(kal) && /class="kal-daynum"/.test(kal));
+ok('Kategorie-Schalter inkl. Überfällig',
+   ['over', 'soon', 'open', 'done', 'abs'].every(k => kal.includes('data-kalcat="' + k + '"')));
+ok('Überfällige Punkte erzeugen Kalendereinträge', ctx.kalenderEvents().some(e => e.art === 'over'));
+state.kalOver = false;
+ok('Kategorie "Überfällig" abschaltbar', !ctx.kalenderEvents().some(e => e.art === 'over'));
+state.kalOver = true;
+state.kalDone = false;
+ok('Kategorie "Erledigt" abschaltbar', !ctx.kalenderEvents().some(e => e.art === 'done'));
+state.kalDone = true;
+state.kalAbs = false;
+ok('Kategorie "Abschaltungen" abschaltbar', !ctx.kalenderEvents().some(e => e.art === 'abs'));
+state.kalAbs = true;
+ok('Abschaltungen aus dem lokalen Bestand geladen', state.abschaltungen.length > 0);
+const abs0 = state.abschaltungen[0];
+ok('Abschaltung: Standort, Zeitraum von/bis, Dienste und Arbeiten',
+   !!abs0.objekt_nr && !!ctx.parseDateTime(abs0.von) && !!ctx.parseDateTime(abs0.bis) &&
+   abs0.dienste.length > 0 && !!abs0.arbeiten);
+ok('Dienste DAB+ · DVB-T2 · UKW', abs0.dienste.join(' ') === 'DAB+ DVB-T2 UKW');
+const absTag = ctx.parseDateTime(abs0.von);
+state.kalJahr = absTag.getFullYear(); state.kalMonat = absTag.getMonth();
+ok('Abschaltung erscheint im Monatsraster', /data-kalabs="1"/.test(ctx.viewCalendar()));
+ok('Abschaltungs-Chip nennt die betroffenen Dienste', /data-kalabs="1"[\s\S]{0,200}DAB\+/.test(ctx.viewCalendar()));
+ok('Abschaltungs-Chip zeigt die Standortnummer', /data-kalabs="1"[\s\S]{0,240}class="sub">\d+/.test(ctx.viewCalendar()));
+ok('Abschaltung als Zeitbalken anteilig im Tagesfeld', /class="kal-ev ev-abs kal-timed"[^>]*style="top:[\d.]+%;height:[\d.]+%"/.test(ctx.viewCalendar()));
+ok('Abschaltungen haben einen eigenen Farbton (Violett, nicht Rot)',
+   /\.kal-ev\.ev-abs\{[^}]*tag-purple-bg/.test(css) && !/\.kal-ev\.ev-abs\{[^}]*tag-red/.test(css));
+state.kalJahr = 2026; state.kalMonat = 9; state.kalDayMax = 4; ctx.render();
+ok('Feiertag nennt seinen Namen im Raster', /class="kal-holiday">Tag der Deutschen Einheit</.test(host()));
+ok('Feiertagsfarbe im Dunkelmodus entschärft (eigener Token)',
+   /--kal-feiertag-bg:#3a1215/.test(css) && /\.kal-cell\.feiertag\{background:var\(--kal-feiertag-bg\)/.test(css));
+state.kalJahr = 2026; state.kalMonat = 11; state.kalDayMax = 2; ctx.render();
+ok('Monatsansicht begrenzt Punkte nach Zellhöhe und zählt den Rest', /class="kal-more">\+\d+/.test(host()));
+ok('Kalenderpunkte nennen immer die Standortnummer',
+   /class="kal-ev[^"]*"[^>]*>[\s\S]{0,200}class="sub">\d+</.test(host()));
+state.kalDayMax = 4; state.kalJahr = 2026; state.kalMonat = 9;
+
+group('Kalender-Navigation und Jahresansicht');
+const mStart = state.kalMonat;
+ctx.kalNav('next');
+ok('Monatsnavigation vorwärts', state.kalMonat === (mStart + 1) % 12, String(state.kalMonat));
+ctx.toggleKalPicker();
+ok('Titel öffnet die Monat/Jahr-Auswahl', state.kalPicker === true && /class="kal-pick"/.test(host()));
+ok('Auswahl springt NICHT auf den heutigen Monat', state.kalMonat === (mStart + 1) % 12);
+ok('Auswahl bietet Jahr und alle Monate',
+   /data-kalyear="-1"/.test(host()) && /data-kalyear="1"/.test(host()) && (host().match(/data-kalmonth="/g) || []).length === 12);
+ctx.kalJahrVerschieben(1);
+ctx.kalMonatWaehlen(5);
+ok('Monatswahl setzt Monat und schließt die Auswahl', state.kalMonat === 5 && !state.kalPicker && state.kalView === 'month');
+ctx.kalNav('today');
+const jetzt2 = new Date();
+ok('Heute-Sprung zum aktuellen Monat', state.kalJahr === jetzt2.getFullYear() && state.kalMonat === jetzt2.getMonth());
+ctx.kalViewSet('year');
+const jahrHtml = host();
+ok('Jahresansicht: zwölf Monatskacheln', (jahrHtml.match(/class="kal-ycell/g) || []).length === 12);
+ok('Jahresansicht nennt die Monate', /Januar/.test(jahrHtml) && /Dezember/.test(jahrHtml));
+ok('Jahresansicht listet offene Punkte in den Monatskacheln',
+   /class="kal-yrow/.test(jahrHtml) && /class="kal-yhead"/.test(jahrHtml) && !/kal-ydot|class="kal-yt"/.test(jahrHtml));
+ok('Jahresansicht begrenzt Punkte je Kachel und zählt den Rest',
+   (() => {
+     state.kalYearMax = 1;
+     const html = ctx.viewCalendar();
+     state.kalYearMax = 8;
+     return /class="kal-yrow more"/.test(html) && /\+\d+ weitere/.test(html);
+   })());
+ok('Kalender blendet Gruppieren/Sortieren/Vorlagen ohne Positionssprung aus',
+   reg['#btnGroup'].style.visibility === 'hidden' && reg['#btnSort'].style.visibility === 'hidden' &&
+   reg['#presetBtn'].style.visibility === 'hidden');
+ok('Ansicht-Umschalter Monat/Jahr vorhanden', /data-kalview="month"/.test(jahrHtml) && /data-kalview="year"/.test(jahrHtml));
+ctx.kalViewSet('month');
+ok('Klick auf Monatskachel öffnet den Monat', (() => {
+  ctx.kalViewSet('year');
+  ctx.kalMonatWaehlen(3);
+  return state.kalMonat === 3 && state.kalView === 'month';
+})());
+
+group('Feiertage (RLP + BW) und Wochenenden');
+const ft26 = ctx.feiertage(2026);
+ok('Neujahr', ft26.get('2026-01-01') === 'Neujahr');
+ok('Heilige Drei Könige (BW)', ft26.get('2026-01-06') === 'Heilige Drei Könige');
+ok('Tag der Arbeit', ft26.get('2026-05-01') === 'Tag der Arbeit');
+ok('Tag der Deutschen Einheit', ft26.get('2026-10-03') === 'Tag der Deutschen Einheit');
+ok('Allerheiligen (RLP + BW)', ft26.get('2026-11-01') === 'Allerheiligen');
+ok('Karfreitag 2026 = 03.04.', ft26.get('2026-04-03') === 'Karfreitag');
+ok('Ostermontag 2026 = 06.04.', ft26.get('2026-04-06') === 'Ostermontag');
+ok('Fronleichnam 2026 = 04.06.', ft26.get('2026-06-04') === 'Fronleichnam');
+ok('Feiertage gelten für jedes Jahr (2027)', ctx.feiertage(2027).get('2027-03-26') === 'Karfreitag');
+ok('Feiertagsname per Datum', ctx.feiertagName(new Date(2026, 9, 3)) === 'Tag der Deutschen Einheit');
+state.kalView = 'month'; state.kalJahr = 2026; state.kalMonat = 9; state.kalPicker = false;
+const okt = ctx.viewCalendar();
+ok('Wochenenden werden schraffiert dargestellt', /class="kal-cell[^"]* wknd/.test(okt));
+ok('Feiertag im Raster hervorgehoben (03.10.)',
+   /class="kal-cell[^"]* feiertag"[^>]*title="Tag der Deutschen Einheit"/.test(okt));
+state.view = 'list'; state.query = ''; ctx.render();
+
 group('Namensformat und Scrollen');
 ok('Dialog fragt Nachname, Vorname', /Nachname, Vorname/.test(src) && !/Vor- und Nachname/.test(src));
 ok('Scrollbereich der Liste hat overflow:auto', /\.content-body\{[^}]*overflow:auto/.test(css));
+ok('Jahresraster als 6 Spalten × 2 Zeilen', /\.kal-ygrid\{[^}]*grid-template-columns:repeat\(6,1fr\);[^}]*grid-template-rows:repeat\(2,1fr\)/.test(css));
+
+group('Mobile Ansicht');
+const mob = css.slice(css.lastIndexOf('@media (max-width:768px)'));
+ok('Standortzeile wird mobil zur Karte (Raster statt 7 Spalten)',
+   /\.loc-head\{[^}]*display:grid/.test(mob) && /\.loc-head\{[^}]*grid-template-areas/.test(mob) &&
+   /\.loc-row\{[^}]*grid-template-areas/.test(mob));
+ok('Mobil ausgeblendete Info-Spalten', /\.loc-preview-col,\.loc-note,\.loc-summary-col\{display:none\}/.test(mob));
+ok('Popover werden mobil zu bodennahen Flächen',
+   /\.ctx-menu\{[^}]*position:fixed/.test(mob) && /#viewPanel\{[^}]*position:fixed/.test(mob));
+ok('Dialoge stehen mobil am unteren Rand', /\.modal-scrim\{[^}]*align-items:flex-end/.test(mob));
+ok('Werkzeugleiste bricht mobil um', /\.toolbar-row\{[^}]*flex-wrap:wrap/.test(mob));
+ok('Jahresraster mobil 2 Spalten × 6 Zeilen',
+   /\.kal-ygrid\{grid-template-columns:repeat\(2,1fr\)[^}]*grid-template-rows:repeat\(6,/.test(mob));
+ok('Mobil-Layer kommt nach den Ansichtsregeln (gewinnt)',
+   css.lastIndexOf('@media (max-width:768px)') > css.lastIndexOf('.kal-ygrid{', css.lastIndexOf('@media (max-width:768px)') - 1) ||
+   css.slice(0, css.lastIndexOf('@media (max-width:768px)')).includes('.kal-ygrid{'));
+ok('Aufgabenzeile mobil dicht: Datum links, Person rechts in einer Zeile',
+   /\.loc-row \.loc-due\{grid-area:due;justify-self:start/.test(mob) &&
+   /\.loc-row \.ecell,\.loc-row \.loc-user\{grid-area:due;justify-self:end/.test(mob));
+ok('Standortkarte kompakt (schlanke Fortschrittszeile)',
+   /\.loc-progress-col\{grid-area:prog;padding:0;margin-top:3px/.test(mob));
+ok('App ist mobil fest auf die Bildschirmhöhe (dvh, kein Seiten-Scroll)',
+   /html,body\{height:100dvh;max-height:100dvh;overflow:hidden/.test(mob) && /body\{position:fixed;inset:0/.test(mob));
+ok('Profil als Kreis mit Initialen, Name mobil ausgeblendet',
+   /\.hdr-avatar\{[^}]*border-radius:50%/.test(css) && /\.hdr-user \.uname\{display:none\}/.test(mob) &&
+   /id="userAvatar"/.test(APP) && /id="userInitials"/.test(APP));
+
+group('Schlanke Steuerung');
+ok('Drucken liegt im Drei-Punkte-Menü, Header-Knopf entfernt',
+   /data-act="print"/.test(APP) && /a === 'print'/.test(src) && !/id="btnPrint"/.test(APP));
+ok('Drucken-Tastenkürzel bleibt', /if \(e\.key === 'p'\) \{ window\.print\(\)/.test(src));
+ok('Sortieren/Gruppieren nur noch Symbole',
+   !/id="sortPillText"/.test(APP) && !/id="groupPillText"/.test(APP) &&
+   /id="btnSort"[^>]*class="tb-pill tb-icon"|class="tb-pill tb-icon"[^>]*id="btnSort"/.test(APP) &&
+   /id="btnGroup"[^>]*class="tb-pill tb-icon"|class="tb-pill tb-icon"[^>]*id="btnGroup"/.test(APP));
+ok('Zustand von Sortieren/Gruppieren im Tooltip', /Gruppieren: ' \+ gTxt/.test(src) && /Sortieren: ' \+ sTxt/.test(src));
+ok('Markentext im Header mobil ausgeblendet',
+   /\.hdr-name,\.hdr-sub\{display:none\}/.test(mob));
+ok('Drei-Punkte-Menü mobil als natives Bottom-Sheet',
+   /#menuPop\{[^}]*position:fixed[^}]*bottom:/.test(mob) &&
+   /#menuPop button\{[^}]*height:52px/.test(mob) &&
+   /#menuPop:not\(\[hidden\]\)::before/.test(mob));
+ok('Tipp auf die Abdunkelung schließt das Blatt', /e\.target === menu/.test(src));
 
 console.log('\n' + (fails
   ? '\u2717 FEHLGESCHLAGEN: ' + fails + ' von ' + runs

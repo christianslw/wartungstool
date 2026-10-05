@@ -64,9 +64,15 @@ function aktuelleZahlen(scope = state.bereich) {
   return countsForScope(scope);
 }
 
-/** Gesamtfortschritt der Wartungen: eigene, sonst alle. */
+/** Gesamtfortschritt der Wartungen: eigene, sonst alle – nur das laufende
+    Kalenderjahr (Fristjahr `bis`). Das Jahr kommt aus der Uhr, damit es mit
+    2027 ff. von selbst weiterläuft. */
 function fortschritt() {
-  const basis = state.items;
+  const jahr = aktuellesJahr();
+  const basis = state.items.filter(i => {
+    const d = parseDate(i.bis);
+    return !!d && String(d.getFullYear()) === jahr;
+  });
   const list = state.user ? basis.filter(i => norm(i.zustaendig) === norm(state.user)) : basis;
   const total = list.length;
   const done = list.filter(i => i.erledigt).length;

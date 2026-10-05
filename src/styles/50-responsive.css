@@ -1,35 +1,14 @@
 /* Wartungstool · Styles · Responsive & Druck */
 /* ==========================================================================
-   Responsive Regeln
+   Responsive Regeln – ab hier wird die App zum mobilen Arbeitsmittel:
+   Kopf/Toolbar rücken zusammen, die Liste wird zur Karte je Standort,
+   Popover werden zu Drawern, Filter und Kalender füllen den Bildschirm.
+   Die Media Queries stehen bewusst am Dateiende, damit sie die weiter
+   unten definierten Basisregeln (Modal, Panel, Toast) überschreiben.
    ========================================================================== */
-@media (max-width:1240px){
-  .loc-head, .loc-row{
-    grid-template-columns: 44px 50px minmax(160px, 1.8fr) minmax(130px, 1fr) 130px 110px 76px;
-  }
-}
-@media (max-width:980px){
-  .loc-head, .loc-row{
-    grid-template-columns: 44px 50px 1fr 120px 100px 76px;
-  }
-  .loc-preview-col, .loc-note{display:none}
-}
-@media (max-width:768px){
-  .shell-header{padding:0 8px;gap:6px}
-  .toolbar-row{padding:0 8px;gap:6px}
-  .summary-info{display:none}
-  .loc-head, .loc-row{
-    grid-template-columns: 36px 44px 1fr 90px 40px;
-  }
-  .loc-summary-col, .loc-user, .loc-acts-col > .td-act:first-child{display:none}
-  
-  .btn-cta{
-    position:fixed;bottom:20px;right:20px;z-index:var(--z-overlay);
-    height:44px;padding:0 16px;border-radius:22px;box-shadow:var(--shadow-2);
-  }
-}
-@media (max-width:480px){
-  .hdr-name{display:none}
-}
+
+
+
 
 /* Carbon Overlays, Dialoge & Drawer */
 .scrim{position:fixed;inset:0;background:var(--scrim);z-index:var(--z-overlay);animation:wt-fade var(--dur) var(--ease)}
@@ -131,3 +110,148 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 .att{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--link);min-width:0;flex:1 1 auto}
 .att span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-meta{font-size:11px;color:var(--text-helper);white-space:nowrap}
+
+/* Fortschrittsleiste klebt auf schmalen Geräten unter der Toolbar. */
+@media (max-width:768px){
+  /* App-Feeling: die Oberfläche ist auf die Bildschirmgröße fixiert und
+     scrollt nur innen (.content-body), nicht als ganze Seite. */
+  html,body{height:100dvh;max-height:100dvh;overflow:hidden;overscroll-behavior:none}
+  body{position:fixed;inset:0;width:100%}
+  .shell-header{padding:0 8px;gap:6px}
+  .hdr-name,.hdr-sub{display:none}
+  .hdr-search{flex:1 1 auto;max-width:none;margin:0 4px;height:36px}
+  .hdr-search input{font-size:16px} /* verhindert Auto-Zoom auf iOS */
+  .searchkey{display:none}
+  .hdr-user{max-width:none;padding:0 4px}
+  .hdr-user .uname{display:none}
+  .toolbar-row{flex-wrap:wrap;height:auto;min-height:var(--tb-h);padding:6px 8px;gap:6px;row-gap:6px}
+  .scope-tabs{order:1;flex:1 1 100%;height:34px;align-items:stretch;gap:2px}
+  .scope-tab{height:34px;padding:0 8px;font-size:12px;gap:5px}
+  .scope-tab .tab-ic{display:none}
+  .tb-actions{order:2;flex:1 1 100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .tb-actions::-webkit-scrollbar{display:none}
+  .tb-viewctl{flex-wrap:nowrap}
+  .tb-pill{height:32px;padding:0 10px}
+  .summary-info{display:none}
+
+  /* Drei-Punkte-Menü: natives Bottom-Sheet statt schwebender Liste. */
+  #menuPop{
+    position:fixed;left:6px;right:6px;top:auto;bottom:6px;min-width:0;
+    border-radius:12px;padding:6px;z-index:calc(var(--z-overlay) + 6);
+    box-shadow:0 12px 40px rgba(0,0,0,.5);animation:wt-slide-up var(--dur-slow) var(--ease-out);
+  }
+  #menuPop button{height:52px;padding:0 16px;font-size:15px;gap:14px;border-radius:8px}
+  #menuPop button:active{background:var(--hover-2)}
+  #menuPop .sep{margin:6px 4px}
+  /* Abdunkelung hinter dem Blatt. */
+  #menuPop:not([hidden])::before{
+    content:'';position:fixed;inset:0;background:var(--scrim);z-index:-1;
+    animation:wt-fade var(--dur) var(--ease);
+  }
+
+  .progress-strip{position:sticky;top:0;z-index:9;padding:6px 8px;gap:8px}
+  .ps-label{max-width:90px;overflow:hidden;text-overflow:ellipsis}
+
+  /* Popover → feste, bildschirmbreite Flächen. */
+  #viewPanel{
+    position:fixed;left:8px;right:8px;top:auto;bottom:8px;width:auto;
+    max-height:min(78vh,620px);border-radius:8px;
+    animation:wt-slide-up var(--dur-slow) var(--ease-out);
+  }
+  .ctx-menu{position:fixed;left:8px !important;right:8px;top:auto !important;bottom:8px;
+    width:auto;max-width:none;min-width:0;max-height:min(78vh,620px);overflow:auto;border-radius:8px;
+    animation:wt-slide-up var(--dur-slow) var(--ease-out)}
+  .ctx-menu.grid2{min-width:0}
+  .ctx-menu.edit{min-width:0}
+  .ctx-menu .ctx-grid{grid-template-columns:1fr 1fr}
+  .modal{align-self:flex-end;width:100%;border-radius:8px 8px 0 0}
+  .modal-scrim{padding:0;align-items:flex-end}
+  .toasts{left:8px;right:8px;bottom:8px;align-items:stretch}
+  .toast{width:auto}
+
+  /* Liste: eine kompakte App-Karte je Standort. */
+  .locs{padding-bottom:88px}
+  .loc-head{
+    display:grid;grid-template-columns:18px 40px 1fr auto;
+    grid-template-areas:
+      'caret nr title acts'
+      'prog  prog prog  prog';
+    align-items:center;gap:0 8px;
+    padding:8px 8px 7px 5px;min-height:0;
+  }
+  .loc-caret{grid-area:caret}
+  .loc-nr{grid-area:nr;font-size:11px;padding:2px 0}
+  .loc-title-col{grid-area:title;flex-wrap:wrap;gap:3px 6px}
+  .loc-name{font-size:14px;line-height:18px}
+  .loc-acts-col{grid-area:acts;gap:0;margin-left:0}
+  .loc-preview-col,.loc-note,.loc-summary-col{display:none}
+  .loc-progress-col{grid-area:prog;padding:0;margin-top:3px;gap:6px;font-size:10px}
+  .loc-progress-col .loc-mini-track{flex:1 1 auto;height:4px;min-width:0}
+  .loc-progress-col > span{flex:0 0 auto;white-space:nowrap}
+
+  .loc-row{
+    display:grid;grid-template-columns:32px 1fr auto;grid-template-areas:
+      'tick task acts'
+      'tick due  acts';
+    align-items:center;gap:0 8px;padding:7px 8px 7px 4px;min-height:0;
+  }
+  .loc-row .tick{grid-area:tick;width:22px;height:22px}
+  .loc-row .loc-nr{display:none}
+  .loc-row .loc-task{grid-area:task;min-width:0}
+  .loc-row .loc-task .c-main{font-size:13px;line-height:17px}
+  .loc-row .loc-task .c-sub{display:none}
+  .loc-row .loc-note{display:none}
+  /* Datum links, Person rechts – in einer Zeile statt drei. */
+  .loc-row .loc-due{grid-area:due;justify-self:start;font-size:11px;line-height:15px}
+  .loc-row .loc-due .c-sub{display:inline;margin-left:6px}
+  .loc-row .ecell,.loc-row .loc-user{grid-area:due;justify-self:end;font-size:11px;line-height:15px}
+  .loc-row .ecell-sub{font-size:11px}
+  .loc-row .ecell-note{display:none}
+  .loc-row .btn-note{display:none}
+  .loc-row .loc-acts-col{grid-area:acts;gap:0}
+  .loc-row .td-act{width:32px;height:32px}
+  .loc-head .td-act{width:32px;height:32px}
+  .loc-rows{background:var(--layer-01)}
+
+  /* Kacheln/Blasen großzügiger, Kalender kompakter. */
+  .tiles{padding:12px 8px 96px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .blobs{padding:20px 8px}
+  .kal{min-height:0;padding:8px 6px 96px}
+  .kal-bar{gap:6px;row-gap:6px}
+  .kal-cats{width:100%;margin-left:0;order:9}
+  .kal-cats .kal-cat{flex:1 1 auto;justify-content:center}
+  .kal-month,.kal-year{min-height:0}
+  .kal-month .kal-grid{grid-template-rows:none}
+  .kal-cell{min-height:64px}
+  .kal-holiday{display:none}
+  .kal-ygrid{grid-template-columns:repeat(2,1fr) !important;grid-template-rows:repeat(6,auto) !important}
+  .kal-ycell{min-height:104px}
+
+  /* Zuhause: Zwei Spalten bleiben, Kacheln kompakt. */
+  .home{padding:16px 10px 120px}
+  .home-hero h1{font-size:22px}
+  .home-kpis{grid-template-columns:repeat(2,1fr)}
+
+  /* „Neues To-Do" schwebt, damit die Toolbar nicht umbricht. */
+  /* Weniger Text: „Neues To-Do" wird mobil zum runden Plus. */
+  .btn-cta{
+    position:fixed;bottom:20px;right:16px;z-index:var(--z-overlay);
+    height:50px;width:50px;padding:0;border-radius:50%;box-shadow:var(--shadow-2);
+  }
+  .btn-cta span{display:none}
+  .btn-cta svg{width:22px;height:22px}
+  .progress-strip{padding:6px 8px;gap:8px}
+  .ps-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}
+  .panel{width:100%}
+  .row{grid-template-columns:1fr;gap:2px}
+  .fgrid{grid-template-columns:1fr}
+}
+
+@media (max-width:480px){
+  .hdr-name{display:none}
+  .home-kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .home-favs{grid-template-columns:1fr}
+  .home-notes{grid-template-columns:1fr}
+  .loc-title-col{flex-basis:55%}
+  .kal-ygrid{grid-template-columns:1fr 1fr !important}
+}

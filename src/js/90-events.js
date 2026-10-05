@@ -3,6 +3,10 @@
    Event-Verdrahtung
    ========================================================================== */
 $('#tableHost').addEventListener('click', async e => {
+  const fav = e.target.closest('[data-fav]');
+  if (fav) { e.stopPropagation(); return toggleFavorit(fav.dataset.fav); }
+  const locfav = e.target.closest('[data-locfav]');
+  if (locfav) { e.stopPropagation(); return openFavorit(locfav.dataset.locfav); }
   const termLoc = e.target.closest('[data-termloc]');
   if (termLoc) {
     e.stopPropagation();
@@ -277,9 +281,12 @@ function openAddMenu(x, y) {
   const el = document.createElement('div');
   el.className = 'ctx-menu grid2';
   const stdBlock = (def) => ctxBlock('data-tabstd="' + esc(def.id) + '"', def.name, TAB_ICONS[def.icon] || TAB_ICONS.list);
-  const recBlock = (attr, rec) => ctxBlock('data-' + attr + '="' + esc(rec.name) + '"', rec.name,
-    (rec.icon && TAB_ICONS[rec.icon]) ? TAB_ICONS[rec.icon] : (attr === 'tabopen' ? TAB_ICONS.folder : TAB_ICONS.clock),
-    { accent: rec.color || '' });
+  const recBlock = (attr, rec) => '<span class="ctx-blockrow">' +
+    ctxBlock('data-' + attr + '="' + esc(rec.name) + '"', rec.name,
+      (rec.icon && TAB_ICONS[rec.icon]) ? TAB_ICONS[rec.icon] : (attr === 'tabopen' ? TAB_ICONS.folder : TAB_ICONS.clock),
+      { accent: rec.color || '' }) +
+    '<button type="button" class="ctx-del" data-tabdel="' + attr + '" data-tabname="' + esc(rec.name) + '"' +
+      ' title="Entfernen" aria-label="Entfernen">' + svg(ICON.close, 12) + '</button></span>';
   el.innerHTML =
     '<div class="ctx-title">Standard Tabs</div>' +
     '<div class="ctx-grid">' + stdBlock(HOME_TAB) + STANDARD_TABS.map(stdBlock).join('') + '</div>' +
@@ -292,6 +299,8 @@ function openAddMenu(x, y) {
   el.style.left = Math.max(4, Math.min(x || 0, (window.innerWidth || 0) - 260)) + 'px';
   el.style.top = Math.max(4, y || 0) + 'px';
   el.addEventListener('click', (ev) => {
+    const del = ev.target.closest('[data-tabdel]');
+    if (del) { ev.stopPropagation(); return confirmDeleteTab(del.dataset.tabdel, del.dataset.tabname); }
     const std = ev.target.closest('[data-tabstd]');
     if (std) { closeTabMenu(); return openStandard(std.dataset.tabstd); }
     const op = ev.target.closest('[data-tabopen]');
@@ -312,6 +321,20 @@ function newTabDialog() {
     collect: (s) => ({ name: s.querySelector('#tName').value.trim() }),
     validate: (d) => d.name ? null : 'Bitte einen Namen angeben.'
   }).then((r) => { if (r && r.name) { addTab(r.name); toast('Tab angelegt', { tone: 'success', detail: r.name }); } });
+}
+
+/** Einen Eintrag im "+"-Menü nach Rückfrage endgültig entfernen. */
+function confirmDeleteTab(art, name) {
+  const istSaved = art === 'tabopen';
+  return modal({
+    title: 'Tab entfernen',
+    bodyHtml: '<p>„' + esc(name) + '" ' + (istSaved ? 'aus den eigenen Tabs' : 'aus „Zuletzt geschlossen"') + ' entfernen?</p>',
+    primary: 'Entfernen', secondary: 'Abbrechen', danger: true
+  }).then((r) => {
+    if (r === null) return;
+    if (istSaved) deleteSavedTab(name); else deleteRecentTab(name);
+    toast('Tab entfernt', { tone: 'success', detail: name });
+  });
 }
 /** Vorlagen (Presets) als Menü am Toolbar-Knopf. */
 function openPresetMenu(x, y) {
@@ -373,6 +396,9 @@ document.addEventListener('mousedown', (e) => {
       !e.target.closest('#btnSort') && !e.target.closest('#btnGroup') && !e.target.closest('#presetBtn')) closeTabMenu();
   if (state.filterOpen && !e.target.closest('#viewPanel') && !e.target.closest('#btnViewPanel')) {
     state.filterOpen = false; renderToolbar();
+  }
+  if (state.kalPicker && !e.target.closest('.kal-pick') && !e.target.closest('[data-kaltitle]')) {
+    state.kalPicker = false; render();
   }
 });
 
@@ -566,8 +592,6 @@ $('#btnNewTodo').addEventListener('click', async () => {
 });
 
 $('#btnUser').addEventListener('click', () => userDialog('Name für die Protokollierung', 'Speichern', 'Dieser Name wird bei Erledigungen eingetragen.', state.user).then(r => { if (r) applyUser(r.name); }));
-$('#btnPrint').addEventListener('click', () => window.print());
-
 const menu = $('#menuPop');
 $('#btnMenu').addEventListener('click', e => {
   e.stopPropagation();
@@ -580,9 +604,14 @@ document.addEventListener('click', e => {
   }
 });
 menu.addEventListener('click', e => {
-  const b = e.target.closest('[data-act]'); if (!b) return;
+  const b = e.target.closest('[data-act]');
+  if (!b) { // Tipp auf die Abdunkelung (Pseudo-Element) schließt das Blatt.
+    if (e.target === menu) { menu.hidden = true; $('#btnMenu').setAttribute('aria-expanded', 'false'); }
+    return;
+  }
   menu.hidden = true; $('#btnMenu').setAttribute('aria-expanded', 'false');
   const a = b.dataset.act;
+  if (a === 'print') window.print();
   if (a === 'csv') exportCsv();
   if (a === 'json') exportJson();
   if (a === 'jsonview') exportJsonView();
@@ -604,7 +633,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '/') { e.preventDefault(); $('#search').focus(); }
   if (e.key === 'p') { window.print(); }
   if (e.key === 'm') {
-    const order = ['list', 'tiles', 'blobs'];
+    const order = ['list', 'tiles', 'blobs', 'calendar'];
     state.view = order[(order.indexOf(state.view) + 1) % order.length];
     render();
   }

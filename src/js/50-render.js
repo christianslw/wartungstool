@@ -36,6 +36,15 @@ function renderSource() {
 function renderHead() {
   $('#userName').textContent = state.user || 'Name hinterlegen';
   $('#userNudge').hidden = !!state.user;
+  const ini = (() => {
+    const v = vorname(state.user || '');
+    const n = (state.user || '').split(',')[0].trim();
+    const s = (v ? v[0] : '') + (n ? n[0] : '');
+    return s ? s.toUpperCase() : '';
+  })();
+  const av = $('#userAvatar'), iniEl = $('#userInitials');
+  if (av) av.classList.toggle('has-name', !!state.user);
+  if (iniEl) iniEl.textContent = ini;
   renderTabs();
 }
 
@@ -97,6 +106,14 @@ function renderToolbar() {
   // Auf der Startseite (Home) haben Gruppierung/Sortierung/Ansicht keine Wirkung.
   const atab = activeTab();
   $('#tbViewCtl').hidden = !!(atab && atab.home);
+  // Im Kalender sind Gruppe/Sortierung/Vorlagen ohne Wirkung. Sie werden nur
+  // unsichtbar geschaltet (nicht `hidden`), damit Ansicht- und Filter-Knopf
+  // ihre Position behalten und nichts springt.
+  const keinCtl = state.view === 'calendar';
+  for (const el of [$('#btnGroup'), $('#btnSort'), $('#presetBtn')]) {
+    el.hidden = false;
+    el.style.visibility = keinCtl ? 'hidden' : '';
+  }
 
   const fill = (sel, values, current, placeholder) => {
     const el = $(sel);
@@ -117,13 +134,16 @@ function renderToolbar() {
   if (document.activeElement !== von) von.value = state.von || '';
   if (document.activeElement !== bis) bis.value = state.bis || '';
 
-  // Gruppieren · Sortieren · Ansicht (+ Presets): Pille zeigt den Ist-Zustand.
+  // Gruppieren · Sortieren · Ansicht (+ Presets): nur noch Symbole; der
+  // Ist-Zustand steckt im Tooltip und in der hervorgehobenen Pille.
   const gDef = GROUP_DEFS.find(g => g.key === state.group);
-  $('#groupPillText').textContent = gDef ? gDef.label : state.group;
   const sDef = SORT_DEFS.find(s => s.key === state.sortKey);
-  $('#sortPillText').textContent = (sDef ? sDef.label : state.sortKey) + (state.sortDir === 'asc' ? ' ↑' : ' ↓');
-  $('#btnGroup').title = 'Gruppieren: ' + $('#groupPillText').textContent;
-  $('#btnSort').title = 'Sortieren: ' + $('#sortPillText').textContent;
+  const gTxt = gDef ? gDef.label : state.group;
+  const sTxt = (sDef ? sDef.label : state.sortKey) + (state.sortDir === 'asc' ? ' ↑' : ' ↓');
+  $('#btnGroup').title = 'Gruppieren: ' + gTxt;
+  $('#btnSort').title = 'Sortieren: ' + sTxt;
+  $('#btnGroup').setAttribute('aria-label', 'Gruppieren: ' + gTxt);
+  $('#btnSort').setAttribute('aria-label', 'Sortieren: ' + sTxt);
   $$('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
 
   const ps = loadPresets();
@@ -217,9 +237,14 @@ function renderBody() {
     host.innerHTML = Array.from({ length: 10 }, () => '<div style="height:38px;border-bottom:1px solid var(--border-subtle);background:var(--layer-01);opacity:.4"></div>').join('');
     return;
   }
-  const list = aktuelleListe();
   const at = activeTab();
   if (at && at.home) { host.innerHTML = renderHome(); return; }
+  if (state.view === 'calendar') {
+    host.innerHTML = viewCalendar();
+    fitKalHeight();
+    return;
+  }
+  const list = aktuelleListe();
   if (!list.length) {
     host.innerHTML = '<div style="padding:48px 16px;text-align:center;color:var(--text-helper)"><h3>Keine Positionen gefunden</h3><p style="font-size:12px;margin-top:6px">Überprüfen Sie die Filter oder das Suchfeld.</p></div>';
     return;
@@ -295,7 +320,7 @@ function viewGroupedList(list) {
         '<span class="loc-preview-col">' + esc(groupPreview(g)) + '</span>' +
         '<div class="loc-summary-col"><b>' + st.open + '/' + st.total + ' offen</b></div>' +
         '<div class="loc-progress-col">' + linearProgress(st.pct) + '<span>' + st.done + '/' + st.total + '</span></div>' +
-        '<div class="loc-acts-col">' + (state.group === 'object' ? '<button class="td-act" data-termloc="' + esc(g.key) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button>' : '') + '</div>' +
+        '<div class="loc-acts-col">' + (state.group === 'object' ? '<button class="td-act fav' + (istFavorit(g.key) ? ' on' : '') + '" data-fav="' + esc(g.key) + '" title="' + (istFavorit(g.key) ? 'Favorit entfernen' : 'Standort anpinnen (Zuhause)') + '" aria-label="Favorit">' + svg(TAB_ICONS.star, 15) + '</button>' + '<button class="td-act" data-termloc="' + esc(g.key) + '" title="Sammeltermin disponieren">' + svg(ICON.calendar, 15) + '</button>' : '') + '</div>' +
       '</div>' +
       (isOpen ? '<div class="loc-rows">' + rows + '</div>' : '') +
     '</section>';
@@ -364,6 +389,27 @@ function renderHome() {
       : '<p class="t-helper">' + esc(leer) + '</p>') +
     '</section>';
 
+  // Angepinnte Standorte: griffbereit mit Fortschritt, Klick öffnet nur diesen Ort.
+  const favs = favoritGruppen(state.items);
+  const favSec = favs.length ? '<section class="home-sec fav">' +
+    '<h2>Favoriten <span class="n">' + favs.length + '</span></h2>' +
+    '<div class="home-favs">' + favs.map(g => {
+      const st = groupStats(g);
+      return '<button class="home-fav' + (st.over ? ' over' : (st.open === 0 ? ' done' : '')) + '" data-locfav="' + esc(g.key) + '">' +
+        '<span class="hf-nr">' + esc(g.nr || '–') + '</span>' +
+        '<span class="hf-name" title="' + esc(g.name || g.label) + '">' + esc(g.name || g.label) + '</span>' +
+        '<span class="hf-sub">' + st.open + ' offen · ' + st.done + '/' + st.total + '</span>' +
+        linearProgress(st.pct) + '</button>';
+    }).join('') + '</div></section>' : '';
+
+  // To-Dos als Haftnotizen.
+  const todoSec = '<section class="home-sec todo"><h2>Eigene To-Dos <span class="n">' + todos.length + '</span></h2>' +
+    (todos.length
+      ? '<div class="home-notes">' + todos.slice(0, HOME_LIMIT).map(homeNote).join('') + '</div>' +
+        (todos.length > HOME_LIMIT ? '<p class="home-more t-helper">+' + (todos.length - HOME_LIMIT) + ' weitere</p>' : '')
+      : '<p class="t-helper">Keine offenen To-Dos.</p>') +
+    '</section>';
+
   return '<div class="home">' +
     '<header class="home-hero">' +
       '<h1>' + esc(gruss()) + '</h1>' +
@@ -375,10 +421,22 @@ function renderHome() {
     '<div class="home-kpis">' +
       kpi(offen, 'offen') + kpi(c.over, 'überfällig', 'over') + kpi(c.soon, 'bald fällig', 'soon') + kpi(c.done, 'erledigt', 'done') +
     '</div>' +
+    favSec +
     sec('Überfällig', ueber, 'over', 'Nichts überfällig – gut.') +
     sec('Bald fällig', bald, 'soon', 'Nichts in Kürze fällig.') +
-    sec('Eigene To-Dos', todos, 'todo', 'Keine offenen To-Dos.') +
+    todoSec +
   '</div>';
+}
+
+/** Ein To-Do als Haftnotiz für Zuhause. */
+function homeNote(it) {
+  const due = it.bis ? dueInfo(it.bis) : null;
+  return '<button class="home-note ist-todo" data-todoedit="' + esc(keyOf(it)) + '" title="To-Do öffnen">' +
+    '<span class="hn-task">' + esc(it.taetigkeit || 'To-Do') + '</span>' +
+    (it.objekt_name ? '<span class="hn-loc">' + esc((it.objekt_nr ? it.objekt_nr + ' ' : '') + it.objekt_name) + '</span>' : '') +
+    (due ? '<span class="hn-due ' + esc(due.cls) + '">' + esc(it.bis) + ' · ' + esc(due.text) + '</span>' : '') +
+    (it.kommentar ? '<span class="hn-note">' + esc(it.kommentar) + '</span>' : '') +
+  '</button>';
 }
 
 function workRow(it, showObject) {

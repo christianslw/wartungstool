@@ -43,6 +43,7 @@ src/
    ├─ 44-presets.js         Presets (Gruppieren+Sortieren+Ansicht), Standard
    ├─ 45-tabs.js            Tabs (benannte Ansichten), Zeitraum-Jahre, Persistenz
    ├─ 50-render.js          Rendering aller Ansichten
+   ├─ 55-kalender.js        Kalender (Monatsansicht) + Abschaltungen
    ├─ 60-detail.js          Detailpanel, Anhänge, Combo-Box
    ├─ 70-termin.js          Outlook-/ICS-Disposition
    ├─ 80-dialogs.js         To-Do- und Erledigungs-Dialoge

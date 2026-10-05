@@ -2,6 +2,7 @@
 async function init() {
   applyTheme();
   try { state.user = localStorage.getItem(CONFIG.userKey) || ''; } catch {}
+  state.favorites = loadFavorites();
   // Beim Aufruf der Seite ist der als Standard festgelegte Tab aktiv
   // (Vorgabe: Zuhause); ein geschlossener Standard-Tab wird dabei geoeffnet.
   if (TABS.def && !TABS.list.some(t => t.id === TABS.def)) {
@@ -19,15 +20,18 @@ async function init() {
     state.items = items;
     state.online = true;
     try { state.todos = await store.loadTodos(); } catch (e2) { state.todos = []; }
+    try { state.abschaltungen = await store.loadAbschaltungen(); } catch (e3) { state.abschaltungen = []; }
   } catch (e) {
     store = LocalStore;
     const { items } = await LocalStore.load();
     state.items = items;
     state.todos = await LocalStore.loadTodos();
+    try { state.abschaltungen = await LocalStore.loadAbschaltungen(); } catch (e3) { state.abschaltungen = []; }
     state.online = false;
   }
   state.loading = false;
   render();
+  abschaltungNotifs();
 }
 
 init();

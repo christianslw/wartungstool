@@ -44,6 +44,14 @@ const ApiStore = {
     const a = await this.req('/todos');
     return (Array.isArray(a) ? a : []).map(normalizeTodo);
   },
+  /** Abschaltungen kommen spaeter aus dem Backend; fehlt der Endpunkt noch,
+      bleibt die Liste leer statt den Start scheitern zu lassen. */
+  async loadAbschaltungen() {
+    try {
+      const a = await this.req('/abschaltungen');
+      return (Array.isArray(a) ? a : []).map(normalizeAbschaltung);
+    } catch (e) { return []; }
+  },
   async saveTodo(t) {
     const body = JSON.stringify(t);
     const r = t.id == null

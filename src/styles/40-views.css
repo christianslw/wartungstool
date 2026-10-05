@@ -32,3 +32,122 @@ table.cds td{height:36px;padding:0 12px;vertical-align:middle;font-size:12px}
 .plan-caret{display:grid;place-items:center;color:var(--text-secondary);transition:transform var(--dur) var(--ease)}
 .plan-sec.open .plan-caret{transform:rotate(90deg)}
 .plan-sub{font-size:11px;color:var(--text-helper);margin-left:auto}
+
+/* Kalender: Monats-/Jahresansicht, Kategorien, Wochenenden & Feiertage ---- */
+.kal{padding:12px 16px 96px;display:flex;flex-direction:column;gap:12px}
+.kal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.kal-nav{display:inline-flex;align-items:center;gap:2px}
+.kal-title{font-size:14px;font-weight:600;min-width:150px;text-align:center;color:var(--text-primary)}
+.kal-title:hover{color:var(--link)}
+.kal-prev{transform:rotate(180deg)}
+.kal-today{height:28px;padding:0 10px;font-size:11px;background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-secondary);margin-left:4px}
+.kal-today:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.kal-view{display:inline-flex;border:1px solid var(--border-subtle);border-radius:2px;overflow:hidden}
+.kal-vbtn{height:28px;padding:0 12px;font-size:11px;color:var(--text-secondary);background:var(--layer-01)}
+.kal-vbtn:hover{color:var(--text-primary);background:var(--hover-2)}
+.kal-vbtn.on{background:var(--layer-03);color:var(--interactive);font-weight:600}
+.kal-cats{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.kal-cat{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;font-size:11px;
+  background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-secondary);
+}
+.kal-cat:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.kal-cat[aria-pressed="false"]{opacity:.5}
+.kal-cat[aria-pressed="false"] .t{text-decoration:line-through}
+.kal-cat .dot{width:8px;height:8px;border-radius:50%;background:var(--info)}
+.kal-cat[data-kalcat="over"] .dot{background:var(--error)}
+.kal-cat[data-kalcat="soon"] .dot{background:var(--warning)}
+.kal-cat[data-kalcat="open"] .dot{background:var(--info)}
+.kal-cat[data-kalcat="done"] .dot{background:var(--success)}
+.kal-cat[data-kalcat="abs"] .dot{background:#a56eff}
+.kal-cat .n{color:var(--text-helper);font-variant-numeric:tabular-nums}
+
+/* Monat/Jahr-Auswahl: Pop-up an der Titelzeile */
+.kal-pick-host{position:relative;display:inline-flex}
+.kal-pick{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:var(--z-overlay);
+  width:min(300px,calc(100vw - 32px));border:1px solid var(--border-strong);
+  border-radius:6px;background:var(--layer-02);padding:10px 12px;box-shadow:var(--shadow-2);
+  animation:wt-pop var(--dur) var(--ease-out);
+}
+.kal-pick-head{display:flex;align-items:center;gap:5px;justify-content:center;margin-bottom:8px}
+.kal-pick-y{font-size:14px;font-weight:600;min-width:70px;text-align:center;font-variant-numeric:tabular-nums}
+.kal-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.kal-pick-m{height:30px;font-size:11px;border:1px solid var(--border-subtle);border-radius:2px;background:var(--bg);color:var(--text-secondary)}
+.kal-pick-m:hover{border-color:var(--interactive-light);color:var(--text-primary)}
+.kal-pick-m.on{background:var(--interactive);border-color:var(--interactive);color:var(--text-on-color);font-weight:600}
+
+.kal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:2px;overflow:hidden}
+/* Monatsansicht füllt die Höhe; die Zellen geben den Punkten damit anteilig
+   Platz nach Bildschirmhöhe (Kapazität setzt fitKalHeight()). */
+.kal-month{min-height:100%;padding-bottom:12px}
+.kal-month .kal-grid{flex:1 1 auto;grid-template-rows:auto repeat(6,minmax(0,1fr))}
+.kal-month .kal-cell{min-height:0}
+.kal-dow{height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--layer-02)}
+.kal-dow.wknd{color:var(--text-helper);background:var(--layer-01)}
+.kal-cell{position:relative;min-height:104px;padding:4px;display:flex;flex-direction:column;gap:3px;overflow:hidden;background:var(--bg)}
+/* Abschaltungen als eigene Ebene: der Termin selbst spannt sich über seinen
+   von–bis-Zeitraum (ganztägig = ganzer Tag, sonst anteilig der Zellhöhe). */
+.kal-abs{position:absolute;inset:0;pointer-events:none;z-index:0}
+.kal-cell .kal-evs,.kal-cell .kal-daynum,.kal-cell .kal-holiday{position:relative;z-index:1}
+.kal-ev.kal-timed{position:absolute;left:3px;right:3px;min-height:14px;pointer-events:auto;overflow:hidden}
+.kal-cell.out{background:var(--layer-01)}
+.kal-cell.out .kal-daynum{color:var(--text-disabled)}
+/* Wochenende: dezente Schraffur. Feiertag: rot getönt (Sonntagsdruck). */
+.kal-cell.wknd{
+  background-color:var(--layer-01);
+  background-image:repeating-linear-gradient(135deg,transparent 0 6px,var(--border-subtle) 6px 7px);
+}
+.kal-cell.feiertag{background:var(--kal-feiertag-bg)}
+.kal-cell.feiertag .kal-daynum{color:var(--tag-red-fg)}
+.kal-holiday{font-size:10px;line-height:13px;color:var(--tag-red-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-daynum{width:20px;height:20px;display:grid;place-items:center;border-radius:50%;font-size:11px;color:var(--text-secondary);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.kal-cell.today .kal-daynum{background:var(--interactive);color:var(--text-on-color)}
+.kal-cell.feiertag.today .kal-daynum{background:var(--error);color:var(--text-on-color)}
+.kal-evs{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-height:0;overflow:hidden}
+.kal-ev{
+  display:flex;align-items:center;gap:4px;text-align:left;padding:1px 4px;font-size:10px;line-height:14px;
+  border-left:3px solid var(--interactive);border-radius:2px;background:var(--sel-bg);color:var(--sel-fg);overflow:hidden;
+}
+.kal-ev:hover{background:var(--hover-2)}
+.kal-ev .t{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-ev .sub{flex:0 0 auto;color:inherit;font-weight:600;font-variant-numeric:tabular-nums;opacity:.9}
+.kal-ev.ev-over{border-left-color:var(--error);background:var(--tag-red-bg);color:var(--tag-red-fg)}
+.kal-ev.ev-soon{border-left-color:var(--warning);background:var(--tag-yellow-bg);color:var(--tag-yellow-fg)}
+.kal-ev.ev-done{border-left-color:var(--success);background:var(--tag-green-bg);color:var(--tag-green-fg)}
+.kal-ev.ev-abs{border-left-color:#a56eff;background:var(--tag-purple-bg);color:var(--tag-purple-fg);font-weight:600}
+.kal-more{padding-left:4px;font-size:10px;color:var(--text-helper)}
+
+/* Jahresansicht: eine Kachel je Monat; so viele offene Punkte wie hineinpassen. */
+.kal-year{min-height:100%;padding-bottom:12px}
+.kal-ygrid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(2,1fr);gap:8px}
+.kal-year .kal-ygrid{flex:1 1 auto;grid-auto-rows:1fr}
+.kal-ycell{
+  display:flex;flex-direction:column;gap:2px;padding:10px 12px;text-align:left;overflow:hidden;
+  background:var(--layer-01);border:1px solid var(--border-subtle);border-radius:4px;color:var(--text-primary);
+}
+.kal-ycell:hover{border-color:var(--interactive-light);background:var(--hover-2)}
+.kal-ycell.now{border-color:var(--interactive)}
+.kal-yhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--border-subtle)}
+.kal-ym{font-size:12px;font-weight:600}
+.kal-yn{font-size:10px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.kal-ypoints{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+.kal-yrow{display:flex;align-items:center;gap:6px;min-width:0;padding:3px 0;font-size:11px;line-height:16px}
+.kal-yrow+.kal-yrow{border-top:1px solid var(--border-subtle)}
+.kal-yrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--info);flex:0 0 auto}
+.kal-yrow.r-over::before{background:var(--error)}
+.kal-yrow.r-soon::before{background:var(--warning)}
+.kal-yrow .t{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kal-yrow .n{flex:0 0 auto;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.kal-yrow.more{color:var(--text-helper)}
+.kal-yrow.more::before{display:none}
+.kal-yempty{font-size:11px;color:var(--text-helper)}
+
+.abs-det{display:flex;flex-direction:column;gap:8px}
+.abs-row{display:grid;grid-template-columns:88px 1fr;gap:10px;font-size:12px}
+.abs-l{color:var(--text-helper)}
+.abs-v{color:var(--text-primary);word-break:break-word}
+
+/* Schmale Geräte regelt 50-responsive.css (lädt später). */
+
+

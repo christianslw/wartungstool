@@ -64,6 +64,7 @@ body.dragging-attr [data-drag]{
 .loc-acts-col{display:flex;align-items:center;justify-content:flex-end;gap:2px}
 .td-act{width:32px;height:32px;display:grid;place-items:center;color:var(--text-secondary);border-radius:2px}
 .td-act:hover{background:var(--hover-2);color:var(--text-primary)}
+.td-act.fav.on{color:var(--warning)}
 
 /* Kind-Zeile */
 .loc-rows{background:var(--bg)}

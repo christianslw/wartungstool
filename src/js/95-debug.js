@@ -31,15 +31,25 @@ window.WT = {
   select: { filtered, aktuelleListe, groupItems, sortItems, sortGroups, groupStats, countsForScope, aktuelleZahlen, fortschritt, suchVorschlag },
 
   /* Darstellung & programmatische Aktionen (src/js/50-render.js, 43-actions.js) */
-  view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline },
+  view: { render, setView, setGroup, setSort, toggleSortDir, setBereich, setAllExpanded, viewGroupedList, viewTiles, viewBlobs, viewTimeline, viewCalendar },
+
+  /* Kalender & Abschaltungen (src/js/55-kalender.js) */
+  kalender: {
+    events: kalenderEvents, view: viewCalendar, notifs: abschaltungNotifs, abschaltung: openAbschaltung,
+    nav: kalNav, viewSet: kalViewSet, picker: toggleKalPicker, year: kalJahrVerschieben, month: kalMonatWaehlen,
+    toggle: toggleKalCategory, feiertage, feiertagName
+  },
 
   /* Presets (src/js/44-presets.js) */
   presets: { loadPresets, applyPreset, saveCurrentPreset, deletePreset, setDefaultPreset, applyDefaultPreset },
 
+  /* Favoriten (src/js/46-favorites.js) – angeheftete Standorte auf Zuhause */
+  favorites: { load: loadFavorites, toggle: toggleFavorit, ist: istFavorit, gruppen: favoritGruppen, open: openFavorit },
+
   /* Tabs (src/js/45-tabs.js) – benannte, gespeicherte Ansichten */
   tabs: {
     all: () => TABS, activeTab, applyTab, openStandard, addTab, renameTab, closeTab, saveTab,
-    reopenSaved, reopenRecent, moveTab, addHomeTab, homeOpen, toggleFavTab, setTabColor, setTabIcon,
+    reopenSaved, reopenRecent, deleteSavedTab, deleteRecentTab, moveTab, addHomeTab, homeOpen, toggleFavTab, setTabColor, setTabIcon,
     setDefaultTab, orderedTabs, tabCount
   },
 

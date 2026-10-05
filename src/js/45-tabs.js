@@ -249,6 +249,20 @@ function reopenRecent(name) {
   return openRecord(rec);
 }
 
+/** Gespeicherten eigenen Tab endgültig aus der Ablage entfernen. */
+function deleteSavedTab(name) {
+  TABS.saved = (TABS.saved || []).filter((s) => s.name !== name);
+  saveTabs();
+  render();
+}
+
+/** Eintrag aus "Zuletzt geschlossen" entfernen. */
+function deleteRecentTab(name) {
+  TABS.recent = (TABS.recent || []).filter((s) => s.name !== name);
+  saveTabs();
+  render();
+}
+
 function renameTab(id, name) {
   const t = TABS.list.find((x) => x.id === id);
   const clean = String(name || '').trim();

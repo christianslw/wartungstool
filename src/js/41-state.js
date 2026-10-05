@@ -1,12 +1,17 @@
 /* Wartungstool · JS · Anwendungszustand & To-Do-Kennzeichen */
 const state = {
-  items: [], todos: [], user: '', lastNote: '',
+  items: [], todos: [], abschaltungen: [], user: '', lastNote: '',
   bereich: 'alle', query: '', status: 'alle', art: '', objekt: '', taetigkeit: '', personen: [],
   zeitraumJahr: aktuellesJahr(), zeitraumJahrManual: false, von: '', bis: '',
   mine: false,
   /* Drei Schritte: Gruppieren · Sortieren · Ansicht (siehe 42/43/presets) */
   group: 'object', view: 'list', sortKey: 'status', sortDir: 'asc',
-  expanded: new Set(), collapsed: new Set(), panelId: null, loading: true, online: true, filterOpen: false
+  /* Kalender (siehe 55-kalender.js): Monat, Kategorien, Monats-/Jahresansicht */
+  kalJahr: new Date().getFullYear(), kalMonat: new Date().getMonth(),
+  kalOver: true, kalSoon: true, kalOpen: true, kalDone: true, kalAbs: true,
+  kalView: 'month', kalPicker: false, kalYearMax: 8, kalDayMax: 4,
+  expanded: new Set(), collapsed: new Set(), panelId: null, loading: true, online: true, filterOpen: false,
+  favorites: []
 };
 
 const TODO_MARK = '__toDo';

@@ -57,6 +57,8 @@
   --tag-yellow-bg:#684e00; --tag-yellow-fg:#fdd13a;
   --tag-blue-bg:#0043ce;   --tag-blue-fg:#d0e2ff;
   --tag-gray-bg:#333333;   --tag-gray-fg:#f4f4f4;
+  --tag-purple-bg:#31135e; --tag-purple-fg:#e8daff;
+  --kal-feiertag-bg:#3a1215;
 
   --font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
@@ -112,6 +114,8 @@ html[data-theme="light"]{
   --tag-yellow-bg:#fdf5d6; --tag-yellow-fg:#4d3b00;
   --tag-blue-bg:#edf5ff;   --tag-blue-fg:#0043ce;
   --tag-gray-bg:#e8e8e8;   --tag-gray-fg:#161616;
+  --tag-purple-bg:#f6f2ff; --tag-purple-fg:#6929c4;
+  --kal-feiertag-bg:#ffeef0;
 
   color-scheme:light;
   --hdr-bg:#ffffff; --hdr-hover:#f4f4f4; --hdr-active:#e8e8e8;
@@ -126,6 +130,8 @@ body{
   font-size:13px;line-height:18px;letter-spacing:.16px;-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;overflow:hidden;
 }
+/* Mobil: fest auf die sichtbare Bildschirmhöhe (dvh), keine Adressleisten-Sprünge. */
+@supports (height:100dvh){ html,body{height:100dvh} }
 
 /* Scrollbereich der Ansichten: Kopf, Toolbar und Fußzeile bleiben stehen. */
 .content-body{flex:1 1 auto;overflow:auto;scrollbar-gutter:stable;min-height:0}

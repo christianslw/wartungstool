@@ -93,3 +93,37 @@
 .home-sec.over h2{color:var(--error)}
 .home-sec.soon h2{color:var(--warning)}
 .home-more{margin-top:4px}
+
+/* Angepinnte Standorte (Favoriten) ---------------------------------------- */
+.home-favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.home-fav{
+  display:grid;grid-template-columns:auto 1fr;grid-template-areas:'nr name' 'sub sub';gap:2px 8px;
+  text-align:left;padding:10px 12px;background:var(--layer-01);border:1px solid var(--border-subtle);
+  border-left:3px solid var(--interactive);border-radius:4px;
+}
+.home-fav:hover{border-color:var(--interactive-light);background:var(--hover-2)}
+.home-fav.over{border-left-color:var(--error)}
+.home-fav.done{border-left-color:var(--success)}
+.home-fav .hf-nr{grid-area:nr;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-secondary)}
+.home-fav .hf-name{grid-area:name;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-fav .hf-sub{grid-area:sub;font-size:11px;color:var(--text-helper);font-variant-numeric:tabular-nums}
+.home-fav .loc-mini-track{grid-column:1 / -1;margin-top:6px}
+
+/* To-Dos als Haftnotizen --------------------------------------------------- */
+.home-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.home-note{
+  position:relative;display:flex;flex-direction:column;gap:4px;text-align:left;min-height:96px;
+  padding:12px 12px 14px;background:var(--tag-yellow-bg);color:var(--tag-yellow-fg);
+  border-radius:3px;box-shadow:var(--shadow-2);
+}
+.home-note::after{
+  content:'';position:absolute;top:0;right:0;border-width:0 14px 14px 0;border-style:solid;
+  border-color:transparent var(--bg) transparent transparent;
+}
+.home-note:hover{transform:translateY(-1px)}
+.home-note .hn-task{font-weight:600;font-size:13px}
+.home-note .hn-loc{font-size:11px;opacity:.85}
+.home-note .hn-due{font-size:11px;font-variant-numeric:tabular-nums;margin-top:auto}
+.home-note .hn-due.late{font-weight:600;text-decoration:underline}
+.home-note .hn-note{font-size:11px;opacity:.9;border-top:1px solid rgba(0,0,0,.15);padding-top:4px}
+

@@ -64,12 +64,21 @@
 .hdr-spacer{flex:1 1 auto}
 
 .hdr-user{
-  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px;
+  display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 8px;
   font-size:12px;color:var(--text-secondary);border:1px solid transparent;
   max-width:180px;white-space:nowrap;transition:background .1s, border-color .1s;flex:0 0 auto;
 }
 .hdr-user:hover{background:var(--hdr-hover);color:var(--text-primary);border-color:var(--border-subtle)}
 .hdr-user span.uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Profil-Kreis: Icon oder Initialen, damit der Name mobil nicht die Zeile sprengt. */
+.hdr-avatar{
+  position:relative;width:28px;height:28px;border-radius:50%;flex:0 0 auto;
+  display:grid;place-items:center;background:var(--layer-03);color:var(--text-secondary);
+}
+.hdr-user:hover .hdr-avatar{color:var(--text-primary)}
+.hdr-avatar .hdr-initials{display:none;font-size:11px;font-weight:700;letter-spacing:.02em}
+.hdr-avatar.has-name svg{display:none}
+.hdr-avatar.has-name .hdr-initials{display:block;color:var(--text-primary)}
 .user-nudge{
   display:inline-flex;align-items:center;justify-content:center;
   background:var(--warning);color:#161616;font-size:10px;font-weight:700;
